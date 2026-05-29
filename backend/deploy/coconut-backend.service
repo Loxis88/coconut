@@ -1,0 +1,24 @@
+[Unit]
+Description=Coconut Backend Service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+# Adjust the path to where the binary is deployed
+WorkingDirectory=/opt/coconut/backend
+ExecStart=/opt/coconut/backend/api
+
+# Load environment variables from a file on the server.
+# Ensure you create this file on the server with real credentials:
+# DATABASE_URL=postgres://user:password@host:port/db
+# JWT_SECRET=your_secret_key
+# GOOGLE_CLIENT_ID=your_client_id
+EnvironmentFile=/opt/coconut/backend/.env
+Environment="PORT=8080"
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
