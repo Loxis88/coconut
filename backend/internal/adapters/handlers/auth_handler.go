@@ -6,7 +6,6 @@ import (
 	"github.com/coconut/backend/internal/core/ports"
 	jwtutil "github.com/coconut/backend/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -24,46 +23,31 @@ func NewAuthHandler(authService ports.AuthService, jwtSecret string) *AuthHandle
 func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	authGroup := router.Group("/auth")
 
-	// Google OAuth routes
-	googleGroup := authGroup.Group("/google")
-	googleGroup.Get("/login", h.GoogleLogin)
-	googleGroup.Get("/callback", h.GoogleCallback)
+	// Mobile-first Google Auth route
+	authGroup.Post("/google", h.GoogleLogin)
 
 	// Protected routes
 	api := router.Group("/api", h.AuthMiddleware())
 	api.Get("/me", h.GetMe)
 }
 
-func (h *AuthHandler) GoogleLogin(c *fiber.Ctx) error {
-	// Generate a random state for CSRF protection
-	state := uuid.New().String()
-
-	// In a real app, you should store this state in a secure HttpOnly cookie
-	// to verify it in the callback. For simplicity, we skip it here, but it's recommended.
-	c.Cookie(&fiber.Cookie{
-		Name:     "oauth_state",
-		Value:    state,
-		HTTPOnly: true,
-		Secure:   false, // Set to true in production
-	})
-
-	url := h.authService.GetGoogleLoginURL(state)
-	return c.Redirect(url, fiber.StatusTemporaryRedirect)
+type GoogleLoginRequest struct {
+	IDToken string `json:"id_token"`
 }
 
-func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
-	state := c.Query("state")
-	code := c.Query("code")
-
-	// Verify state from cookie (recommended)
-	cookieState := c.Cookies("oauth_state")
-	if state != cookieState {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid state"})
+func (h *AuthHandler) GoogleLogin(c *fiber.Ctx) error {
+	var req GoogleLoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
 	}
 
-	accessToken, refreshToken, user, err := h.authService.GoogleCallback(c.Context(), code)
+	if req.IDToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id_token is required"})
+	}
+
+	accessToken, refreshToken, user, err := h.authService.VerifyGoogleToken(c.Context(), req.IDToken)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to authenticate", "details": err.Error()})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "failed to authenticate", "details": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{

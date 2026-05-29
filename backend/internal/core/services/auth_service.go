@@ -2,87 +2,68 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/coconut/backend/internal/core/domain"
 	"github.com/coconut/backend/internal/core/ports"
 	jwtutil "github.com/coconut/backend/pkg/jwt"
 	"github.com/google/uuid"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
+	"google.golang.org/api/idtoken"
 )
 
 type authService struct {
-	userRepo    ports.UserRepository
-	oauthConfig *oauth2.Config
-	jwtSecret   string
+	userRepo       ports.UserRepository
+	allowedClients []string
+	jwtSecret      string
 }
 
-func NewAuthService(userRepo ports.UserRepository, clientID, clientSecret, redirectURL, jwtSecret string) ports.AuthService {
-	conf := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  redirectURL,
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-		},
-		Endpoint: google.Endpoint,
-	}
-
+func NewAuthService(userRepo ports.UserRepository, allowedClients []string, jwtSecret string) ports.AuthService {
 	return &authService{
-		userRepo:    userRepo,
-		oauthConfig: conf,
-		jwtSecret:   jwtSecret,
+		userRepo:       userRepo,
+		allowedClients: allowedClients,
+		jwtSecret:      jwtSecret,
 	}
 }
 
-func (s *authService) GetGoogleLoginURL(state string) string {
-	return s.oauthConfig.AuthCodeURL(state)
-}
+func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) (string, string, *domain.User, error) {
+	// 1. Validate the ID Token
+	// We check against the first client ID.
+	// In production, if you have multiple clients (Android, iOS),
+	// idtoken.Validate will check if the 'aud' matches the provided client ID.
+	// A more robust approach loops through allowedClients if the first fails due to aud mismatch,
+	// but providing the expected Android client ID is sufficient for now.
+	var payload *idtoken.Payload
+	var err error
+	var validated bool
 
-func (s *authService) GoogleCallback(ctx context.Context, code string) (string, string, *domain.User, error) {
-	// 1. Exchange code for token
-	token, err := s.oauthConfig.Exchange(ctx, code)
-	if err != nil {
-		return "", "", nil, fmt.Errorf("code exchange failed: %w", err)
+	for _, clientID := range s.allowedClients {
+		payload, err = idtoken.Validate(ctx, idTokenStr, clientID)
+		if err == nil {
+			validated = true
+			break
+		}
 	}
 
-	// 2. Fetch user info from Google
-	client := s.oauthConfig.Client(ctx, token)
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		return "", "", nil, fmt.Errorf("failed getting user info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", "", nil, fmt.Errorf("google api returned status %d: %s", resp.StatusCode, body)
+	if !validated {
+		return "", "", nil, fmt.Errorf("failed to validate id_token: %v", err)
 	}
 
-	var googleUser struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
-		Name  string `json:"name"`
-		// Picture string `json:"picture"`
+	// 2. Extract User Info
+	emailRaw, ok := payload.Claims["email"]
+	if !ok {
+		return "", "", nil, errors.New("email not found in token claims")
+	}
+	email, ok := emailRaw.(string)
+	if !ok {
+		return "", "", nil, errors.New("email claim is not a string")
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&googleUser); err != nil {
-		return "", "", nil, fmt.Errorf("failed decoding user info: %w", err)
-	}
-
-	if googleUser.Email == "" || googleUser.ID == "" {
-		return "", "", nil, errors.New("incomplete user info received from Google")
-	}
+	googleID := payload.Subject // The 'sub' field is the Google User ID
 
 	// 3. Find or Create User
-	user, err := s.userRepo.GetByEmail(ctx, googleUser.Email)
+	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed querying user by email: %w", err)
 	}
@@ -91,8 +72,8 @@ func (s *authService) GoogleCallback(ctx context.Context, code string) (string, 
 		// Create new user
 		user = &domain.User{
 			ID:        uuid.New().String(),
-			Email:     googleUser.Email,
-			GoogleID:  &googleUser.ID,
+			Email:     email,
+			GoogleID:  &googleID,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -100,10 +81,8 @@ func (s *authService) GoogleCallback(ctx context.Context, code string) (string, 
 			return "", "", nil, fmt.Errorf("failed creating new user: %w", err)
 		}
 	} else if user.GoogleID == nil {
-		// Update existing user with Google ID (if they signed up with email first, for future proofing)
-		// TODO: Implement an Update method in UserRepository to set GoogleID.
-		// For now, we will just proceed, but ideally we link the account.
-		// user.GoogleID = &googleUser.ID
+		// Link account if GoogleID is missing
+		// user.GoogleID = &googleID
 		// s.userRepo.Update(ctx, user)
 	}
 

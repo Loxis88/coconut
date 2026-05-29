@@ -23,10 +23,9 @@ func main() {
 	}
 
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
-	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	googleRedirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
-	if googleRedirectURL == "" {
-		googleRedirectURL = "http://localhost:8080/auth/google/callback"
+	if googleClientID == "" {
+		// Default to the Android client ID
+		googleClientID = "810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com"
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -52,7 +51,8 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(dbPool)
 
 	// 4. Initialize Services
-	authService := services.NewAuthService(userRepo, googleClientID, googleClientSecret, googleRedirectURL, jwtSecret)
+	allowedClients := []string{googleClientID}
+	authService := services.NewAuthService(userRepo, allowedClients, jwtSecret)
 
 	// 5. Initialize Fiber App
 	app := fiber.New(fiber.Config{
