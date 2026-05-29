@@ -125,6 +125,9 @@ import androidx.compose.material3.OutlinedTextField
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.coconut.app.presentation.viewmodel.CoconutViewModel
+import com.coconut.app.presentation.ui.AuthScreen
+import com.coconut.app.presentation.viewmodel.AuthViewModel
+import com.coconut.app.presentation.viewmodel.AuthViewModelFactory
 import com.coconut.app.presentation.viewmodel.ProductState
 import com.coconut.app.domain.model.Product
 import com.coconut.app.domain.model.Nutrients
@@ -159,7 +162,21 @@ private fun CoconutApp() {
     val viewModel: CoconutViewModel = viewModel(
         factory = CoconutViewModel.Factory(app.container.searchBarcodeUseCase, app.container.productRepository)
     )
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(app.container)
+    )
     
+    var isAuthenticated by remember { mutableStateOf(app.container.authRepository.getAccessToken() != null) }
+
+    if (!isAuthenticated) {
+        MaterialTheme {
+            AuthScreen(authViewModel) {
+                isAuthenticated = true
+            }
+        }
+        return
+    }
+
     MaterialTheme {
         val nav = rememberNavController()
         val state by viewModel.productState.collectAsState()

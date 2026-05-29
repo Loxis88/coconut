@@ -56,6 +56,15 @@ jobs:
           # Create directory structure
           sudo mkdir -p /opt/coconut/backend
 
+          # Create .env file with default credentials so the app doesn't crash on startup
+          # The user should update this manually on the server for production
+          sudo bash -c 'cat << EOF > /opt/coconut/backend/.env
+          PORT=8080
+          DATABASE_URL=postgres://postgres:aramadmin@127.0.0.1:5432/postgres
+          GOOGLE_CLIENT_ID=810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com
+          JWT_SECRET=super-secret-key-change-me-in-production
+          EOF'
+
           # Remove old binary to ensure clean replace
           sudo rm -f /opt/coconut/backend/api
 
@@ -107,7 +116,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: android/app/build/outputs/apk/debug/app-debug.apk
-        name: Latest Beta Release
-        tag_name: latest
+        name: Beta Release ${{ github.run_number }}
+        tag_name: dev-${{ github.run_number }}
+        prerelease: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

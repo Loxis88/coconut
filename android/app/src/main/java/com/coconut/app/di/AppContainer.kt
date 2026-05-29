@@ -1,8 +1,11 @@
 package com.coconut.app.di
 
 import android.content.Context
+import com.coconut.app.data.api.AuthApi
 import com.coconut.app.data.api.RoskachestvoApi
+import com.coconut.app.data.repository.AuthRepositoryImpl
 import com.coconut.app.data.repository.ProductRepositoryImpl
+import com.coconut.app.domain.repository.AuthRepository
 import com.coconut.app.domain.repository.ProductRepository
 import com.coconut.app.domain.usecase.SearchBarcodeUseCase
 import com.google.gson.Gson
@@ -58,9 +61,16 @@ class AppContainer(private val context: Context) {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
+    private val coconutRetrofit = Retrofit.Builder()
+        .baseUrl("http://62.233.43.33:8080/") // IP address of the Coconut backend server
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
     private val api: RoskachestvoApi = retrofit.create(RoskachestvoApi::class.java)
+    private val authApi: AuthApi = coconutRetrofit.create(AuthApi::class.java)
 
     val productRepository: ProductRepository = ProductRepositoryImpl(api, prefs, gson)
-
     val searchBarcodeUseCase: SearchBarcodeUseCase = SearchBarcodeUseCase(productRepository)
+    val authRepository: AuthRepository = AuthRepositoryImpl(authApi, context)
 }
