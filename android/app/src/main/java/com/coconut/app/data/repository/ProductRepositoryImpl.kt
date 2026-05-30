@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter
 
 class ProductRepositoryImpl(
     private val api: RoskachestvoApi,
+    private val backendApi: com.coconut.app.data.api.CoconutBackendApi,
     private val prefs: SharedPreferences,
     private val gson: Gson
 ) : ProductRepository {
@@ -40,7 +41,7 @@ class ProductRepositoryImpl(
         _scanHistoryFlow.value = history
     }
 
-    override suspend fun searchByBarcode(barcode: String): Result<Product> {
+    override suspend fun searchByBarcode(barcode: String, token: String?): Result<Product> {
         return try {
             val response = api.searchBarcode(barcode)
             
@@ -60,6 +61,23 @@ class ProductRepositoryImpl(
                 
                 // Track date for streak
                 trackScanDate()
+
+                // Save to backend if authenticated
+                if (token != null) {
+                    try {
+                        backendApi.saveHistory(
+                            token = "Bearer $token",
+                            request = com.coconut.app.data.api.HistoryRequest(
+                                barcode = barcode,
+                                title = product.title,
+                                score = (product.totalRating * 20).toInt()
+                            )
+                        )
+                    } catch (e: Exception) {
+                        // Log error but don't fail the whole search
+                        android.util.Log.e("ProductRepo", "Failed to save history to backend", e)
+                    }
+                }
                 
                 Result.success(product)
             } else {
@@ -67,6 +85,43 @@ class ProductRepositoryImpl(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun syncHistory(token: String) {
+        try {
+            val serverHistory = backendApi.getHistory("Bearer $token")
+            // This is a simplified sync: we'll just merge titles/barcodes if we can.
+            // Since Roskachestvo data is rich, we might still want to fetch full details if missing.
+            // For now, let's at least populate the history list with basic info from server.
+            
+            val mappedHistory = serverHistory.map { h ->
+                Product(
+                    id = h.id.hashCode(), // Simplified ID mapping
+                    title = h.title,
+                    totalRating = h.score / 20.0,
+                    description = "",
+                    categoryName = "",
+                    manufacturer = "",
+                    price = "",
+                    thumbnail = null,
+                    criteriaRatings = emptyList(),
+                    worth = emptyList(),
+                    info = emptyList(),
+                    recommendations = emptyList(),
+                    nutrients = null,
+                    composition = null,
+                    hasQualityMark = false,
+                    hasBadQualityMark = false
+                )
+            }
+            
+            // Merge with local history if needed, or just replace for now
+            if (mappedHistory.isNotEmpty()) {
+                saveHistoryToPrefs(mappedHistory)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ProductRepo", "Failed to sync history from backend", e)
         }
     }
 
@@ -86,9 +141,16 @@ class ProductRepositoryImpl(
         return _streakFlow.asStateFlow()
     }
 
-    override suspend fun clearHistory() {
+    override suspend fun clearHistory(token: String?) {
         prefs.edit().remove(historyKey).apply()
         _scanHistoryFlow.value = emptyList()
+        if (token != null) {
+            try {
+                backendApi.clearHistory("Bearer $token")
+            } catch (e: Exception) {
+                android.util.Log.e("ProductRepo", "Failed to clear history on backend", e)
+            }
+        }
     }
 
     private val datesKey = "scan_dates"

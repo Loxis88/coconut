@@ -24,8 +24,7 @@ func main() {
 
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientID == "" {
-		// Default to the Android client ID
-		googleClientID = "810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com"
+		log.Println("Warning: GOOGLE_CLIENT_ID environment variable is not set")
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -49,6 +48,7 @@ func main() {
 
 	// 3. Initialize Repositories
 	userRepo := repositories.NewPostgresUserRepository(dbPool)
+	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
 
 	// 4. Initialize Services
 	allowedClients := []string{googleClientID}
@@ -66,6 +66,11 @@ func main() {
 	// 6. Setup Routes
 	authHandler := handlers.NewAuthHandler(authService, jwtSecret)
 	authHandler.SetupRoutes(app)
+
+	historyHandler := handlers.NewHistoryHandler(historyRepo)
+	// Apply AuthMiddleware to /api group
+	api := app.Group("/api", authHandler.AuthMiddleware())
+	historyHandler.SetupRoutes(api)
 
 	// Health check
 	app.Get("/health", func(c *fiber.Ctx) error {

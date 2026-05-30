@@ -23,11 +23,25 @@ sealed class ProductState {
 
 class CoconutViewModel(
     private val searchBarcodeUseCase: SearchBarcodeUseCase,
-    private val repository: ProductRepository
+    private val repository: ProductRepository,
+    private val authRepository: com.coconut.app.domain.repository.AuthRepository
 ) : ViewModel() {
 
     private val _productState = MutableStateFlow<ProductState>(ProductState.Idle)
     val productState: StateFlow<ProductState> = _productState.asStateFlow()
+
+    init {
+        syncHistory()
+    }
+
+    private fun syncHistory() {
+        val token = authRepository.getAccessToken()
+        if (token != null) {
+            viewModelScope.launch {
+                repository.syncHistory(token)
+            }
+        }
+    }
 
     val scanHistory: StateFlow<List<Product>> = repository.getScanHistory()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -47,8 +61,9 @@ class CoconutViewModel(
         if (barcode.isBlank()) return
         _productState.value = ProductState.Loading
 
+        val token = authRepository.getAccessToken()
         viewModelScope.launch {
-            val result = searchBarcodeUseCase(barcode)
+            val result = searchBarcodeUseCase(barcode, token)
             result.onSuccess { product ->
                 _productState.value = ProductState.Success(product)
             }.onFailure { exception ->
@@ -66,8 +81,9 @@ class CoconutViewModel(
     }
 
     fun clearHistory() {
+        val token = authRepository.getAccessToken()
         viewModelScope.launch {
-            repository.clearHistory()
+            repository.clearHistory(token)
         }
     }
 
@@ -79,11 +95,12 @@ class CoconutViewModel(
 
     class Factory(
         private val searchBarcodeUseCase: SearchBarcodeUseCase,
-        private val repository: ProductRepository
+        private val repository: ProductRepository,
+        private val authRepository: com.coconut.app.domain.repository.AuthRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CoconutViewModel(searchBarcodeUseCase, repository) as T
+            return CoconutViewModel(searchBarcodeUseCase, repository, authRepository) as T
         }
     }
 }
