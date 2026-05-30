@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/coconut/backend/internal/core/ports"
 	"github.com/gofiber/fiber/v2"
 )
@@ -28,6 +30,7 @@ func (h *ProductHandler) GetProductByBarcode(c *fiber.Ctx) error {
 
 	product, err := h.productRepo.GetByBarcode(c.UserContext(), barcode)
 	if err != nil {
+		log.Printf("ERROR: Failed to fetch product [%s]: %v", barcode, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch product", "details": err.Error()})
 	}
 
