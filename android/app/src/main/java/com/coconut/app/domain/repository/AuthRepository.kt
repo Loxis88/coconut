@@ -7,4 +7,7 @@ interface AuthRepository {
     fun getAccessToken(): String?
     fun saveTokens(accessToken: String, refreshToken: String)
     fun clearTokens()
+    suspend fun fetchCurrentUser(): Result<com.coconut.app.data.api.AuthUser>
+    fun getCachedUser(): com.coconut.app.data.api.AuthUser?
+    suspend fun updateNickname(nickname: String): Result<Unit>
 }

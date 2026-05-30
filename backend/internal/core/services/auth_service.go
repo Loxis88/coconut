@@ -69,10 +69,19 @@ func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) 
 	}
 
 	if user == nil {
+		// Try to get name from claims to use as nickname
+		nickname := email // Default to email
+		if nameRaw, exists := payload.Claims["name"]; exists {
+			if name, ok := nameRaw.(string); ok {
+				nickname = name
+			}
+		}
+
 		// Create new user
 		user = &domain.User{
 			ID:        uuid.New().String(),
 			Email:     email,
+			Nickname:  nickname,
 			GoogleID:  &googleID,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -93,4 +102,12 @@ func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) 
 	}
 
 	return accessToken, refreshToken, user, nil
+}
+
+func (s *authService) UpdateNickname(ctx context.Context, userID, nickname string) error {
+	return s.userRepo.UpdateNickname(ctx, userID, nickname)
+}
+
+func (s *authService) GetUserByID(ctx context.Context, userID string) (*domain.User, error) {
+	return s.userRepo.GetByID(ctx, userID)
 }

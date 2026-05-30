@@ -11,4 +11,5 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	GetByGoogleID(ctx context.Context, googleID string) (*domain.User, error)
+	UpdateNickname(ctx context.Context, userID, nickname string) error
 }

@@ -23,6 +23,25 @@ class AuthViewModel(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
+    private val _currentUser = MutableStateFlow<AuthUser?>(authRepository.getCachedUser())
+    val currentUser: StateFlow<AuthUser?> = _currentUser.asStateFlow()
+
+    init {
+        refreshUserInfo()
+    }
+
+    fun refreshUserInfo() {
+        viewModelScope.launch {
+            val result = authRepository.fetchCurrentUser()
+            result.onSuccess { user ->
+                _currentUser.value = user
+                if (_authState.value is AuthState.Idle) {
+                    _authState.value = AuthState.Success(user)
+                }
+            }
+        }
+    }
+
     fun handleGoogleSignIn(idToken: String?) {
         if (idToken == null) {
             _authState.value = AuthState.Error("Google Sign-In failed or was cancelled.")
@@ -32,22 +51,27 @@ class AuthViewModel(
         _authState.value = AuthState.Loading
         viewModelScope.launch {
             val result = authRepository.loginWithGoogle(idToken)
-            if (result.isSuccess) {
-                val response = result.getOrNull()
-                if (response != null) {
-                    _authState.value = AuthState.Success(response.user)
-                } else {
-                    _authState.value = AuthState.Error("Empty response from server")
-                }
-            } else {
-                val error = result.exceptionOrNull()
-                _authState.value = AuthState.Error(error?.message ?: "Unknown login error")
+            result.onSuccess { response ->
+                _currentUser.value = response.user
+                _authState.value = AuthState.Success(response.user)
+            }.onFailure { error ->
+                _authState.value = AuthState.Error(error.message ?: "Unknown login error")
+            }
+        }
+    }
+
+    fun updateNickname(newNickname: String) {
+        viewModelScope.launch {
+            val result = authRepository.updateNickname(newNickname)
+            result.onSuccess {
+                refreshUserInfo()
             }
         }
     }
 
     fun logout() {
         authRepository.clearTokens()
+        _currentUser.value = null
         _authState.value = AuthState.Idle
     }
 }

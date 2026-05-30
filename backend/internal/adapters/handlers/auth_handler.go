@@ -29,6 +29,28 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	// Protected routes
 	api := router.Group("/api", h.AuthMiddleware())
 	api.Get("/me", h.GetMe)
+	api.Patch("/me/nickname", h.UpdateNickname)
+}
+
+func (h *AuthHandler) UpdateNickname(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var req struct {
+		Nickname string `json:"nickname"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	if req.Nickname == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "nickname is required"})
+	}
+
+	if err := h.authService.UpdateNickname(c.UserContext(), userID, req.Nickname); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update nickname"})
+	}
+
+	return c.JSON(fiber.Map{"message": "nickname updated successfully"})
 }
 
 type GoogleLoginRequest struct {
@@ -86,11 +108,11 @@ func (h *AuthHandler) AuthMiddleware() fiber.Handler {
 
 func (h *AuthHandler) GetMe(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	email := c.Locals("email").(string)
 
-	return c.JSON(fiber.Map{
-		"message": "You are authenticated!",
-		"user_id": userID,
-		"email":   email,
-	})
+	user, err := h.authService.GetUserByID(c.UserContext(), userID)
+	if err != nil || user == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	return c.JSON(user)
 }
