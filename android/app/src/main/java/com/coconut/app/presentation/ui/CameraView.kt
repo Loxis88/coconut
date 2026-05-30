@@ -23,10 +23,13 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
+import androidx.compose.ui.unit.IntSize
+
 @Composable
 fun CameraView(
     modifier: Modifier = Modifier,
     isFlashlightOn: Boolean = false,
+    onBarcodeDetected: (android.graphics.Rect?, IntSize) -> Unit = { _, _ -> },
     onBarcodeScanned: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -54,7 +57,7 @@ fun CameraView(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also {
-                        it.setAnalyzer(executor, BarcodeAnalyzer(onBarcodeScanned))
+                        it.setAnalyzer(executor, BarcodeAnalyzer(onBarcodeScanned, onBarcodeDetected))
                     }
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -93,7 +96,10 @@ fun CameraView(
     )
 }
 
-class BarcodeAnalyzer(private val onBarcodeScanned: (String) -> Unit) : ImageAnalysis.Analyzer {
+class BarcodeAnalyzer(
+    private val onBarcodeScanned: (String) -> Unit,
+    private val onBarcodeDetected: (android.graphics.Rect?, IntSize) -> Unit
+) : ImageAnalysis.Analyzer {
 
     private val options = BarcodeScannerOptions.Builder()
         .setBarcodeFormats(
@@ -119,16 +125,24 @@ class BarcodeAnalyzer(private val onBarcodeScanned: (String) -> Unit) : ImageAna
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+            val previewSize = IntSize(imageProxy.width, imageProxy.height)
+            
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
-                    val barcode = barcodes.firstOrNull()?.rawValue
-                    if (barcode != null && barcode.isNotBlank()) {
-                        isScanning = false
-                        onBarcodeScanned(barcode)
+                    val barcode = barcodes.firstOrNull()
+                    if (barcode != null) {
+                        onBarcodeDetected(barcode.boundingBox, previewSize)
+                        val rawValue = barcode.rawValue
+                        if (rawValue != null && rawValue.isNotBlank()) {
+                            isScanning = false
+                            onBarcodeScanned(rawValue)
+                        }
+                    } else {
+                        onBarcodeDetected(null, previewSize)
                     }
                 }
                 .addOnFailureListener {
-                    // Handle failure if needed
+                    onBarcodeDetected(null, previewSize)
                 }
                 .addOnCompleteListener {
                     imageProxy.close()
