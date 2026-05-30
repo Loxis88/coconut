@@ -81,13 +81,8 @@ fun AuthScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit) {
 fun GoogleSignInButton(context: Context, launchSignIn: (android.content.Intent) -> Unit) {
     Button(
         onClick = {
-            // NOTE: In a real production app, you must create a Web Client ID in Google Cloud Console
-            // and pass it here instead of the Android Client ID. Passing the Android Client ID here
-            // will cause Google Sign In to fail with DEVELOPER_ERROR.
-            // Since we only have the Android Client ID provided right now, we leave it,
-            // but the user needs to create a Web Client ID.
             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com")
+                .requestIdToken("810958888238-c1fmanoapbjbgha6nkbte55o99cqj446.apps.googleusercontent.com") // Web Client ID
                 .requestEmail()
                 .build()
             val mGoogleSignInClient = GoogleSignIn.getClient(context, gso)
