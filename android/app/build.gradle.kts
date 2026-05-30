@@ -7,12 +7,27 @@ android {
     namespace = "com.coconut.app"
     compileSdk = 36
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.coconut.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+    }
+
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 }
 
