@@ -19,7 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import com.coconut.app.presentation.viewmodel.AuthViewModel
+import com.coconut.app.presentation.viewmodel.AuthState
 
 @Composable
 fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> Unit) {
@@ -115,98 +117,4 @@ private fun ProfileInfoRow(label: String, value: String) {
         Text(label, color = Coco.Muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         Text(value, color = Coco.Ink, fontSize = 15.sp, fontWeight = FontWeight.Bold)
     }
-}
-
-// Reuse the common components (simplified versions for now, or we should move them to a common file)
-
-@Composable
-private fun AdaptiveScreen(
-    background: Color = Coco.Cream,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(background)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        Box(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun CocoCard(
-    modifier: Modifier = Modifier,
-    background: Color = Color.White,
-    padding: Dp = 18.dp,
-    content: @Composable () -> Unit,
-) {
-    Surface(modifier = modifier.fillMaxWidth(), color = background, shape = RoundedCornerShape(24.dp)) {
-        Column(Modifier.padding(padding)) { content() }
-    }
-}
-
-@Composable
-private fun RoundIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(40.dp).clip(CircleShape).background(Coco.Hairline),
-    ) {
-        Icon(icon, null, tint = Coco.Ink, modifier = Modifier.size(22.dp))
-    }
-}
-
-@Composable
-private fun DividerLine() {
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Coco.Hairline))
-}
-
-private enum class PillKind { Ink, Brand, Ghost }
-
-@Composable
-private fun Pill(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    kind: PillKind = PillKind.Ink,
-    large: Boolean = false,
-    onClick: () -> Unit,
-) {
-    val brush = if (kind == PillKind.Brand) Coco.BrandBrush else Brush.linearGradient(listOf(if (kind == PillKind.Ink) Coco.Ink else Coco.Hairline, if (kind == PillKind.Ink) Coco.Ink else Coco.Hairline))
-    val contentColor = when (kind) {
-        PillKind.Brand -> Coco.BrownDeep
-        PillKind.Ink -> Color.White
-        PillKind.Ghost -> Coco.Red // Specific for logout usually
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(999.dp))
-            .background(brush)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = if (large) 16.dp else 12.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, color = contentColor, fontSize = if (large) 17.sp else 15.sp, fontWeight = FontWeight.ExtraBold)
-        if (icon != null) {
-            Spacer(Modifier.width(8.dp))
-            Icon(icon, null, tint = contentColor, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-private object Coco {
-    val Cream = Color(0xFFFFF6E8)
-    val Ink = Color(0xFF1A1410)
-    val Muted = Color(0xFF7A6B5C)
-    val Hairline = Color(0x151A1410)
-    val Lime = Color(0xFFBEF264)
-    val Emerald = Color(0xFF10B981)
-    val EmeraldDeep = Color(0xFF047857)
-    val Red = Color(0xFFE11D48)
-    val BrownDeep = Color(0xFF3F2412)
-    val BrandBrush = Brush.linearGradient(listOf(Lime, Emerald, EmeraldDeep))
 }

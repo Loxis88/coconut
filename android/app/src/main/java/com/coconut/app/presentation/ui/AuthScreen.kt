@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.geometry.Size
 import com.coconut.app.presentation.viewmodel.AuthState
 import com.coconut.app.presentation.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -107,8 +108,9 @@ fun AuthScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit) {
                             label = "Войти через Google",
                             kind = AuthPillKind.Brand,
                             onClick = {
+                                val clientId = context.getString(com.coconut.app.R.string.google_client_id)
                                 val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                    .requestIdToken("810958888238-c1fmanoapbjbgha6nkbte55o99cqj446.apps.googleusercontent.com")
+                                    .requestIdToken(clientId)
                                     .requestEmail()
                                     .build()
                                 val mGoogleSignInClient = GoogleSignIn.getClient(context, gso)
@@ -175,82 +177,3 @@ private fun AuthPill(
 }
 
 private enum class AuthPillKind { Ink, Brand, Ghost }
-
-@Composable
-private fun AdaptiveScreen(
-    background: Color = Coco.Cream,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(background)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        Box(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun CoconutMark(size: Dp, modifier: Modifier = Modifier) {
-    Canvas(modifier.size(size)) {
-        drawCircle(brush = Coco.BrandBrush)
-        val eye = Color(0xFF1A1410)
-        fun oval(center: Offset) {
-            drawOval(
-                color = eye,
-                topLeft = Offset(center.x - this.size.width * 0.05f, center.y - this.size.height * 0.07f),
-                size = Size(this.size.width * 0.10f, this.size.height * 0.14f),
-            )
-        }
-        oval(Offset(this.size.width * 0.35f, this.size.height * 0.42f))
-        oval(Offset(this.size.width * 0.64f, this.size.height * 0.42f))
-        oval(Offset(this.size.width * 0.49f, this.size.height * 0.66f))
-    }
-}
-
-@Composable
-private fun ScoreChip(score: Int, big: Boolean = false) {
-    val t = tier(score)
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(t.color)
-            .padding(horizontal = if (big) 14.dp else 10.dp, vertical = if (big) 8.dp else 4.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(score.toString(), color = Color.White, fontSize = if (big) 18.sp else 13.sp, fontWeight = FontWeight.ExtraBold)
-        Text("/100", color = Color.White.copy(alpha = 0.8f), fontSize = if (big) 12.sp else 10.sp, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
-private fun FloatingScore(score: Int, modifier: Modifier) {
-    Box(modifier) { ScoreChip(score, big = true) }
-}
-
-private data class Tier(val label: String, val color: Color, val bg: Color, val inkOn: Color)
-
-private fun tier(score: Int): Tier = when {
-    score >= 80 -> Tier("Супер", Coco.Emerald, Color(0xFFD7F5E6), Color(0xFF04432A))
-    score >= 60 -> Tier("Норма", Color(0xFFA3B91D), Color(0xFFF0F6CF), Color(0xFF3A4407))
-    score >= 40 -> Tier("Спорно", Coco.Coral, Color(0xFFFFE2CC), Color(0xFF5A1F00))
-    else -> Tier("Мусор", Coco.Red, Color(0xFFFFD9DF), Color(0xFF5C0716))
-}
-
-private object Coco {
-    val Cream = Color(0xFFFFF6E8)
-    val Ink = Color(0xFF1A1410)
-    val Ink2 = Color(0xFF3D332B)
-    val Hairline = Color(0x151A1410)
-    val Lime = Color(0xFFBEF264)
-    val Emerald = Color(0xFF10B981)
-    val EmeraldDeep = Color(0xFF047857)
-    val Coral = Color(0xFFF97316)
-    val Red = Color(0xFFE11D48)
-    val BrownDeep = Color(0xFF3F2412)
-    val BrandBrush = Brush.linearGradient(listOf(Lime, Emerald, EmeraldDeep))
-}

@@ -2,6 +2,8 @@ package com.coconut.app.data.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.coconut.app.data.api.AuthApi
 import com.coconut.app.data.api.AuthResponse
 import com.coconut.app.data.api.GoogleLoginRequest
@@ -14,7 +16,14 @@ class AuthRepositoryImpl(
     private val context: Context
 ) : AuthRepository {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
+        "auth_prefs",
+        masterKeyAlias,
+        context,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 
     override suspend fun loginWithGoogle(idToken: String): Result<AuthResponse> = withContext(Dispatchers.IO) {
         try {

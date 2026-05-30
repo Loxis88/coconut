@@ -24,8 +24,7 @@ func main() {
 
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientID == "" {
-		// Default to the Android client ID
-		googleClientID = "810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com"
+		log.Println("Warning: GOOGLE_CLIENT_ID environment variable is not set")
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
