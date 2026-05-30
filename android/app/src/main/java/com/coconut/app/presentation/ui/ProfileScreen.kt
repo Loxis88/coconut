@@ -23,13 +23,23 @@ import androidx.compose.foundation.clickable
 import com.coconut.app.presentation.viewmodel.AuthViewModel
 import com.coconut.app.presentation.viewmodel.AuthState
 
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Cancel
+
 @Composable
 fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> Unit) {
-    val authState by viewModel.authState.collectAsState()
-    
-    // In a real app, we'd get the user info from the state or repository
-    // For now, let's assume we can get it from the Success state or just show placeholder if loading
-    
+    val user by viewModel.currentUser.collectAsState()
+    var isEditingNickname by remember { mutableStateOf(false) }
+    var editedNickname by remember { mutableStateOf(user?.nickname ?: "") }
+
+    LaunchedEffect(user) {
+        if (user != null && !isEditingNickname) {
+            editedNickname = user?.nickname ?: ""
+        }
+    }
+
     AdaptiveScreen {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -64,12 +74,40 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Теофиль", // Placeholder or get from user name
-                        color = Coco.Ink,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
+                    if (isEditingNickname) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.OutlinedTextField(
+                                value = editedNickname,
+                                onValueChange = { editedNickname = it },
+                                modifier = Modifier.widthIn(max = 200.dp),
+                                singleLine = true,
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            RoundIcon(Icons.Rounded.Save) {
+                                viewModel.updateNickname(editedNickname)
+                                isEditingNickname = false
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            RoundIcon(Icons.Rounded.Cancel) {
+                                editedNickname = user?.nickname ?: ""
+                                isEditingNickname = false
+                            }
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = user?.nickname ?: "User",
+                                color = Coco.Ink,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(onClick = { isEditingNickname = true }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Rounded.Edit, null, tint = Coco.Muted, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
                     Text(
                         text = "Premium Member", // Placeholder
                         color = Coco.Muted,
@@ -79,9 +117,10 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
                 }
 
                 CocoCard(padding = 20.dp) {
-                    ProfileInfoRow("Email", "theo@coconut.app") // TODO: Get from auth state
+                    ProfileInfoRow("Email", user?.email ?: "-")
                     DividerLine()
-                    ProfileInfoRow("ID", "user_7721_abc") // TODO: Get from auth state
+                    val displayId = if (user != null) "COCO-${user?.id?.take(8)?.uppercase()}" else "-"
+                    ProfileInfoRow("ID", displayId)
                     DividerLine()
                     ProfileInfoRow("Статус", "Активен")
                 }
@@ -90,7 +129,7 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
 
                 Pill(
                     label = "Выйти из аккаунта",
-                    icon = Icons.Rounded.Logout,
+                    icon = Icons.AutoMirrored.Rounded.Logout,
                     kind = PillKind.Ghost,
                     large = true,
                     onClick = {
