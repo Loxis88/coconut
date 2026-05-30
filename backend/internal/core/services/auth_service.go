@@ -89,8 +89,7 @@ func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) 
 		if err := s.userRepo.Create(ctx, user); err != nil {
 			return "", "", nil, fmt.Errorf("failed creating new user: %w", err)
 		}
-	}
- else if user.GoogleID == nil {
+	} else if user.GoogleID == nil {
 		// Link account if GoogleID is missing
 		// user.GoogleID = &googleID
 		// s.userRepo.Update(ctx, user)
