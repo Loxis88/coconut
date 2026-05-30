@@ -5,7 +5,6 @@ import (
 
 	"github.com/coconut/backend/internal/core/domain"
 	"github.com/coconut/backend/internal/core/ports"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
