@@ -22,35 +22,16 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
+googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+var allowedClients []string
+if googleClientID != "" {
+	allowedClients = strings.Split(googleClientID, ",")
+} else {
+	log.Println("Warning: GOOGLE_CLIENT_ID environment variable is not set")
+}
 
-	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
-	var allowedClients []string
-	if googleClientID != "" {
-		allowedClients = strings.Split(googleClientID, ",")
-	}
-	
-	// Add default fallbacks to ensure compatibility during migration/testing
-	fallbacks := []string{
-		"810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com",
-		"810958888238-c1fmanoapbjbgha6nkbte55o99cqj446.apps.googleusercontent.com",
-	}
-	
-	for _, f := range fallbacks {
-		exists := false
-		for _, a := range allowedClients {
-			if a == f {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			allowedClients = append(allowedClients, f)
-		}
-	}
-	
-	log.Printf("Allowed Google Client IDs: %v", allowedClients)
+jwtSecret := os.Getenv("JWT_SECRET")
 
-	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
