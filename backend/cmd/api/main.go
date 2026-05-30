@@ -53,6 +53,7 @@ jwtSecret := os.Getenv("JWT_SECRET")
 	// 3. Initialize Repositories
 	userRepo := repositories.NewPostgresUserRepository(dbPool)
 	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
+	productRepo := repositories.NewPostgresProductRepository(dbPool)
 
 	// 4. Initialize Services
 	authService := services.NewAuthService(userRepo, allowedClients, jwtSecret)
@@ -71,9 +72,11 @@ jwtSecret := os.Getenv("JWT_SECRET")
 	authHandler.SetupRoutes(app)
 
 	historyHandler := handlers.NewHistoryHandler(historyRepo)
+	productHandler := handlers.NewProductHandler(productRepo)
 	// Apply AuthMiddleware to /api group
 	api := app.Group("/api", authHandler.AuthMiddleware())
 	historyHandler.SetupRoutes(api)
+	productHandler.SetupRoutes(api)
 
 	// Health check
 	app.Get("/health", func(c *fiber.Ctx) error {
