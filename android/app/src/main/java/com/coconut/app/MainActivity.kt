@@ -126,6 +126,12 @@ import androidx.compose.material3.OutlinedTextField
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.unit.IntSize
 import com.coconut.app.presentation.viewmodel.CoconutViewModel
 import com.coconut.app.presentation.ui.AuthScreen
 import com.coconut.app.presentation.ui.SmartScannerFrame
@@ -210,25 +216,13 @@ private fun CoconutApp() {
             }
             composable(Routes.Scan) {
                 ScanScreen(
+                    state = state,
                     onClose = { nav.popBackStack(Routes.Home, inclusive = false) },
                     onAnalyze = { barcode ->
                         viewModel.searchBarcode(barcode)
-                        nav.navigate(Routes.Analyzing)
                     },
-                )
-            }
-            composable(Routes.Analyzing) {
-                AnalyzingScreen(
-                    state = state,
-                    onClose = { 
-                        viewModel.resetState()
-                        nav.popBackStack(Routes.Home, inclusive = false) 
-                    },
-                    onDone = {
-                        nav.navigate(Routes.Detail) {
-                            popUpTo(Routes.Scan) { inclusive = true }
-                        }
-                    },
+                    onResetState = { viewModel.resetState() },
+                    onSwap = { nav.navigate(Routes.Swap) }
                 )
             }
             composable(Routes.Detail) {
@@ -457,12 +451,18 @@ private fun HomeScreen(
 }
 
 @Composable
-private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
+private fun ScanScreen(
+    state: ProductState,
+    onClose: () -> Unit,
+    onAnalyze: (String) -> Unit,
+    onResetState: () -> Unit,
+    onSwap: () -> Unit
+) {
     var barcode by remember { mutableStateOf("") }
     var isManualMode by remember { mutableStateOf(false) }
     var isFlashlightOn by remember { mutableStateOf(false) }
     var detectedRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
-    var previewSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    var previewSize by remember { mutableStateOf(IntSize.Zero) }
     
     val context = LocalContext.current
     var hasCameraPermission by remember {
