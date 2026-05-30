@@ -273,20 +273,10 @@ fun SmartScannerFrame(
     val right by animateFloatAsState(targetValue = detectedRect?.right?.toFloat() ?: 0f, label = "Right")
     val bottom by animateFloatAsState(targetValue = detectedRect?.bottom?.toFloat() ?: 0f, label = "Bottom")
     
-    val infiniteTransition = rememberInfiniteTransition(label = "ScannerGlow")
-    val glowProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing)
-        ),
-        label = "Glow"
-    )
-
     Canvas(modifier.fillMaxSize()) {
-        val strokeWidth = 4.dp.toPx()
-        val cornerLen = 28.dp.toPx()
-        val cornerRadius = 16.dp.toPx()
+        val strokeWidth = 3.dp.toPx()
+        val cornerLen = 24.dp.toPx()
+        val cornerRadius = 12.dp.toPx()
 
         val targetRect = if (detectedRect != null && previewSize.width > 0) {
             val scaleX = size.width / previewSize.height
@@ -296,46 +286,36 @@ fun SmartScannerFrame(
                 top = top * scaleY,
                 right = right * scaleX,
                 bottom = bottom * scaleY
-            ).inflate(30f)
+            ).inflate(20f)
         } else {
-            val side = size.minDimension * 0.7f
+            val side = size.minDimension * 0.65f
             Rect(center = center, radius = side / 2f)
         }
         
-        val color = if (detectedRect != null) Coco.Lime else Color.White.copy(alpha = 0.5f)
+        val color = if (detectedRect != null) Coco.Lime else Color.White.copy(alpha = 0.4f)
 
         val path = Path().apply {
             moveTo(targetRect.left, targetRect.top + cornerLen)
             lineTo(targetRect.left, targetRect.top + cornerRadius)
-            quadraticBezierTo(targetRect.left, targetRect.top, targetRect.left + cornerRadius, targetRect.top)
+            quadraticTo(targetRect.left, targetRect.top, targetRect.left + cornerRadius, targetRect.top)
             lineTo(targetRect.left + cornerLen, targetRect.top)
 
             moveTo(targetRect.right - cornerLen, targetRect.top)
             lineTo(targetRect.right - cornerRadius, targetRect.top)
-            quadraticBezierTo(targetRect.right, targetRect.top, targetRect.right, targetRect.top + cornerRadius)
+            quadraticTo(targetRect.right, targetRect.top, targetRect.right, targetRect.top + cornerRadius)
             lineTo(targetRect.right, targetRect.top + cornerLen)
 
             moveTo(targetRect.right, targetRect.bottom - cornerLen)
             lineTo(targetRect.right, targetRect.bottom - cornerRadius)
-            quadraticBezierTo(targetRect.right, targetRect.bottom, targetRect.right - cornerRadius, targetRect.bottom)
+            quadraticTo(targetRect.right, targetRect.bottom, targetRect.right - cornerRadius, targetRect.bottom)
             lineTo(targetRect.right, targetRect.bottom - cornerLen)
 
             moveTo(targetRect.left + cornerLen, targetRect.bottom)
             lineTo(targetRect.left + cornerRadius, targetRect.bottom)
-            quadraticBezierTo(targetRect.left, targetRect.bottom, targetRect.left, targetRect.bottom - cornerRadius)
+            quadraticTo(targetRect.left, targetRect.bottom, targetRect.left, targetRect.bottom - cornerRadius)
             lineTo(targetRect.left, targetRect.bottom - cornerLen)
         }
         drawPath(path, color, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
-        
-        if (detectedRect != null) {
-            val scanLineY = targetRect.top + (targetRect.height * glowProgress)
-            drawLine(
-                brush = Brush.verticalGradient(listOf(Color.Transparent, color.copy(alpha = 0.4f), Color.Transparent)),
-                start = Offset(targetRect.left, scanLineY),
-                end = Offset(targetRect.right, scanLineY),
-                strokeWidth = 10.dp.toPx()
-            )
-        }
     }
 }
 
