@@ -2,6 +2,7 @@ package com.coconut.app.di
 
 import android.content.Context
 import com.coconut.app.data.api.AuthApi
+import com.coconut.app.data.api.CoconutBackendApi
 import com.coconut.app.data.api.RoskachestvoApi
 import com.coconut.app.data.repository.AuthRepositoryImpl
 import com.coconut.app.data.repository.ProductRepositoryImpl
@@ -69,8 +70,9 @@ class AppContainer(private val context: Context) {
 
     private val api: RoskachestvoApi = retrofit.create(RoskachestvoApi::class.java)
     private val authApi: AuthApi = coconutRetrofit.create(AuthApi::class.java)
+    private val backendApi: CoconutBackendApi = coconutRetrofit.create(CoconutBackendApi::class.java)
 
-    val productRepository: ProductRepository = ProductRepositoryImpl(api, prefs, gson)
+    val productRepository: ProductRepository = ProductRepositoryImpl(api, backendApi, prefs, gson)
     val searchBarcodeUseCase: SearchBarcodeUseCase = SearchBarcodeUseCase(productRepository)
     val authRepository: AuthRepository = AuthRepositoryImpl(authApi, context)
 }

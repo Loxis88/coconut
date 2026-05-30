@@ -137,6 +137,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.coconut.app.presentation.ui.CameraView
+import com.coconut.app.presentation.ui.ProfileScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,12 +148,12 @@ class MainActivity : ComponentActivity() {
 }
 
 private object Routes {
-    const val Welcome = "welcome"
     const val Home = "home"
     const val Scan = "scan"
     const val Analyzing = "analyzing"
     const val Detail = "detail"
     const val Swap = "swap"
+    const val Profile = "profile"
 }
 
 @Composable
@@ -160,7 +161,7 @@ private fun CoconutApp() {
     val context = LocalContext.current
     val app = context.applicationContext as CoconutApplication
     val viewModel: CoconutViewModel = viewModel(
-        factory = CoconutViewModel.Factory(app.container.searchBarcodeUseCase, app.container.productRepository)
+        factory = CoconutViewModel.Factory(app.container.searchBarcodeUseCase, app.container.productRepository, app.container.authRepository)
     )
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(app.container)
@@ -181,8 +182,7 @@ private fun CoconutApp() {
         val nav = rememberNavController()
         val state by viewModel.productState.collectAsState()
         
-        NavHost(navController = nav, startDestination = Routes.Welcome) {
-            composable(Routes.Welcome) { WelcomeScreen { nav.navigate(Routes.Home) } }
+        NavHost(navController = nav, startDestination = Routes.Home) {
             composable(Routes.Home) { 
                 val history by viewModel.scanHistory.collectAsState()
                 val avg by viewModel.dailyAverage.collectAsState()
@@ -199,7 +199,8 @@ private fun CoconutApp() {
                     },
                     onDeleteProduct = { product ->
                         viewModel.deleteFromHistory(product)
-                    }
+                    },
+                    onProfile = { nav.navigate(Routes.Profile) }
                 )
             }
             composable(Routes.Scan) {
@@ -238,6 +239,13 @@ private fun CoconutApp() {
                 SwapScreen(
                     onBack = { nav.popBackStack() },
                     onClose = { nav.popBackStack(Routes.Home, inclusive = false) },
+                )
+            }
+            composable(Routes.Profile) {
+                ProfileScreen(
+                    viewModel = authViewModel,
+                    onBack = { nav.popBackStack() },
+                    onLogout = { isAuthenticated = false }
                 )
             }
         }
@@ -292,55 +300,6 @@ private fun AdaptiveScreen(
 
 private data class AxisScore(val label: String, val value: Int, val note: String, val bad: Boolean = false)
 
-@Composable
-private fun WelcomeScreen(onStart: () -> Unit) {
-    AdaptiveScreen {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-            Canvas(Modifier.fillMaxSize()) {
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(Coco.Lime.copy(alpha = 0.35f), Color.Transparent)),
-                    radius = size.minDimension * 0.62f,
-                    center = Offset(size.width * 0.5f, size.height * 0.42f),
-                )
-            }
-            CoconutMark(220.dp)
-            FloatingScore(92, Modifier.align(Alignment.TopStart).padding(start = 28.dp, top = 70.dp))
-            FloatingScore(48, Modifier.align(Alignment.TopEnd).padding(end = 36.dp, top = 120.dp))
-            FloatingScore(71, Modifier.align(Alignment.BottomStart).padding(start = 36.dp, bottom = 140.dp))
-            FloatingScore(88, Modifier.align(Alignment.BottomEnd).padding(end = 40.dp, bottom = 90.dp))
-        }
-        Column(Modifier.padding(start = 28.dp, end = 28.dp, bottom = 36.dp)) {
-            Text("Coconut.", color = Coco.Ink, fontSize = 56.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 54.sp)
-            Text(
-                "Раскуси каждый кусочек. Получи честную оценку любого продукта — в один скан.",
-                color = Coco.Ink2,
-                fontSize = 19.sp,
-                lineHeight = 25.sp,
-                modifier = Modifier.padding(top = 10.dp, bottom = 24.dp),
-            )
-            Pill("Начать", icon = Icons.AutoMirrored.Rounded.ArrowForward, kind = PillKind.Ink, large = true, onClick = onStart)
-            Text(
-                "У меня уже есть аккаунт",
-                color = Coco.Muted,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
-                textAlign = TextAlign.Center,
-            )
-        }
-        }
-    }
-}
 
 @Composable
 private fun HomeScreen(
@@ -350,7 +309,8 @@ private fun HomeScreen(
     onScan: () -> Unit,
     onClearHistory: () -> Unit,
     onProductClick: (Product) -> Unit,
-    onDeleteProduct: (Product) -> Unit
+    onDeleteProduct: (Product) -> Unit,
+    onProfile: () -> Unit
 ) {
     val context = LocalContext.current
     AdaptiveScreen {
@@ -485,7 +445,7 @@ private fun HomeScreen(
                 }
             }
         }
-        BottomNav(active = "home", onScan = onScan)
+        BottomNav(active = "home", onScan = onScan, onProfile = onProfile)
         }
     }
 }
@@ -1084,7 +1044,7 @@ private fun WeekBars(values: List<Int>) {
 }
 
 @Composable
-private fun BottomNav(active: String, onScan: () -> Unit) {
+private fun BottomNav(active: String, onScan: () -> Unit, onProfile: () -> Unit) {
     val context = LocalContext.current
     fun toast(msg: String) = android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
     Row(
@@ -1108,7 +1068,7 @@ private fun BottomNav(active: String, onScan: () -> Unit) {
             Text("Скан", color = Coco.Ink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
         NavItem(Icons.Rounded.Groups, "Друзья", false) { toast("Раздел друзей скоро появится") }
-        NavItem(Icons.Rounded.Person, "Профиль", false) { toast("Профиль скоро появится") }
+        NavItem(Icons.Rounded.Person, "Профиль", active == "profile", onClick = onProfile)
     }
 }
 

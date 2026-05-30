@@ -49,6 +49,7 @@ func main() {
 
 	// 3. Initialize Repositories
 	userRepo := repositories.NewPostgresUserRepository(dbPool)
+	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
 
 	// 4. Initialize Services
 	allowedClients := []string{googleClientID}
@@ -66,6 +67,11 @@ func main() {
 	// 6. Setup Routes
 	authHandler := handlers.NewAuthHandler(authService, jwtSecret)
 	authHandler.SetupRoutes(app)
+
+	historyHandler := handlers.NewHistoryHandler(historyRepo)
+	// Apply AuthMiddleware to /api group
+	api := app.Group("/api", authHandler.AuthMiddleware())
+	historyHandler.SetupRoutes(api)
 
 	// Health check
 	app.Get("/health", func(c *fiber.Ctx) error {
