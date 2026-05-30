@@ -31,15 +31,19 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 		LIMIT 1
 	`
 
-	p := &domain.Product{
-		Category:       &domain.Category{},
-		NutritionFacts: &domain.NutritionFacts{},
-	}
+	p := &domain.Product{}
+	
+	// Temporary variables for LEFT JOIN columns that can be NULL
+	var catID *int64
+	var catTitle *string
+	var catImg *string
+	
+	nf := &domain.NutritionFacts{}
 
 	err := r.db.QueryRow(ctx, query, barcode).Scan(
 		&p.ID, &p.SourceID, &p.Source, &p.TotalRating, &p.Brand, &p.ImageLink, &p.Barcode, &p.Name, &p.Ingredients,
-		&p.Category.ID, &p.Category.Title, &p.Category.ImageLink,
-		&p.NutritionFacts.ServingSizeG, &p.NutritionFacts.CaloriesKcal, &p.NutritionFacts.ProteinG, &p.NutritionFacts.FatG, &p.NutritionFacts.CarbsG, &p.NutritionFacts.FiberG, &p.NutritionFacts.SugarG, &p.NutritionFacts.SaltG, &p.NutritionFacts.SodiumMg,
+		&catID, &catTitle, &catImg,
+		&nf.ServingSizeG, &nf.CaloriesKcal, &nf.ProteinG, &nf.FatG, &nf.CarbsG, &nf.FiberG, &nf.SugarG, &nf.SaltG, &nf.SodiumMg,
 	)
 
 	if err != nil {
@@ -47,6 +51,23 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 			return nil, nil
 		}
 		return nil, err
+	}
+
+	// Map category if it exists
+	if catID != nil {
+		p.Category = &domain.Category{
+			ID:        *catID,
+			Title:     "",
+			ImageLink: catImg,
+		}
+		if catTitle != nil {
+			p.Category.Title = *catTitle
+		}
+	}
+
+	// Map nutrition facts if at least one field is not null
+	if nf.CaloriesKcal != nil || nf.ProteinG != nil {
+		p.NutritionFacts = nf
 	}
 
 	// Fetch Health Risks
