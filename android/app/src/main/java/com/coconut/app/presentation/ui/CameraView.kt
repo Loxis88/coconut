@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.IntSize
 fun CameraView(
     modifier: Modifier = Modifier,
     isFlashlightOn: Boolean = false,
+    isScanning: Boolean = true,
     onBarcodeDetected: (android.graphics.Rect?, IntSize) -> Unit = { _, _ -> },
     onBarcodeScanned: (String) -> Unit
 ) {
@@ -36,6 +37,11 @@ fun CameraView(
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
+    val analyzer = remember { BarcodeAnalyzer(onBarcodeScanned, onBarcodeDetected) }
+
+    LaunchedEffect(isScanning) {
+        analyzer.setScanning(isScanning)
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -57,7 +63,7 @@ fun CameraView(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also {
-                        it.setAnalyzer(executor, BarcodeAnalyzer(onBarcodeScanned, onBarcodeDetected))
+                        it.setAnalyzer(executor, analyzer)
                     }
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -71,7 +77,6 @@ fun CameraView(
                         imageAnalyzer
                     )
                     
-                    // Initial flash state
                     camera.cameraControl.enableTorch(isFlashlightOn)
                     
                 } catch (e: Exception) {
@@ -81,7 +86,6 @@ fun CameraView(
             previewView
         },
         update = { previewView ->
-            // Use cameraProvider to get the camera and toggle flash
             try {
                 val cameraProvider = cameraProviderFuture.get()
                 val camera = cameraProvider.bindToLifecycle(
@@ -90,7 +94,7 @@ fun CameraView(
                 )
                 camera.cameraControl.enableTorch(isFlashlightOn)
             } catch (e: Exception) {
-                // Ignore or handle
+                // Ignore
             }
         }
     )
@@ -115,9 +119,16 @@ class BarcodeAnalyzer(
     private val scanner = BarcodeScanning.getClient(options)
     private var isScanning = true
 
+    fun setScanning(value: Boolean) {
+        isScanning = value
+    }
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun analyze(imageProxy: ImageProxy) {
+        val previewSize = IntSize(imageProxy.width, imageProxy.height)
+        
         if (!isScanning) {
+            onBarcodeDetected(null, previewSize)
             imageProxy.close()
             return
         }
@@ -125,7 +136,6 @@ class BarcodeAnalyzer(
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-            val previewSize = IntSize(imageProxy.width, imageProxy.height)
             
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
