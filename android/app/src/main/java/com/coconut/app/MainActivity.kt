@@ -48,6 +48,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.FlashOff
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Home
@@ -187,10 +188,12 @@ private fun CoconutApp() {
                 val history by viewModel.scanHistory.collectAsState()
                 val avg by viewModel.dailyAverage.collectAsState()
                 val streak by viewModel.streak.collectAsState()
+                val user by authViewModel.currentUser.collectAsState()
                 HomeScreen(
                     history = history,
                     dailyAverage = avg,
                     streak = streak,
+                    nickname = user?.nickname ?: "Тео",
                     onScan = { nav.navigate(Routes.Scan) },
                     onClearHistory = { viewModel.clearHistory() },
                     onProductClick = { product ->
@@ -306,6 +309,7 @@ private fun HomeScreen(
     history: List<Product>, 
     dailyAverage: Int, 
     streak: Int, 
+    nickname: String,
     onScan: () -> Unit,
     onClearHistory: () -> Unit,
     onProductClick: (Product) -> Unit,
@@ -346,7 +350,7 @@ private fun HomeScreen(
         ) {
             item {
                 Text("Сегодня", color = Coco.Muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Text("Привет, Тео —\nвсё идет по плану.", color = Coco.Ink, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp)
+                Text("Привет, $nickname —\nвсё идет по плану.", color = Coco.Ink, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp)
             }
             item {
                 CocoCard(background = Coco.BrandBrush, padding = 22.dp) {
@@ -454,6 +458,7 @@ private fun HomeScreen(
 private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
     var barcode by remember { mutableStateOf("") }
     var isManualMode by remember { mutableStateOf(false) }
+    var isFlashlightOn by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     var hasCameraPermission by remember {
@@ -479,6 +484,7 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
         if (!isManualMode && hasCameraPermission) {
             CameraView(
                 modifier = Modifier.fillMaxSize(),
+                isFlashlightOn = isFlashlightOn,
                 onBarcodeScanned = { scannedBarcode ->
                     onAnalyze(scannedBarcode)
                 }
@@ -504,7 +510,11 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
         ) {
             RoundIcon(Icons.Rounded.Close, dark = true, onClick = onClose)
             Spacer(Modifier.weight(1f))
-            RoundIcon(Icons.Rounded.FlashOn, dark = true) {}
+            RoundIcon(
+                icon = if (isFlashlightOn) Icons.Rounded.FlashOff else Icons.Rounded.FlashOn,
+                dark = true,
+                onClick = { isFlashlightOn = !isFlashlightOn }
+            )
         }
         
         if (!isManualMode && hasCameraPermission) {
@@ -1118,7 +1128,7 @@ private fun AnimatedTabToggle(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(54.dp)
             .clip(RoundedCornerShape(999.dp))
             .background(Coco.Cream)
             .padding(4.dp)
@@ -1126,9 +1136,10 @@ private fun AnimatedTabToggle(
         val halfWidth = maxWidth / 2
         val offset by animateDpAsState(
             targetValue = if (isManualMode) halfWidth else 0.dp,
-            animationSpec = spring(dampingRatio = 0.75f, stiffness = 400f)
+            animationSpec = spring(dampingRatio = 0.8f, stiffness = 380f)
         )
 
+        // The Sliding "Thumb"
         Box(
             modifier = Modifier
                 .offset(x = offset)
@@ -1141,12 +1152,11 @@ private fun AnimatedTabToggle(
         Row(modifier = Modifier.fillMaxSize()) {
             ModeTab(
                 icon = Icons.Rounded.DocumentScanner,
-                label = "Скан",
+                label = "Автоскан",
                 active = !isManualMode,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(999.dp))
                     .clickable { onModeChange(false) }
             )
             ModeTab(
@@ -1156,7 +1166,6 @@ private fun AnimatedTabToggle(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(999.dp))
                     .clickable { onModeChange(true) }
             )
         }
@@ -1165,15 +1174,16 @@ private fun AnimatedTabToggle(
 
 @Composable
 private fun ModeTab(icon: ImageVector, label: String, active: Boolean, modifier: Modifier) {
-    val color by animateColorAsState(if (active) Coco.Ink else Coco.Muted)
+    val color by animateColorAsState(if (active) Coco.Ink else Coco.Muted, label = "TabColor")
+    
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(label, color = color, fontSize = 14.sp, fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold)
     }
 }
 

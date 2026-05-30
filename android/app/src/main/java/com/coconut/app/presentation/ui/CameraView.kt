@@ -26,6 +26,7 @@ import java.util.concurrent.Executors
 @Composable
 fun CameraView(
     modifier: Modifier = Modifier,
+    isFlashlightOn: Boolean = false,
     onBarcodeScanned: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -60,17 +61,34 @@ fun CameraView(
 
                 try {
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
+                    val camera = cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
                         preview,
                         imageAnalyzer
                     )
+                    
+                    // Initial flash state
+                    camera.cameraControl.enableTorch(isFlashlightOn)
+                    
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }, ContextCompat.getMainExecutor(ctx))
             previewView
+        },
+        update = { previewView ->
+            // Use cameraProvider to get the camera and toggle flash
+            try {
+                val cameraProvider = cameraProviderFuture.get()
+                val camera = cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                )
+                camera.cameraControl.enableTorch(isFlashlightOn)
+            } catch (e: Exception) {
+                // Ignore or handle
+            }
         }
     )
 }
