@@ -129,6 +129,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.unit.IntSize
 import com.coconut.app.presentation.viewmodel.CoconutViewModel
 import com.coconut.app.presentation.ui.AuthScreen
@@ -448,10 +450,6 @@ private fun HomeScreen(
     }
 }
 
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.graphics.Size as ComposeSize
-
 @Composable
 private fun ScanScreen(
     state: ProductState,
@@ -464,7 +462,7 @@ private fun ScanScreen(
     var isManualMode by remember { mutableStateOf(false) }
     var isFlashlightOn by remember { mutableStateOf(false) }
     var detectedRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
-    var previewSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    var previewSize by remember { mutableStateOf(IntSize.Zero) }
     
     val context = LocalContext.current
     var hasCameraPermission by remember {
