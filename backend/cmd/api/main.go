@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/coconut/backend/internal/adapters/handlers"
 	"github.com/coconut/backend/internal/adapters/repositories"
@@ -21,13 +22,16 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
+googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+var allowedClients []string
+if googleClientID != "" {
+	allowedClients = strings.Split(googleClientID, ",")
+} else {
+	log.Println("Warning: GOOGLE_CLIENT_ID environment variable is not set")
+}
 
-	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
-	if googleClientID == "" {
-		log.Println("Warning: GOOGLE_CLIENT_ID environment variable is not set")
-	}
+jwtSecret := os.Getenv("JWT_SECRET")
 
-	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
@@ -51,7 +55,6 @@ func main() {
 	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
 
 	// 4. Initialize Services
-	allowedClients := []string{googleClientID}
 	authService := services.NewAuthService(userRepo, allowedClients, jwtSecret)
 
 	// 5. Initialize Fiber App

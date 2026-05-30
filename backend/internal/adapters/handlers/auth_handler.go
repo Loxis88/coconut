@@ -69,7 +69,13 @@ func (h *AuthHandler) GoogleLogin(c *fiber.Ctx) error {
 
 	accessToken, refreshToken, user, err := h.authService.VerifyGoogleToken(c.UserContext(), req.IDToken)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "failed to authenticate", "details": err.Error()})
+		// Log the full error for debugging
+		println("Auth Error:", err.Error())
+		
+		if strings.Contains(err.Error(), "failed to validate id_token") {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid google token", "details": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error during auth", "details": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
