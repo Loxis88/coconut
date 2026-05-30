@@ -125,8 +125,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextField
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.coconut.app.presentation.viewmodel.CoconutViewModel
 import com.coconut.app.presentation.ui.AuthScreen
+import com.coconut.app.presentation.ui.SmartScannerFrame
 import com.coconut.app.presentation.viewmodel.AuthViewModel
 import com.coconut.app.presentation.viewmodel.AuthViewModelFactory
 import com.coconut.app.presentation.viewmodel.ProductState
@@ -459,6 +461,8 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
     var barcode by remember { mutableStateOf("") }
     var isManualMode by remember { mutableStateOf(false) }
     var isFlashlightOn by remember { mutableStateOf(false) }
+    var detectedRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
+    var previewSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
     
     val context = LocalContext.current
     var hasCameraPermission by remember {
@@ -485,14 +489,19 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
             CameraView(
                 modifier = Modifier.fillMaxSize(),
                 isFlashlightOn = isFlashlightOn,
+                onBarcodeDetected = { rect, size ->
+                    detectedRect = rect
+                    previewSize = size
+                },
                 onBarcodeScanned = { scannedBarcode ->
                     onAnalyze(scannedBarcode)
                 }
             )
-            // Overlay dimming
-            Canvas(Modifier.fillMaxSize()) {
-                drawRect(Color(0x990A0805))
-            }
+            // Smart frame tracking the barcode
+            SmartScannerFrame(
+                detectedRect = detectedRect,
+                previewSize = previewSize
+            )
         } else {
             Canvas(Modifier.fillMaxSize()) {
                 drawCircle(Color(0xFF5A4A3E), radius = size.maxDimension * 0.6f, center = Offset(size.width * 0.3f, size.height * 0.36f))
@@ -517,8 +526,7 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
             )
         }
         
-        if (!isManualMode && hasCameraPermission) {
-            ScanReticle(Modifier.align(Alignment.Center))
+        if (!isManualMode && hasCameraPermission && detectedRect == null) {
             Text(
                 "Наведите на штрих-код",
                 color = Color.White,
@@ -545,18 +553,18 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
                 isManualMode = isManualMode,
                 onModeChange = { isManualMode = it }
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
             
             AnimatedContent(
                 targetState = isManualMode || !hasCameraPermission,
                 transitionSpec = {
-                    (fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + 
-                     slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) { it / 8 } +
-                     scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)))
+                    (fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) + 
+                     slideInVertically(animationSpec = tween(400, easing = FastOutSlowInEasing)) { it / 8 } +
+                     scaleIn(initialScale = 0.95f, animationSpec = tween(400, easing = FastOutSlowInEasing)))
                     .togetherWith(
-                     fadeOut(animationSpec = tween(200)) + 
-                     slideOutVertically(animationSpec = tween(200)) { -it / 8 } +
-                     scaleOut(targetScale = 0.95f, animationSpec = tween(200)))
+                     fadeOut(animationSpec = tween(250)) + 
+                     slideOutVertically(animationSpec = tween(250)) { -it / 8 } +
+                     scaleOut(targetScale = 0.95f, animationSpec = tween(250)))
                 },
                 label = "ScanModeTransition"
             ) { showManual ->
@@ -565,9 +573,15 @@ private fun ScanScreen(onClose: () -> Unit, onAnalyze: (String) -> Unit) {
                         OutlinedTextField(
                             value = barcode,
                             onValueChange = { barcode = it },
-                            label = { Text("Введите штрих-код (напр. 4603955002165)") },
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            label = { Text("Введите штрих-код") },
+                            placeholder = { Text("напр. 4603955002165") },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Coco.Emerald,
+                                unfocusedBorderColor = Coco.Hairline
+                            )
                         )
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             Column(Modifier.weight(1f)) {
