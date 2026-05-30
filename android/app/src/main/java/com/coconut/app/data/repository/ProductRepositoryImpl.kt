@@ -43,49 +43,76 @@ class ProductRepositoryImpl(
 
     override suspend fun searchByBarcode(barcode: String, token: String?): Result<Product> {
         return try {
-            val response = api.searchBarcode(barcode)
+            val bearerToken = if (token != null) "Bearer $token" else {
+                // If token is missing, we might still want to try fetching if backend allows guest access, 
+                // but usually our API is protected. Let's assume we need a token.
+                return Result.failure(Exception("Authentication required"))
+            }
+
+            val dto = backendApi.getProduct(bearerToken, barcode)
             
-            val apiError = response.message?.find { it.type == "error" }
-            if (apiError != null) {
-                return Result.failure(Exception(apiError.message))
-            }
+            val product = mapBackendToDomain(dto)
+            val currentHistory = _scanHistoryFlow.value.toMutableList()
+            // Remove if already exists to move it to top
+            currentHistory.removeAll { it.id == product.id }
+            currentHistory.add(0, product)
+            saveHistoryToPrefs(currentHistory)
+            
+            // Track date for streak
+            trackScanDate()
 
-            val dto = response.response
-            if (dto != null && dto.id != 0 && !dto.title.isNullOrBlank() && dto.title != "Unknown") {
-                val product = mapToDomain(dto)
-                val currentHistory = _scanHistoryFlow.value.toMutableList()
-                // Remove if already exists to move it to top
-                currentHistory.removeAll { it.id == product.id }
-                currentHistory.add(0, product)
-                saveHistoryToPrefs(currentHistory)
-                
-                // Track date for streak
-                trackScanDate()
-
-                // Save to backend if authenticated
-                if (token != null) {
-                    try {
-                        backendApi.saveHistory(
-                            token = "Bearer $token",
-                            request = com.coconut.app.data.api.HistoryRequest(
-                                barcode = barcode,
-                                title = product.title,
-                                score = (product.totalRating * 20).toInt()
-                            )
-                        )
-                    } catch (e: Exception) {
-                        // Log error but don't fail the whole search
-                        android.util.Log.e("ProductRepo", "Failed to save history to backend", e)
-                    }
-                }
-                
-                Result.success(product)
-            } else {
-                Result.failure(Exception("Product not found or invalid"))
+            // Save to history table on backend (already saved by being in the catalog? 
+            // No, catalog is just a list of all products. History is personal.)
+            // The GetProduct endpoint might or might not save to history automatically.
+            // Based on our implementation of SaveHistory, we should call it.
+            try {
+                backendApi.saveHistory(
+                    token = bearerToken,
+                    request = com.coconut.app.data.api.HistoryRequest(
+                        barcode = barcode,
+                        title = product.title,
+                        score = (product.totalRating * 20).toInt()
+                    )
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("ProductRepo", "Failed to save history to backend", e)
             }
+            
+            Result.success(product)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun mapBackendToDomain(dto: com.coconut.app.data.api.BackendProduct): Product {
+        val nutrients = dto.nutrition_facts?.let {
+            Nutrients(
+                proteins = it.protein_g.toString(),
+                fats = it.fat_g.toString(),
+                carbohydrates = it.carbs_g.toString(),
+                calories = it.calories_kcal.toString(),
+                fiber = it.fiber_g.toString()
+            )
+        }
+
+        return Product(
+            id = dto.id.toInt(),
+            title = dto.name,
+            totalRating = dto.total_rating,
+            description = "",
+            categoryName = dto.category?.title ?: "Unknown",
+            manufacturer = dto.brand ?: "Unknown",
+            price = "",
+            thumbnail = dto.image_link,
+            criteriaRatings = emptyList(), // Not currently in our backend schema
+            worth = dto.health_risks?.map { it.fact } ?: emptyList(),
+            info = emptyList(),
+            recommendations = emptyList(),
+            nutrients = nutrients,
+            composition = dto.ingredients,
+            hasQualityMark = false,
+            hasBadQualityMark = (dto.health_risks?.size ?: 0) > 0
+        )
     }
 
     override suspend fun syncHistory(token: String) {
