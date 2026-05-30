@@ -29,11 +29,11 @@ type Product struct {
 	Source         *string         `json:"source,omitempty"`
 	CategoryID     *int64          `json:"category_id,omitempty"`
 	Category       *Category       `json:"category,omitempty"`
-	TotalRating    float64         `json:"total_rating"`
+	TotalRating    *float64        `json:"total_rating,omitempty"`
 	Brand          *string         `json:"brand,omitempty"`
 	ImageLink      *string         `json:"image_link,omitempty"`
-	Barcode        string          `json:"barcode"`
-	Name           string          `json:"name"`
+	Barcode        *string         `json:"barcode,omitempty"`
+	Name           *string         `json:"name,omitempty"`
 	Ingredients    *string         `json:"ingredients,omitempty"`
 	NutritionFacts *NutritionFacts `json:"nutrition_facts,omitempty"`
 	HealthRisks    []HealthRisk    `json:"health_risks,omitempty"`
