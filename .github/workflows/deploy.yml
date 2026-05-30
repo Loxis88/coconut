@@ -60,9 +60,9 @@ jobs:
           # The user should update this manually on the server for production
           sudo bash -c 'cat << EOF > /opt/coconut/backend/.env
           PORT=8080
-          DATABASE_URL=postgres://postgres:aramadmin@127.0.0.1:5432/postgres
-          GOOGLE_CLIENT_ID=810958888238-k6gftls965hnaorbnh9fn8seb653du7b.apps.googleusercontent.com
-          JWT_SECRET=super-secret-key-change-me-in-production
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
           EOF'
 
           # Remove old binary to ensure clean replace
