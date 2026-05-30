@@ -44,4 +44,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    // Credentials Manager for modern Android Auth
+    implementation("androidx.credentials:credentials:1.3.0-rc01")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0-rc01")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 }
