@@ -108,7 +108,7 @@ fun AuthScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit) {
                             label = "Войти через Google",
                             kind = AuthPillKind.Brand,
                             onClick = {
-                                val clientId = context.getString(com.coconut.app.R.string.google_client_id)
+                                val clientId = context.resources.getString(com.coconut.app.R.string.google_client_id)
                                 val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                                     .requestIdToken(clientId)
                                     .requestEmail()
