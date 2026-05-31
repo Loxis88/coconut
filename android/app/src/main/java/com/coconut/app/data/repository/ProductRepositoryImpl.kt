@@ -7,10 +7,15 @@ import com.coconut.app.domain.model.*
 import com.coconut.app.domain.repository.ProductRepository
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -35,10 +40,23 @@ class ProductRepositoryImpl(
         _scanHistoryFlow.value = history
     }
 
+    private val scope = CoroutineScope(
+        SupervisorJob() +
+        Dispatchers.IO +
+        CoroutineExceptionHandler { _, throwable ->
+            android.util.Log.e("ProductRepo", "Error saving history to prefs", throwable)
+        }
+    )
+
     private fun saveHistoryToPrefs(history: List<Product>) {
-        val json = gson.toJson(history)
-        prefs.edit().putString(historyKey, json).apply()
+        // Update state synchronously for immediate UI feedback
         _scanHistoryFlow.value = history
+
+        // Offload blocking JSON serialization and SharedPreferences I/O to background
+        scope.launch {
+            val json = gson.toJson(history)
+            prefs.edit().putString(historyKey, json).apply()
+        }
     }
 
     override suspend fun searchByBarcode(barcode: String, token: String?): Result<Product> {
