@@ -25,7 +25,11 @@ class AppContainer(private val context: Context) {
     private val prefs = context.getSharedPreferences("coconut_prefs", Context.MODE_PRIVATE)
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if ((context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     private val cookieJar = object : CookieJar {
