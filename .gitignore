@@ -32,3 +32,4 @@ cookies.txt
 translate.py
 test.json
 test_parse.kts
+android/app/debug.keystore

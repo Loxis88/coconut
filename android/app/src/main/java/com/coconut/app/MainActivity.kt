@@ -116,6 +116,13 @@ private fun CoconutApp() {
     )
     
     var isAuthenticated by remember { mutableStateOf(app.container.authRepository.getAccessToken() != null) }
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    LaunchedEffect(currentUser) {
+        if (currentUser == null) {
+            isAuthenticated = false
+        }
+    }
 
     if (!isAuthenticated) {
         MaterialTheme {
@@ -135,7 +142,7 @@ private fun CoconutApp() {
                 val history by viewModel.scanHistory.collectAsState()
                 val avg by viewModel.dailyAverage.collectAsState()
                 val streak by viewModel.streak.collectAsState()
-                val user by authViewModel.currentUser.collectAsState()
+                val user = currentUser
                 HomeScreen(
                     history = history,
                     dailyAverage = avg,
@@ -556,6 +563,7 @@ private fun ScanScreen(
         if (state is ProductState.Error) {
             LaunchedEffect(state) {
                 android.widget.Toast.makeText(context, state.message, android.widget.Toast.LENGTH_LONG).show()
+                kotlinx.coroutines.delay(2500)
                 detectedRect = null
                 onResetState()
             }
