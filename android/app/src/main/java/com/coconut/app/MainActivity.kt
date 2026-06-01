@@ -399,7 +399,7 @@ private fun ScanScreen(
             CameraView(
                 modifier = Modifier.fillMaxSize(),
                 isFlashlightOn = isFlashlightOn,
-                isScanning = !showSheet && state !is ProductState.Loading,
+                isScanning = !showSheet && state !is ProductState.Loading && state !is ProductState.Error,
                 onBarcodeDetected = { rect, size ->
                     detectedRect = rect
                     previewSize = size
@@ -561,11 +561,16 @@ private fun ScanScreen(
         }
         
         if (state is ProductState.Error) {
-            LaunchedEffect(state) {
-                android.widget.Toast.makeText(context, state.message, android.widget.Toast.LENGTH_LONG).show()
-                kotlinx.coroutines.delay(2500)
-                detectedRect = null
-                onResetState()
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Товар не найден", color = Coco.Red, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text(state.message, color = Color.White, modifier = Modifier.padding(16.dp))
+                    Spacer(Modifier.height(16.dp))
+                    Pill("Сканировать снова", icon = Icons.AutoMirrored.Rounded.ArrowBack, kind = PillKind.Brand) {
+                        detectedRect = null
+                        onResetState()
+                    }
+                }
             }
         }
     }

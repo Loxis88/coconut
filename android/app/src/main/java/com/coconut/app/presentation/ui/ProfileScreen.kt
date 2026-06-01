@@ -28,8 +28,13 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Cancel
 
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+
 @Composable
 fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> Unit) {
+    val context = LocalContext.current
     val user by viewModel.currentUser.collectAsState()
     var isEditingNickname by remember { mutableStateOf(false) }
     var editedNickname by remember { mutableStateOf(user?.nickname ?: "") }
@@ -133,8 +138,16 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
                     kind = PillKind.Ghost,
                     large = true,
                     onClick = {
-                        viewModel.logout()
-                        onLogout()
+                        val clientId = context.resources.getString(com.coconut.app.R.string.google_client_id)
+                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(clientId)
+                            .requestEmail()
+                            .build()
+                        val mGoogleSignInClient = GoogleSignIn.getClient(context, gso)
+                        mGoogleSignInClient.signOut().addOnCompleteListener {
+                            viewModel.logout()
+                            onLogout()
+                        }
                     }
                 )
                 
