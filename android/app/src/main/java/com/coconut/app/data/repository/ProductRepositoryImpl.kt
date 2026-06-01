@@ -136,32 +136,39 @@ class ProductRepositoryImpl(
     override suspend fun syncHistory(token: String) {
         try {
             val serverHistory = backendApi.getHistory("Bearer $token")
-            // This is a simplified sync: we'll just merge titles/barcodes if we can.
-            // Since Roskachestvo data is rich, we might still want to fetch full details if missing.
-            // For now, let's at least populate the history list with basic info from server.
+            val currentHistory = _scanHistoryFlow.value
             
             val mappedHistory = serverHistory.map { h ->
-                Product(
-                    id = h.id.hashCode(), // Simplified ID mapping
-                    title = h.title,
-                    totalRating = h.score / 20.0,
-                    description = "",
-                    categoryName = "",
-                    manufacturer = "",
-                    price = "",
-                    thumbnail = null,
-                    criteriaRatings = emptyList(),
-                    worth = emptyList(),
-                    info = emptyList(),
-                    recommendations = emptyList(),
-                    nutrients = null,
-                    composition = null,
-                    hasQualityMark = false,
-                    hasBadQualityMark = false
-                )
+                // Try to find full product details in current local history by checking title matching or generated ID
+                val existingLocal = currentHistory.find { it.title == h.title || it.id == h.id.hashCode() }
+
+                existingLocal ?: run {
+                    try {
+                        val backendProduct = backendApi.getProduct("Bearer $token", h.barcode)
+                        mapBackendToDomain(backendProduct)
+                    } catch (e: Exception) {
+                        Product(
+                            id = h.id.hashCode(), // Simplified ID mapping
+                            title = h.title,
+                            totalRating = h.score / 20.0,
+                            description = "",
+                            categoryName = "",
+                            manufacturer = "",
+                            price = "",
+                            thumbnail = null,
+                            criteriaRatings = emptyList(),
+                            worth = emptyList(),
+                            info = emptyList(),
+                            recommendations = emptyList(),
+                            nutrients = null,
+                            composition = null,
+                            hasQualityMark = false,
+                            hasBadQualityMark = false
+                        )
+                    }
+                }
             }
             
-            // Merge with local history if needed, or just replace for now
             if (mappedHistory.isNotEmpty()) {
                 saveHistoryToPrefs(mappedHistory)
             }

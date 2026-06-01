@@ -38,6 +38,10 @@ class AuthViewModel(
                 if (_authState.value is AuthState.Idle) {
                     _authState.value = AuthState.Success(user)
                 }
+            }.onFailure { error ->
+                if (error.message?.contains("401", ignoreCase = true) == true || error.message?.contains("Unauthorized", ignoreCase = true) == true) {
+                    logout()
+                }
             }
         }
     }

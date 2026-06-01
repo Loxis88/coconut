@@ -21,13 +21,14 @@ func NewPostgresProductRepository(db *pgxpool.Pool) ports.ProductRepository {
 func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode string) (*domain.Product, error) {
 	query := `
 		SELECT 
-			p.id, p.source_id, p.source, p.total_rating, p.brand, p.image_link, p.barcode, p.name, p.ingredients,
+			p.id, p.source_id, p.source, p.total_rating, p.brand, p.image_link, pb.barcode, p.name, p.ingredients,
 			c.category_id, c.title, c.image_link,
 			n.serving_size_g, n.calories_kcal, n.protein_g, n.fat_g, n.carbs_g, n.fiber_g, n.sugar_g, n.salt_g, n.sodium_mg
 		FROM product_catalog.product p
+		JOIN product_catalog.product_barcode pb ON p.id = pb.product_id
 		LEFT JOIN product_catalog.category c ON p.category_id = c.category_id
 		LEFT JOIN product_catalog.nutrition_facts n ON p.id = n.product_id
-		WHERE p.barcode = $1
+		WHERE pb.barcode = $1
 		LIMIT 1
 	`
 
