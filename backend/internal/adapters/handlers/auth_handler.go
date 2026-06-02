@@ -30,6 +30,7 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	api := router.Group("/api", h.AuthMiddleware())
 	api.Get("/me", h.GetMe)
 	api.Patch("/me/nickname", h.UpdateNickname)
+	api.Delete("/me", h.DeleteAccount)
 }
 
 func (h *AuthHandler) UpdateNickname(c *fiber.Ctx) error {
@@ -121,4 +122,14 @@ func (h *AuthHandler) GetMe(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(user)
+}
+
+func (h *AuthHandler) DeleteAccount(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	if err := h.authService.DeleteAccount(c.UserContext(), userID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to delete account"})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }

@@ -89,6 +89,17 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun deleteAccount(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val token = getAccessToken() ?: return@withContext Result.failure(Exception("Not logged in"))
+            authApi.deleteAccount("Bearer $token")
+            clearTokens()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override fun clearTokens() {
         prefs.edit().clear().apply()
     }

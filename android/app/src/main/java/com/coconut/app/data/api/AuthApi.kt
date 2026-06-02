@@ -37,4 +37,7 @@ interface AuthApi {
         @Header("Authorization") token: String,
         @Body request: NicknameRequest
     )
+
+    @DELETE("/api/me")
+    suspend fun deleteAccount(@Header("Authorization") token: String)
 }

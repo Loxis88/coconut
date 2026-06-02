@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.compose.material.icons.rounded.Delete
 
 @Composable
 fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> Unit) {
@@ -38,6 +39,7 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
     val user by viewModel.currentUser.collectAsState()
     var isEditingNickname by remember { mutableStateOf(false) }
     var editedNickname by remember { mutableStateOf(user?.nickname ?: "") }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(user) {
         if (user != null && !isEditingNickname) {
@@ -151,9 +153,53 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
                     }
                 )
                 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Pill(
+                    label = "Удалить аккаунт",
+                    icon = Icons.Rounded.Delete,
+                    kind = PillKind.Ghost,
+                    large = true,
+                    onClick = {
+                        showDeleteConfirmation = true
+                    }
+                )
+
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = {
+                Text(text = "Удалить аккаунт?", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(text = "Вы уверены, что хотите безвозвратно удалить свой аккаунт и все данные?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        viewModel.deleteAccount(onSuccess = onLogout)
+                    }
+                ) {
+                    Text("Удалить", color = Coco.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmation = false }
+                ) {
+                    Text("Отмена", color = Coco.Ink)
+                }
+            },
+            containerColor = Coco.Cream,
+            titleContentColor = Coco.Ink,
+            textContentColor = Coco.Ink2
+        )
     }
 }
 

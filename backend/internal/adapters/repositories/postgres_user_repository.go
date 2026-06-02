@@ -90,3 +90,9 @@ func (r *PostgresUserRepository) UpdateNickname(ctx context.Context, userID, nic
 	_, err := r.db.Exec(ctx, query, nickname, time.Now(), userID)
 	return err
 }
+
+func (r *PostgresUserRepository) Delete(ctx context.Context, id string) error {
+	query := `DELETE FROM users WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
+	return err
+}
