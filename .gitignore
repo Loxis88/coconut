@@ -33,3 +33,11 @@ translate.py
 test.json
 test_parse.kts
 android/app/debug.keystore
+
+# Android secrets
+android/app/debug.keystore
+android/debug_base64.txt
+android/local.properties
+
+# Backend secrets
+backend/.env
