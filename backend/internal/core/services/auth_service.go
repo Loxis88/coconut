@@ -111,3 +111,7 @@ func (s *authService) UpdateNickname(ctx context.Context, userID, nickname strin
 func (s *authService) GetUserByID(ctx context.Context, userID string) (*domain.User, error) {
 	return s.userRepo.GetByID(ctx, userID)
 }
+
+func (s *authService) DeleteAccount(ctx context.Context, userID string) error {
+	return s.userRepo.Delete(ctx, userID)
+}

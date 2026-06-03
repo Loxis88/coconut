@@ -73,6 +73,15 @@ class AuthViewModel(
         }
     }
 
+    fun deleteAccount(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val result = authRepository.deleteAccount()
+            result.onSuccess {
+                onSuccess()
+            }
+        }
+    }
+
     fun logout() {
         authRepository.clearTokens()
         _currentUser.value = null

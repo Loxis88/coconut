@@ -10,4 +10,5 @@ interface AuthRepository {
     suspend fun fetchCurrentUser(): Result<com.coconut.app.data.api.AuthUser>
     fun getCachedUser(): com.coconut.app.data.api.AuthUser?
     suspend fun updateNickname(nickname: String): Result<Unit>
+    suspend fun deleteAccount(): Result<Unit>
 }
