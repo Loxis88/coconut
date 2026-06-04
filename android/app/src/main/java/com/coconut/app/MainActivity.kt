@@ -595,6 +595,7 @@ private fun ScanScreen(
                     showSheet = false
                     detectedRect = null
                     previewProduct = null
+                    lastScannedBarcode = ""
                     onResetState()
                 },
                 sheetState = sheetState,
@@ -608,6 +609,7 @@ private fun ScanScreen(
                         showSheet = false
                         detectedRect = null
                         previewProduct = null
+                        lastScannedBarcode = ""
                         onResetState()
                     },
                     onSwap = onSwap
