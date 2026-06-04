@@ -12,6 +12,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
@@ -70,6 +71,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -364,6 +366,8 @@ private fun ScanScreen(
     var isFlashlightOn by remember { mutableStateOf(false) }
     var detectedRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
     var previewSize by remember { mutableStateOf(IntSize.Zero) }
+    var previewProduct by remember { mutableStateOf<Product?>(null) }
+    var lastScannedBarcode by remember { mutableStateOf("") }
     
     val context = LocalContext.current
     var hasCameraPermission by remember {
@@ -379,7 +383,10 @@ private fun ScanScreen(
 
     LaunchedEffect(state) {
         if (state is ProductState.Success) {
-            showSheet = true
+            previewProduct = state.product
+            if (isManualMode) {
+                showSheet = true
+            }
         }
     }
 
@@ -405,7 +412,10 @@ private fun ScanScreen(
                     previewSize = size
                 },
                 onBarcodeScanned = { scannedBarcode ->
-                    onAnalyze(scannedBarcode)
+                    if (scannedBarcode != lastScannedBarcode && !showSheet) {
+                        lastScannedBarcode = scannedBarcode
+                        onAnalyze(scannedBarcode)
+                    }
                 }
             )
             SmartScannerFrame(
@@ -436,7 +446,7 @@ private fun ScanScreen(
             )
         }
         
-        if (!isManualMode && hasCameraPermission && detectedRect == null && !showSheet && state !is ProductState.Loading) {
+        if (!isManualMode && hasCameraPermission && detectedRect == null && !showSheet && previewProduct == null && state !is ProductState.Loading) {
             Text(
                 "Наведите на штрих-код",
                 color = Color.White,
@@ -466,7 +476,7 @@ private fun ScanScreen(
             Spacer(Modifier.height(24.dp))
             
             AnimatedContent(
-                targetState = isManualMode || !hasCameraPermission,
+                targetState = Triple(if (previewProduct != null && !showSheet) 2 else if (isManualMode || !hasCameraPermission) 1 else 0, previewProduct, isManualMode || !hasCameraPermission),
                 transitionSpec = {
                     (fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) + 
                      slideInVertically(animationSpec = tween(400, easing = FastOutSlowInEasing)) { it / 8 } +
@@ -477,8 +487,57 @@ private fun ScanScreen(
                      scaleOut(targetScale = 0.95f, animationSpec = tween(250)))
                 },
                 label = "ScanModeTransition"
-            ) { showManual ->
-                if (showManual) {
+            ) { (modeState, p, showManual) ->
+                if (modeState == 2 && p != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Coco.Cream)
+                            .pointerInput(Unit) {
+                                var totalDrag = 0f
+                                detectVerticalDragGestures(
+                                    onDragEnd = { totalDrag = 0f },
+                                    onDragCancel = { totalDrag = 0f }
+                                ) { _, dragAmount ->
+                                    totalDrag += dragAmount
+                                    if (totalDrag < -50) {
+                                        showSheet = true
+                                        totalDrag = 0f
+                                    } else if (totalDrag > 50) {
+                                        previewProduct = null
+                                        lastScannedBarcode = ""
+                                        onResetState()
+                                        totalDrag = 0f
+                                    }
+                                }
+                            }
+                            .clickable { showSheet = true }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (p.thumbnail != null) {
+                            coil.compose.AsyncImage(
+                                model = p.thumbnail,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
+                            )
+                        } else {
+                            FoodThumb(p.title.take(1), size = 56.dp, radius = 16.dp)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(p.title, color = Coco.Ink, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, false))
+                                if (p.hasQualityMark) Icon(Icons.Rounded.Verified, null, tint = Coco.Emerald, modifier = Modifier.size(16.dp))
+                                if (p.hasBadQualityMark) Icon(Icons.Rounded.NewReleases, null, tint = Coco.Red, modifier = Modifier.size(16.dp))
+                            }
+                            Text(p.manufacturer.ifEmpty { p.categoryName }.ifEmpty { "НЕИЗВЕСТНО" }, color = Coco.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        }
+                        ScoreChip((p.totalRating * 20).toInt())
+                    }
+                } else if (modeState == 1 || showManual) {
                     Column {
                         OutlinedTextField(
                             value = barcode,
@@ -535,6 +594,7 @@ private fun ScanScreen(
                 onDismissRequest = {
                     showSheet = false
                     detectedRect = null
+                    previewProduct = null
                     onResetState()
                 },
                 sheetState = sheetState,
@@ -547,6 +607,7 @@ private fun ScanScreen(
                     onBack = { 
                         showSheet = false
                         detectedRect = null
+                        previewProduct = null
                         onResetState()
                     },
                     onSwap = onSwap
@@ -568,6 +629,7 @@ private fun ScanScreen(
                     Spacer(Modifier.height(16.dp))
                     Pill("Сканировать снова", icon = Icons.AutoMirrored.Rounded.ArrowBack, kind = PillKind.Brand) {
                         detectedRect = null
+                        lastScannedBarcode = ""
                         onResetState()
                     }
                 }
