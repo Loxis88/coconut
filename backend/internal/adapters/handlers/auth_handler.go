@@ -25,12 +25,38 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 
 	// Mobile-first Google Auth route
 	authGroup.Post("/google", h.GoogleLogin)
+	authGroup.Post("/refresh", h.RefreshTokens)
 
 	// Protected routes
 	api := router.Group("/api", h.AuthMiddleware())
 	api.Get("/me", h.GetMe)
 	api.Patch("/me/nickname", h.UpdateNickname)
 	api.Delete("/me", h.DeleteAccount)
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (h *AuthHandler) RefreshTokens(c *fiber.Ctx) error {
+	var req RefreshRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	if req.RefreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "refresh_token is required"})
+	}
+
+	accessToken, refreshToken, err := h.authService.RefreshTokens(c.UserContext(), req.RefreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid refresh token", "details": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 func (h *AuthHandler) UpdateNickname(c *fiber.Ctx) error {

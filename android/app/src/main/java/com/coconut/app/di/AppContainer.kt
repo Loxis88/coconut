@@ -55,6 +55,7 @@ class AppContainer(private val context: Context) {
                 .build()
             chain.proceed(request)
         }
+        .authenticator(com.coconut.app.data.api.AuthAuthenticator(context, "http://62.233.43.33:8080/"))
         .cookieJar(cookieJar)
         .followRedirects(true)
         .followSslRedirects(true)

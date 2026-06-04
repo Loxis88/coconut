@@ -104,6 +104,31 @@ func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) 
 	return accessToken, refreshToken, user, nil
 }
 
+func (s *authService) RefreshTokens(ctx context.Context, refreshToken string) (string, string, error) {
+	// Validate the refresh token
+	claims, err := jwtutil.ValidateToken(refreshToken, s.jwtSecret)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	// Verify user still exists
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return "", "", errors.New("user not found")
+	}
+
+	// Generate new tokens
+	newAccessToken, newRefreshToken, err := jwtutil.GenerateTokens(user.ID, user.Email, s.jwtSecret)
+	if err != nil {
+		return "", "", fmt.Errorf("failed generating tokens: %w", err)
+	}
+
+	return newAccessToken, newRefreshToken, nil
+}
+
 func (s *authService) UpdateNickname(ctx context.Context, userID, nickname string) error {
 	return s.userRepo.UpdateNickname(ctx, userID, nickname)
 }
