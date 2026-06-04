@@ -183,7 +183,18 @@ fun ProfileScreen(viewModel: AuthViewModel, onBack: () -> Unit, onLogout: () -> 
                 TextButton(
                     onClick = {
                         showDeleteConfirmation = false
-                        viewModel.deleteAccount(onSuccess = onLogout)
+                        viewModel.deleteAccount(onSuccess = {
+                            val clientId = context.resources.getString(com.coconut.app.R.string.google_client_id)
+                            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestIdToken(clientId)
+                                .requestEmail()
+                                .build()
+                            val mGoogleSignInClient = GoogleSignIn.getClient(context, gso)
+                            mGoogleSignInClient.signOut().addOnCompleteListener {
+                                viewModel.logout()
+                                onLogout()
+                            }
+                        })
                     }
                 ) {
                     Text("Удалить", color = Coco.Red, fontWeight = FontWeight.Bold)
