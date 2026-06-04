@@ -145,7 +145,6 @@ class BarcodeAnalyzer(
                         onBarcodeDetected(barcode.boundingBox, previewSize)
                         val rawValue = barcode.rawValue
                         if (rawValue != null && rawValue.isNotBlank()) {
-                            isScanning = false
                             onBarcodeScanned(rawValue)
                         }
                     } else {
