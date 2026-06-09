@@ -195,6 +195,7 @@ class _CoconutAppState extends State<CoconutApp> {
                     await _authRepository.deleteAccount();
                     setState(() => _user = null);
                   },
+                  onClearError: () => setState(() => _error = null),
                 ),
     );
   }
@@ -217,6 +218,7 @@ class HomeShell extends StatefulWidget {
     required this.onLogout,
     required this.onUpdateNickname,
     required this.onDeleteAccount,
+    required this.onClearError,
   });
 
   final AuthUser user;
@@ -233,6 +235,7 @@ class HomeShell extends StatefulWidget {
   final Future<void> Function() onLogout;
   final Future<void> Function(String nickname) onUpdateNickname;
   final Future<void> Function() onDeleteAccount;
+  final VoidCallback onClearError;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -261,11 +264,18 @@ class _HomeShellState extends State<HomeShell> {
       AppRoute.scan => ScanScreen(
           loading: widget.loading,
           error: widget.error,
-          onBack: () => setState(() => _route = AppRoute.home),
+          onBack: () {
+            widget.onClearError();
+            setState(() => _route = AppRoute.home);
+          },
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
-            if (product != null && mounted) setState(() => _route = AppRoute.detail);
+            if (product != null && mounted) {
+              widget.onClearError();
+              setState(() => _route = AppRoute.detail);
+            }
           },
+          onScanAgain: widget.onClearError,
         ),
       AppRoute.detail => widget.currentProduct == null
           ? EmptyState(onBack: () => setState(() => _route = AppRoute.home))
@@ -508,19 +518,31 @@ class ScanScreen extends StatefulWidget {
     required this.error,
     required this.onBack,
     required this.onFound,
+    required this.onScanAgain,
   });
 
   final bool loading;
   final String? error;
   final VoidCallback onBack;
   final Future<void> Function(String barcode) onFound;
+  final VoidCallback onScanAgain;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final _controller = MobileScannerController(torchEnabled: false);
+  final _controller = MobileScannerController(
+    torchEnabled: false,
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.qrCode,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+    ],
+  );
   final _manualController = TextEditingController();
   var _manual = false;
   var _lastBarcode = '';
@@ -594,7 +616,13 @@ class _ScanScreenState extends State<ScanScreen> {
                     const SizedBox(height: 12),
                     Text(widget.error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
                     const SizedBox(height: 16),
-                    PillButton(label: 'Сканировать снова', onTap: () => setState(() => _lastBarcode = '')),
+                    PillButton(
+                      label: 'Сканировать снова',
+                      onTap: () {
+                        setState(() => _lastBarcode = '');
+                        widget.onScanAgain();
+                      },
+                    ),
                   ],
                 ),
               ),
