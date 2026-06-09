@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
-import 'pill_button.dart';
 
 class EmailAuthSheet extends StatefulWidget {
   const EmailAuthSheet({
@@ -73,7 +72,7 @@ class _EmailAuthSheetState extends State<EmailAuthSheet> {
             child: Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.bottom(20),
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(color: Coco.hairline, borderRadius: BorderRadius.circular(2)),
             ),
           ),
