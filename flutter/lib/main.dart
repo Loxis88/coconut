@@ -10,6 +10,7 @@ import 'data/auth_repository.dart';
 import 'data/product_repository.dart';
 import 'domain/auth_user.dart';
 import 'domain/product.dart';
+import 'widgets/email_auth_sheet.dart';
 
 void main() {
   runApp(const CoconutApp());
@@ -90,6 +91,39 @@ class _CoconutAppState extends State<CoconutApp> {
     }
   }
 
+  Future<void> _emailLogin(String email, String password) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final user = await _authRepository.signInWithEmail(email, password);
+      final token = await _authRepository.accessToken();
+      if (token != null) await _productRepository.syncHistory(token);
+      setState(() => _user = user);
+    } catch (error) {
+      setState(() => _error = error.toString());
+      rethrow;
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _emailRegister(String email, String password, String nickname) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await _authRepository.registerWithEmail(email, password, nickname);
+    } catch (error) {
+      setState(() => _error = error.toString());
+      rethrow;
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
   Future<Product?> _searchBarcode(String barcode) async {
     setState(() {
       _loading = true;
@@ -130,7 +164,13 @@ class _CoconutAppState extends State<CoconutApp> {
       home: _loading && _user == null
           ? const CenteredLoader()
           : _user == null
-              ? AuthScreen(loading: _loading, error: _error, onGoogleLogin: _login)
+              ? AuthScreen(
+                  loading: _loading,
+                  error: _error,
+                  onGoogleLogin: _login,
+                  onEmailLogin: _emailLogin,
+                  onEmailRegister: _emailRegister,
+                )
               : HomeShell(
                   user: _user!,
                   history: _history,
@@ -258,11 +298,15 @@ class AuthScreen extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.onGoogleLogin,
+    required this.onEmailLogin,
+    required this.onEmailRegister,
   });
 
   final bool loading;
   final String? error;
   final VoidCallback onGoogleLogin;
+  final Future<void> Function(String email, String password) onEmailLogin;
+  final Future<void> Function(String email, String password, String nickname) onEmailRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +345,17 @@ class AuthScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   PillButton(label: 'Войти через Apple ID', kind: PillKind.ink, onTap: () {}),
                   const SizedBox(height: 12),
-                  PillButton(label: 'Войти по почте', kind: PillKind.ghost, icon: Icons.email, onTap: () {}),
+                  PillButton(
+                    label: 'Войти по почте',
+                    kind: PillKind.ghost,
+                    icon: Icons.email,
+                    onTap: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => EmailAuthSheet(onLogin: onEmailLogin, onRegister: onEmailRegister),
+                    ),
+                  ),
                 ],
                 if (error != null) ...[
                   const SizedBox(height: 12),

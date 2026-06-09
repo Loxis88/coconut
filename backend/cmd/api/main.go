@@ -32,32 +32,39 @@ if googleClientID != "" {
 
 jwtSecret := os.Getenv("JWT_SECRET")
 
-	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET environment variable is required")
-	}
+if jwtSecret == "" {
+	log.Fatal("JWT_SECRET environment variable is required")
+}
 
-	// 2. Initialize Database Connection
-	ctx := context.Background()
-	dbPool, err := pgxpool.New(ctx, dbURL)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer dbPool.Close()
+// SMTP Configuration
+smtpHost := os.Getenv("SMTP_HOST")
+smtpPort := os.Getenv("SMTP_PORT")
+smtpUser := os.Getenv("SMTP_USER")
+smtpPass := os.Getenv("SMTP_PASS")
+smtpFrom := os.Getenv("SMTP_FROM")
 
-	// Verify connection
-	if err := dbPool.Ping(ctx); err != nil {
-		log.Fatalf("Database ping failed: %v\n", err)
-	}
-	log.Println("Connected to PostgreSQL successfully")
+// 2. Initialize Database Connection
+ctx := context.Background()
+dbPool, err := pgxpool.New(ctx, dbURL)
+if err != nil {
+	log.Fatalf("Unable to connect to database: %v\n", err)
+}
+defer dbPool.Close()
 
-	// 3. Initialize Repositories
-	userRepo := repositories.NewPostgresUserRepository(dbPool)
-	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
-	productRepo := repositories.NewPostgresProductRepository(dbPool)
+// Verify connection
+if err := dbPool.Ping(ctx); err != nil {
+	log.Fatalf("Database ping failed: %v\n", err)
+}
+log.Println("Connected to PostgreSQL successfully")
 
-	// 4. Initialize Services
-	authService := services.NewAuthService(userRepo, allowedClients, jwtSecret)
+// 3. Initialize Repositories
+userRepo := repositories.NewPostgresUserRepository(dbPool)
+historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
+productRepo := repositories.NewPostgresProductRepository(dbPool)
 
+// 4. Initialize Services
+emailService := services.NewEmailService(smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom)
+authService := services.NewAuthService(userRepo, emailService, allowedClients, jwtSecret)
 	// 5. Initialize Fiber App
 	app := fiber.New(fiber.Config{
 		AppName: "Coconut Backend",

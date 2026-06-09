@@ -29,6 +29,20 @@ class ApiClient {
     return AuthResponse.fromJson(response);
   }
 
+  Future<AuthResponse> loginWithEmail(String email, String password) async {
+    final response = await _post('/auth/login', body: {'email': email, 'password': password});
+    return AuthResponse.fromJson(response);
+  }
+
+  Future<String> registerWithEmail(String email, String password, String nickname) async {
+    final response = await _post('/auth/register', body: {
+      'email': email,
+      'password': password,
+      'nickname': nickname,
+    });
+    return response['message'] as String? ?? 'Registration successful';
+  }
+
   Future<AuthUser> getMe(String token) async {
     final response = await _get('/api/me', headers: _authHeaders(token));
     return AuthUser.fromJson(response);

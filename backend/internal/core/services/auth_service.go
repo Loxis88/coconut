@@ -10,21 +10,117 @@ import (
 	"github.com/coconut/backend/internal/core/ports"
 	jwtutil "github.com/coconut/backend/pkg/jwt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/api/idtoken"
 )
 
 type authService struct {
 	userRepo       ports.UserRepository
+	emailService   ports.EmailService
 	allowedClients []string
 	jwtSecret      string
 }
 
-func NewAuthService(userRepo ports.UserRepository, allowedClients []string, jwtSecret string) ports.AuthService {
+func NewAuthService(userRepo ports.UserRepository, emailService ports.EmailService, allowedClients []string, jwtSecret string) ports.AuthService {
 	return &authService{
 		userRepo:       userRepo,
+		emailService:   emailService,
 		allowedClients: allowedClients,
 		jwtSecret:      jwtSecret,
 	}
+}
+
+func (s *authService) RegisterWithEmail(ctx context.Context, email, password, nickname string) error {
+	// 1. Check if user already exists
+	existing, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("failed checking existing user: %w", err)
+	}
+	if existing != nil {
+		return errors.New("user with this email already exists")
+	}
+
+	// 2. Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed hashing password: %w", err)
+	}
+	pwStr := string(hashedPassword)
+
+	// 3. Generate verification token
+	token := uuid.New().String()
+
+	// 4. Create user
+	user := &domain.User{
+		ID:                uuid.New().String(),
+		Email:             email,
+		Nickname:          nickname,
+		PasswordHash:      &pwStr,
+		IsVerified:        false,
+		VerificationToken: &token,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return fmt.Errorf("failed creating user: %w", err)
+	}
+
+	// 5. Send verification email
+	if err := s.emailService.SendVerificationEmail(ctx, email, token); err != nil {
+		// Log error but don't fail registration? Or fail? 
+		// For now, let's just log it.
+		fmt.Printf("Warning: failed sending verification email to %s: %v\n", email, err)
+	}
+
+	return nil
+}
+
+func (s *authService) LoginWithEmail(ctx context.Context, email, password string) (string, string, *domain.User, error) {
+	// 1. Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("failed querying user: %w", err)
+	}
+	if user == nil || user.PasswordHash == nil {
+		return "", "", nil, errors.New("invalid email or password")
+	}
+
+	// 2. Check password
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(password)); err != nil {
+		return "", "", nil, errors.New("invalid email or password")
+	}
+
+	// 3. Check if verified
+	if !user.IsVerified {
+		return "", "", nil, errors.New("please verify your email before logging in")
+	}
+
+	// 4. Generate tokens
+	accessToken, refreshToken, err := jwtutil.GenerateTokens(user.ID, user.Email, s.jwtSecret)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("failed generating tokens: %w", err)
+	}
+
+	return accessToken, refreshToken, user, nil
+}
+
+func (s *authService) VerifyEmail(ctx context.Context, token string) error {
+	// 1. Find user by token
+	user, err := s.userRepo.GetByVerificationToken(ctx, token)
+	if err != nil {
+		return fmt.Errorf("failed querying user by token: %w", err)
+	}
+	if user == nil {
+		return errors.New("invalid or expired verification token")
+	}
+
+	// 2. Mark as verified
+	if err := s.userRepo.UpdateVerificationStatus(ctx, user.ID, true); err != nil {
+		return fmt.Errorf("failed updating verification status: %w", err)
+	}
+
+	return nil
 }
 
 func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) (string, string, *domain.User, error) {
@@ -79,12 +175,13 @@ func (s *authService) VerifyGoogleToken(ctx context.Context, idTokenStr string) 
 
 		// Create new user
 		user = &domain.User{
-			ID:        uuid.New().String(),
-			Email:     email,
-			Nickname:  nickname,
-			GoogleID:  &googleID,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			ID:         uuid.New().String(),
+			Email:      email,
+			Nickname:   nickname,
+			GoogleID:   &googleID,
+			IsVerified: true, // Google users are verified by default
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 		if err := s.userRepo.Create(ctx, user); err != nil {
 			return "", "", nil, fmt.Errorf("failed creating new user: %w", err)

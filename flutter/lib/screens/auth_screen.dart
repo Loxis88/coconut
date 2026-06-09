@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/adaptive_screen.dart';
 import '../widgets/coconut_mark.dart';
+import '../widgets/email_auth_sheet.dart';
 import '../widgets/pill_button.dart';
 import '../widgets/score_widgets.dart';
 
@@ -11,11 +12,15 @@ class AuthScreen extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.onGoogleLogin,
+    required this.onEmailLogin,
+    required this.onEmailRegister,
   });
 
   final bool loading;
   final String? error;
   final VoidCallback onGoogleLogin;
+  final Future<void> Function(String email, String password) onEmailLogin;
+  final Future<void> Function(String email, String password, String nickname) onEmailRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +59,17 @@ class AuthScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   PillButton(label: 'Войти через Apple ID', kind: PillKind.ink, onTap: () {}),
                   const SizedBox(height: 12),
-                  PillButton(label: 'Войти по почте', kind: PillKind.ghost, icon: Icons.email, onTap: () {}),
+                  PillButton(
+                    label: 'Войти по почте',
+                    kind: PillKind.ghost,
+                    icon: Icons.email,
+                    onTap: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => EmailAuthSheet(onLogin: onEmailLogin, onRegister: onEmailRegister),
+                    ),
+                  ),
                 ],
                 if (error != null) ...[
                   const SizedBox(height: 12),

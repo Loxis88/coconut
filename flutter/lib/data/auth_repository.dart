@@ -42,6 +42,16 @@ class AuthRepository {
     return response.user;
   }
 
+  Future<AuthUser> signInWithEmail(String email, String password) async {
+    final response = await _api.loginWithEmail(email, password);
+    await _saveAuth(response.accessToken, response.refreshToken, response.user);
+    return response.user;
+  }
+
+  Future<String> registerWithEmail(String email, String password, String nickname) async {
+    return _api.registerWithEmail(email, password, nickname);
+  }
+
   Future<AuthUser?> fetchCurrentUser() async {
     final token = await accessToken();
     if (token == null) return null;

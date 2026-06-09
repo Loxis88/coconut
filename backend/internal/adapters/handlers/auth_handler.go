@@ -23,6 +23,11 @@ func NewAuthHandler(authService ports.AuthService, jwtSecret string) *AuthHandle
 func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	authGroup := router.Group("/auth")
 
+	// Email Auth routes
+	authGroup.Post("/register", h.Register)
+	authGroup.Post("/login", h.Login)
+	authGroup.Get("/verify", h.VerifyEmail)
+
 	// Mobile-first Google Auth route
 	authGroup.Post("/google", h.GoogleLogin)
 	authGroup.Post("/refresh", h.RefreshTokens)
@@ -32,6 +37,68 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	api.Get("/me", h.GetMe)
 	api.Patch("/me/nickname", h.UpdateNickname)
 	api.Delete("/me", h.DeleteAccount)
+}
+
+type RegisterRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Nickname string `json:"nickname"`
+}
+
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+	var req RegisterRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	if req.Email == "" || req.Password == "" || req.Nickname == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email, password and nickname are required"})
+	}
+
+	if err := h.authService.RegisterWithEmail(c.UserContext(), req.Email, req.Password, req.Nickname); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "registration successful, please check your email for verification"})
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
+	var req LoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	accessToken, refreshToken, user, err := h.authService.LoginWithEmail(c.UserContext(), req.Email, req.Password)
+	if err != nil {
+		if strings.Contains(err.Error(), "verify your email") {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user":          user,
+	})
+}
+
+func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "verification token is required"})
+	}
+
+	if err := h.authService.VerifyEmail(c.UserContext(), token); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.SendString("Email verified successfully! You can now log in to the app.")
 }
 
 type RefreshRequest struct {
