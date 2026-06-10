@@ -55,7 +55,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     if (_route == AuthRoute.login || _route == AuthRoute.register) {
       return AdaptiveScreen(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

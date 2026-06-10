@@ -25,7 +25,12 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final _controller = MobileScannerController(torchEnabled: false);
+  final _controller = MobileScannerController(
+    torchEnabled: false,
+    formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
+    detectionTimeoutMs: 500,
+    returnImage: false,
+  );
   final _manualController = TextEditingController();
   var _manual = false;
   var _lastBarcode = '';
