@@ -4,6 +4,7 @@ import '../widgets/adaptive_screen.dart';
 import '../widgets/coconut_mark.dart';
 import '../widgets/pill_button.dart';
 import '../widgets/score_widgets.dart';
+import '../widgets/shared.dart';
 
 enum AuthRoute { welcome, login, register }
 
