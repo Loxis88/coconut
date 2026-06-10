@@ -279,6 +279,7 @@ class AuthScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 if (loading)
                   const CenteredLoader(compact: true)
+                else ...[
                   PillButton(label: 'Войти по почте', kind: PillKind.brand, icon: Icons.email, onTap: () {}),
                 ],
                 if (error != null) ...[
