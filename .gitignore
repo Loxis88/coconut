@@ -8,12 +8,7 @@ captures/
 *.jar
 *.zip
 
-# Android Module
-android/.gradle/
-android/build/
-android/local.properties
-android/app/build/
-android/.kotlin/
+
 
 # Backend Module
 backend/node_modules/
@@ -27,17 +22,7 @@ backend/build/
 *.iml
 .vscode/
 
-# Project specifics
-cookies.txt
-translate.py
-test.json
-test_parse.kts
-android/app/debug.keystore
 
-# Android secrets
-android/app/debug.keystore
-android/debug_base64.txt
-android/local.properties
 
 # Backend secrets
 backend/.env
