@@ -27,10 +27,12 @@ func (r *PostgresHistoryRepository) Create(ctx context.Context, history *domain.
 
 func (r *PostgresHistoryRepository) GetByUserID(ctx context.Context, userID string) ([]domain.SearchHistory, error) {
 	query := `
-		SELECT id, user_id, barcode, title, score, scanned_at
-		FROM search_history
-		WHERE user_id = $1
-		ORDER BY scanned_at DESC
+		SELECT h.id, h.user_id, h.barcode, h.title, h.score, h.scanned_at, p.image_link
+		FROM search_history h
+		LEFT JOIN product_catalog.product_barcode pb ON h.barcode = pb.barcode
+		LEFT JOIN product_catalog.product p ON pb.product_id = p.id
+		WHERE h.user_id = $1
+		ORDER BY h.scanned_at DESC
 	`
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
@@ -41,7 +43,7 @@ func (r *PostgresHistoryRepository) GetByUserID(ctx context.Context, userID stri
 	var histories []domain.SearchHistory
 	for rows.Next() {
 		var h domain.SearchHistory
-		err := rows.Scan(&h.ID, &h.UserID, &h.Barcode, &h.Title, &h.Score, &h.ScannedAt)
+		err := rows.Scan(&h.ID, &h.UserID, &h.Barcode, &h.Title, &h.Score, &h.ScannedAt, &h.ImageLink)
 		if err != nil {
 			return nil, err
 		}

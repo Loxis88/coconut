@@ -56,30 +56,27 @@ class ProductRepository {
           mapped.add(local);
           continue;
         }
-        try {
-          mapped.add(await _api.getProduct(token, item.barcode));
-        } catch (_) {
-          mapped.add(
-            Product(
-              id: item.id.hashCode,
-              title: item.title,
-              totalRating: item.score / 20.0,
-              description: '',
-              categoryName: '',
-              manufacturer: '',
-              price: '',
-              thumbnail: null,
-              criteriaRatings: const [],
-              worth: const [],
-              info: const [],
-              recommendations: const [],
-              nutrients: null,
-              composition: null,
-              hasQualityMark: false,
-              hasBadQualityMark: false,
-            ),
-          );
-        }
+        
+        mapped.add(
+          Product(
+            id: item.id.hashCode,
+            title: item.title,
+            totalRating: item.score / 20.0,
+            description: '',
+            categoryName: '',
+            manufacturer: '',
+            price: '',
+            thumbnail: item.imageLink,
+            criteriaRatings: const [],
+            worth: const [],
+            info: const [],
+            recommendations: const [],
+            nutrients: null,
+            composition: null,
+            hasQualityMark: false,
+            hasBadQualityMark: false,
+          ),
+        );
       }
       if (mapped.isNotEmpty) {
         _history = mapped;

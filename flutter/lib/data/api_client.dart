@@ -194,17 +194,20 @@ class HistoryItem {
     required this.barcode,
     required this.title,
     required this.score,
+    this.imageLink,
   });
 
   final String id;
   final String barcode;
   final String title;
   final int score;
+  final String? imageLink;
 
   factory HistoryItem.fromJson(Map<String, dynamic> json) => HistoryItem(
         id: json['id'] as String? ?? '',
         barcode: json['barcode'] as String? ?? '',
         title: json['title'] as String? ?? '',
         score: (json['score'] as num?)?.toInt() ?? 0,
+        imageLink: json['image_link'] as String?,
       );
 }

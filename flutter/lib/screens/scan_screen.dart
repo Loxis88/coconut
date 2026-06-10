@@ -29,6 +29,8 @@ class _ScanScreenState extends State<ScanScreen> {
     torchEnabled: false,
     formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
     detectionTimeoutMs: 500,
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    useNewCameraSelector: true,
     returnImage: false,
   );
   final _manualController = TextEditingController();

@@ -10,5 +10,6 @@ type SearchHistory struct {
 	Barcode   string    `json:"barcode"`
 	Title     string    `json:"title"`
 	Score     int       `json:"score"`
+	ImageLink *string   `json:"image_link,omitempty"`
 	ScannedAt time.Time `json:"scanned_at"`
 }
