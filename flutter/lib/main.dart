@@ -19,6 +19,7 @@ import 'screens/profile_screen.dart';
 import 'screens/scan_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/swap_screen.dart';
+import 'theme.dart';
 import 'widgets/adaptive_screen.dart';
 import 'widgets/shared.dart';
 
@@ -292,6 +293,9 @@ class _HomeShellState extends State<HomeShell> {
         ),
       AppRoute.profile => ProfileScreen(
           user: widget.user,
+          streak: widget.streak,
+          average: widget.average,
+          scanCount: widget.history.length,
           onBack: () => setState(() => _route = AppRoute.home),
           onLogout: widget.onLogout,
           onUpdateNickname: widget.onUpdateNickname,
