@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"strings"
+	"errors"
 
 	"github.com/coconut/backend/internal/core/ports"
+	"github.com/coconut/backend/internal/core/services"
 	jwtutil "github.com/coconut/backend/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -24,6 +26,10 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	authGroup := router.Group("/auth")
 
 	authGroup.Post("/refresh", h.RefreshTokens)
+	authGroup.Post("/register", h.Register)
+	authGroup.Post("/login", h.Login)
+	authGroup.Get("/verify", h.VerifyEmail)
+	authGroup.Post("/resend-verification", h.ResendVerification)
 
 	// Protected routes
 	api := router.Group("/api", h.AuthMiddleware())
@@ -34,6 +40,106 @@ func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+type CredentialsRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+	var req CredentialsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+	if req.Email == "" || req.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email and password are required"})
+	}
+
+	user, err := h.authService.Register(c.UserContext(), req.Email, req.Password)
+	if err != nil {
+		if errors.Is(err, services.ErrUserAlreadyExists) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "user already exists"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "registration failed", "details": err.Error()})
+	}
+
+	verifyURLBase := c.BaseURL() + "/auth/verify"
+	_ = h.authService.SendVerificationEmail(c.UserContext(), user.ID, user.Email, verifyURLBase)
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registration successful, please verify your email"})
+}
+
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
+	var req CredentialsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	accessToken, refreshToken, user, err := h.authService.Login(c.UserContext(), req.Email, req.Password)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
+		}
+		if errors.Is(err, services.ErrEmailNotVerified) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "email not verified"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "login failed"})
+	}
+
+	return c.JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user":          user,
+	})
+}
+
+func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("Token is required")
+	}
+
+	if err := h.authService.VerifyEmail(c.UserContext(), token); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid or expired verification token")
+	}
+
+	html := `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Coconut - Email Verified</title>
+    <script>
+        setTimeout(function() {
+            window.location.href = "coconut://verify/success";
+        }, 1000);
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h2>Email успешно подтверждён!</h2>
+    <p>Если вы открыли ссылку с телефона, приложение запустится автоматически.</p>
+    <p>Иначе вы можете вернуться в приложение и войти.</p>
+</body>
+</html>`
+	c.Set("Content-Type", "text/html")
+	return c.SendString(html)
+}
+
+func (h *AuthHandler) ResendVerification(c *fiber.Ctx) error {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	user, _ := h.authService.GetUserByEmail(c.UserContext(), req.Email)
+	if user != nil && !user.IsVerified {
+		verifyURLBase := c.BaseURL() + "/auth/verify"
+		_ = h.authService.SendVerificationEmail(c.UserContext(), user.ID, user.Email, verifyURLBase)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "verification email sent if account exists"})
 }
 
 func (h *AuthHandler) RefreshTokens(c *fiber.Ctx) error {

@@ -61,3 +61,16 @@ func ValidateToken(tokenString, secret string) (*TokenClaims, error) {
 
 	return nil, jwt.ErrSignatureInvalid
 }
+
+func GenerateVerificationToken(userID, email, secret string) (string, error) {
+	claims := TokenClaims{
+		UserID: userID,
+		Email:  email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}

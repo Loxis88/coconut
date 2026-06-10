@@ -21,7 +21,19 @@ class AuthRepository {
 
   Future<String?> accessToken() => _storage.read(key: 'access_token');
 
+  Future<void> register(String email, String password) async {
+    await _api.register(email, password);
+  }
 
+  Future<AuthUser> login(String email, String password) async {
+    final response = await _api.login(email, password);
+    await _saveAuth(response.accessToken, response.refreshToken, response.user);
+    return response.user;
+  }
+
+  Future<void> resendVerification(String email) async {
+    await _api.resendVerification(email);
+  }
 
   Future<AuthUser?> fetchCurrentUser() async {
     final token = await accessToken();

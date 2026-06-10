@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/coconut/backend/internal/adapters/handlers"
 	"github.com/coconut/backend/internal/adapters/repositories"
@@ -49,7 +50,19 @@ jwtSecret := os.Getenv("JWT_SECRET")
 	productRepo := repositories.NewPostgresProductRepository(dbPool)
 
 	// 4. Initialize Services
-	authService := services.NewAuthService(userRepo, jwtSecret)
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPortStr := os.Getenv("SMTP_PORT")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+	smtpFrom := os.Getenv("SMTP_FROM")
+
+	var smtpPort int
+	if smtpPortStr != "" {
+		smtpPort, _ = strconv.Atoi(smtpPortStr)
+	}
+
+	emailService := services.NewSMTPEmailService(smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom)
+	authService := services.NewAuthService(userRepo, emailService, jwtSecret)
 
 	// 5. Initialize Fiber App
 	app := fiber.New(fiber.Config{

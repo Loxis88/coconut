@@ -24,7 +24,18 @@ class ApiClient {
         'Content-Type': 'application/json',
       };
 
+  Future<void> register(String email, String password) async {
+    await _post('/auth/register', body: {'email': email, 'password': password});
+  }
 
+  Future<AuthResponse> login(String email, String password) async {
+    final response = await _post('/auth/login', body: {'email': email, 'password': password});
+    return AuthResponse.fromJson(response);
+  }
+
+  Future<void> resendVerification(String email) async {
+    await _post('/auth/resend-verification', body: {'email': email});
+  }
 
   Future<AuthUser> getMe(String token) async {
     final response = await _get('/api/me', headers: _authHeaders(token));

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:app_links/app_links.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -10,6 +11,7 @@ import 'data/auth_repository.dart';
 import 'data/product_repository.dart';
 import 'domain/auth_user.dart';
 import 'domain/product.dart';
+import 'screens/auth_screen.dart';
 
 void main() {
   runApp(const CoconutApp());
@@ -34,6 +36,9 @@ class _CoconutAppState extends State<CoconutApp> {
   bool _loading = true;
   StreamSubscription<List<Product>>? _historySub;
 
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSub;
+
   @override
   void initState() {
     super.initState();
@@ -41,11 +46,30 @@ class _CoconutAppState extends State<CoconutApp> {
     _authRepository = AuthRepository(_api);
     _productRepository = ProductRepository(_api);
     _bootstrap();
+    _initAppLinks();
+  }
+
+  void _initAppLinks() {
+    _appLinks = AppLinks();
+    _linkSub = _appLinks.uriLinkStream.listen((uri) async {
+      if (uri.scheme == 'coconut' && uri.host == 'verify') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email успешно подтверждён!')),
+          );
+        }
+        try {
+          final fresh = await _authRepository.fetchCurrentUser();
+          if (fresh != null && mounted) setState(() => _user = fresh);
+        } catch (_) {}
+      }
+    });
   }
 
   @override
   void dispose() {
     _historySub?.cancel();
+    _linkSub?.cancel();
     super.dispose();
   }
 
@@ -115,7 +139,31 @@ class _CoconutAppState extends State<CoconutApp> {
       home: _loading && _user == null
           ? const CenteredLoader()
           : _user == null
-              ? AuthScreen(loading: _loading, error: _error)
+              ? AuthScreen(
+                  loading: _loading,
+                  error: _error,
+                  onLogin: (email, password) async {
+                    setState(() => _error = null);
+                    try {
+                      final user = await _authRepository.login(email, password);
+                      final token = await _authRepository.accessToken();
+                      if (token != null) await _productRepository.syncHistory(token);
+                      setState(() => _user = user);
+                    } catch (e) {
+                      setState(() => _error = e.toString());
+                      rethrow;
+                    }
+                  },
+                  onRegister: (email, password) async {
+                    setState(() => _error = null);
+                    try {
+                      await _authRepository.register(email, password);
+                    } catch (e) {
+                      setState(() => _error = e.toString());
+                      rethrow;
+                    }
+                  },
+                )
               : HomeShell(
                   user: _user!,
                   history: _history,
@@ -236,64 +284,6 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 enum AppRoute { home, scan, detail, swap, profile }
-
-class AuthScreen extends StatelessWidget {
-  const AuthScreen({
-    super.key,
-    required this.loading,
-    required this.error,
-  });
-
-  final bool loading;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    return AdaptiveScreen(
-      child: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(size: Size.infinite, painter: GlowPainter()),
-                const CoconutMark(size: 180),
-                const Positioned(left: 28, top: 70, child: ScoreChip(score: 92, big: true)),
-                const Positioned(right: 36, top: 120, child: ScoreChip(score: 48, big: true)),
-                const Positioned(left: 36, bottom: 140, child: ScoreChip(score: 71, big: true)),
-                const Positioned(right: 40, bottom: 90, child: ScoreChip(score: 88, big: true)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Coconut.', style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900, height: .96)),
-                const SizedBox(height: 10),
-                const Text(
-                  'Раскуси каждый кусочек. Получи честную оценку любого продукта в один скан.',
-                  style: TextStyle(color: Coco.ink2, fontSize: 19, height: 1.3),
-                ),
-                const SizedBox(height: 24),
-                if (loading)
-                  const CenteredLoader(compact: true)
-                else ...[
-                  PillButton(label: 'Войти по почте', kind: PillKind.brand, icon: Icons.email, onTap: () {}),
-                ],
-                if (error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: Coco.red)),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
