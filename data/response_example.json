@@ -1,0 +1,322 @@
+{
+  "data": {
+    "card_attributes": {
+      "show_alternative_offers": true
+    },
+    "product": {
+      "active": true,
+      "alcohol": false,
+      "brand": {
+        "id": "20259",
+        "name": "Слобода",
+        "permalink": "sloboda"
+      },
+      "canonical_permalink": "24924628-podsolnechnoe-maslo-sloboda-rafinirovannoe-dezodorirovannoe-1-l",
+      "description": "Подсолнечное масло Слобода высшего сорта — универсальный продукт, предназначенный для жарки, салатов и выпечки. Масло Слобода способно придать неповторимый вкус холодным закускам, рагу, мясным и другим блюдам, а при нагревании не подвержено температурному окислению, что говорит об отсутствии в нем вредных канцерогенов. Готовить на таком масле жареные блюда абсолютно безопасно для здоровья благодаря инновационной технологии очистки продукта. Масло Слобода - ваш незаменимый помощник на кухне!",
+      "human_volume": "920 г",
+      "id": "33415973973",
+      "images": [
+        {
+          "mini_url": "https://imgproxy.kuper.ru/imgproxy/size-64-64/czM6Ly9zYi1vYnMtcHJvZC1jb250ZW50LWltYWdlczAxL3Byb2R1Y3RzLzI0OTI0NjI4L29yaWdpbmFsLzEvMjAyNi0wNC0yOSUyMDE1JTNBNTIlM0E0NS40NDU3NjYlMkIwMCUzQTAwLzI0OTI0NjI4XzEuanBn",
+          "original_url": "https://imgproxy.kuper.ru/imgproxy/width-auto/czM6Ly9zYi1vYnMtcHJvZC1jb250ZW50LWltYWdlczAxL3Byb2R1Y3RzLzI0OTI0NjI4L29yaWdpbmFsLzEvMjAyNi0wNC0yOSUyMDE1JTNBNTIlM0E0NS40NDU3NjYlMkIwMCUzQTAwLzI0OTI0NjI4XzEuanBn",
+          "preview_url": "https://imgproxy.kuper.ru/imgproxy/size-680-680/czM6Ly9zYi1vYnMtcHJvZC1jb250ZW50LWltYWdlczAxL3Byb2R1Y3RzLzI0OTI0NjI4L29yaWdpbmFsLzEvMjAyNi0wNC0yOSUyMDE1JTNBNTIlM0E0NS40NDU3NjYlMkIwMCUzQTAwLzI0OTI0NjI4XzEuanBn",
+          "product_url": "https://imgproxy.kuper.ru/imgproxy/size-210-210/czM6Ly9zYi1vYnMtcHJvZC1jb250ZW50LWltYWdlczAxL3Byb2R1Y3RzLzI0OTI0NjI4L29yaWdpbmFsLzEvMjAyNi0wNC0yOSUyMDE1JTNBNTIlM0E0NS40NDU3NjYlMkIwMCUzQTAwLzI0OTI0NjI4XzEuanBn",
+          "small_url": "https://imgproxy.kuper.ru/imgproxy/size-192-185/czM6Ly9zYi1vYnMtcHJvZC1jb250ZW50LWltYWdlczAxL3Byb2R1Y3RzLzI0OTI0NjI4L29yaWdpbmFsLzEvMjAyNi0wNC0yOSUyMDE1JTNBNTIlM0E0NS40NDU3NjYlMkIwMCUzQTAwLzI0OTI0NjI4XzEuanBn"
+        }
+      ],
+      "items_per_pack": 1,
+      "labels": null,
+      "license_info": "",
+      "manufacturer": {
+        "id": "118464",
+        "name": "Эфко АО"
+      },
+      "manufacturing_country": {
+        "id": "RU",
+        "name": "Россия",
+        "permalink": "rossiya"
+      },
+      "name": "Подсолнечное масло Слобода рафинированное дезодорированное 1 л",
+      "offer": {
+        "active": true,
+        "beneficial": false,
+        "bmpl_info": {},
+        "bmpl_values": {},
+        "discount": 17,
+        "discount_ends_at": "2026-06-16T00:00:00Z",
+        "discounted": true,
+        "grams_per_unit": 920,
+        "id": "33415973973",
+        "instamart_price": 156.99,
+        "items_per_pack": 1,
+        "max_per_order": 503,
+        "max_stock_rate": 0,
+        "name": "Подсолнечное масло Слобода рафинированное дезодорированное 1 л",
+        "options": [],
+        "original_unit_price": 156.99,
+        "price": 139.99,
+        "price_type": "per_item",
+        "product_id": "0",
+        "retailer_id": "11501",
+        "retailer_sku": "86175",
+        "rsku": "11501-24924628",
+        "sale_conditions": [
+          {
+            "id": 152,
+            "value": "Невозвратные категории"
+          }
+        ],
+        "stock": 503,
+        "stock_discount_product_count": 0,
+        "stock_discount_product_left": 0,
+        "stock_rate": 0,
+        "store_id": "122409",
+        "unit_price": 139.99,
+        "uuid": "",
+        "vat_info": {},
+        "vertical": "grocery"
+      },
+      "permalink": "podsolnechnoe-maslo-sloboda-rafinirovannoe-dezodorirovannoe-1-l",
+      "product_taxons": [],
+      "promo_badge_ids": [],
+      "related_products": null,
+      "requirements": [],
+      "score": 4.9,
+      "score_details": {
+        "comment_count": 4,
+        "feedback_count": 14,
+        "feedback_source": "ВкусВилл"
+      },
+      "sku": 24924628,
+      "volume": 920,
+      "volume_type": "g"
+    },
+    "product_groups": [],
+    "product_properties": [
+      {
+        "id": "0",
+        "name": "attribute_46299",
+        "presentation": "Условия возврата",
+        "value": "Товар не подлежит возврату или обмену"
+      },
+      {
+        "id": "1",
+        "name": "attribute_144",
+        "presentation": "Вид масла",
+        "value": "Подсолнечное"
+      },
+      {
+        "id": "2",
+        "name": "attribute_146",
+        "presentation": "Способ очистки",
+        "value": "Вымороженный, Рафинированный, Дезодорированный"
+      },
+      {
+        "id": "3",
+        "name": "attribute_147",
+        "presentation": "Особенности производства",
+        "value": "Горячий отжим"
+      },
+      {
+        "id": "4",
+        "name": "attribute_18",
+        "presentation": "Вес",
+        "value": "920.0 г"
+      },
+      {
+        "id": "5",
+        "name": "attribute_150",
+        "presentation": "Добавки",
+        "value": "Без добавок"
+      },
+      {
+        "id": "6",
+        "name": "attribute_145",
+        "presentation": "Объем",
+        "value": "1.0 л"
+      },
+      {
+        "id": "7",
+        "name": "attribute_38236",
+        "presentation": "Количество в упаковке",
+        "value": "1 шт"
+      },
+      {
+        "id": "8",
+        "name": "attribute_30509",
+        "presentation": "Вид упаковки",
+        "value": "Пластиковая бутылка"
+      },
+      {
+        "id": "9",
+        "name": "ingredients",
+        "presentation": "Состав",
+        "value": "масло подсолнечное рафинированное дезодорированное, высший сорт, вымороженное"
+      },
+      {
+        "id": "10",
+        "name": "fat",
+        "presentation": "Жиры",
+        "value": "99.9 г"
+      },
+      {
+        "id": "11",
+        "name": "energy_value",
+        "presentation": "Калорийность",
+        "value": "899.0 ккал"
+      },
+      {
+        "id": "12",
+        "name": "storage_mode",
+        "presentation": "Условия хранения",
+        "value": "При температуре от +5°С до +25°С"
+      },
+      {
+        "id": "13",
+        "name": "attribute_13",
+        "presentation": "Срок хранения",
+        "value": "1 г"
+      },
+      {
+        "id": "14",
+        "name": "attribute_14",
+        "presentation": "Условия хранения 2",
+        "value": "После вскрытия упаковки хранить при температуре от +2°С до +6°С"
+      },
+      {
+        "id": "15",
+        "name": "attribute_15",
+        "presentation": "Срок хранения 2",
+        "value": "1 мес"
+      }
+    ],
+    "product_taxons": [
+      {
+        "filters": [],
+        "id": "52072",
+        "leaf": false,
+        "name": "Каталог-Globus",
+        "permalink": "katalog-globus-02bfb49",
+        "position": 89
+      },
+      {
+        "filters": [],
+        "id": "55833",
+        "leaf": false,
+        "name": "Растительное масло, соусы, специи",
+        "permalink": "katalog-globus-02bfb49/rastitelnoe-maslo-sousi-spetsii-824f031",
+        "position": 17
+      },
+      {
+        "filters": [
+          {
+            "dictionary_value_id": "3797",
+            "filter": true,
+            "key": "site_category_filter_10000110",
+            "multi_value": true,
+            "name": "Страна происхождения",
+            "permalink": "rossiya-3797",
+            "position": 102,
+            "value": "Россия"
+          },
+          {
+            "dictionary_value_id": "21344",
+            "filter": true,
+            "key": "site_category_filter_10000421",
+            "multi_value": true,
+            "name": "Тип продукта",
+            "permalink": "rastitel-noe-maslo",
+            "position": 144,
+            "value": "Растительное масло"
+          },
+          {
+            "dictionary_value_id": "20259",
+            "filter": true,
+            "key": "brand",
+            "multi_value": false,
+            "name": "Бренд",
+            "permalink": "sloboda",
+            "position": 0,
+            "value": "Слобода"
+          },
+          {
+            "dictionary_value_id": "0",
+            "filter": true,
+            "key": "country",
+            "multi_value": false,
+            "name": "Страна изготовления",
+            "permalink": "rossiya",
+            "position": 0,
+            "value": "Россия"
+          },
+          {
+            "dictionary_value_id": "4315",
+            "filter": true,
+            "key": "site_category_filter_10000125",
+            "multi_value": true,
+            "name": "Добавки",
+            "permalink": "bez-dobavok-4315",
+            "position": 80,
+            "value": "Без добавок"
+          },
+          {
+            "dictionary_value_id": "15328",
+            "filter": true,
+            "key": "site_category_filter_10000643",
+            "multi_value": true,
+            "name": "Особенности производств",
+            "permalink": "goryachiy-otzhim",
+            "position": 2,
+            "value": "Горячий отжим"
+          },
+          {
+            "dictionary_value_id": "21220",
+            "filter": true,
+            "key": "site_category_filter_10000967",
+            "multi_value": true,
+            "name": "Способ очистки",
+            "permalink": "rafinirovannoe-21220",
+            "position": 5,
+            "value": "Рафинированное"
+          },
+          {
+            "dictionary_value_id": "21224",
+            "filter": true,
+            "key": "site_category_filter_10000968",
+            "multi_value": true,
+            "name": "Вид масла",
+            "permalink": "podsolnechnoe-21224",
+            "position": 22,
+            "value": "Подсолнечное"
+          },
+          {
+            "dictionary_value_id": "1043",
+            "filter": true,
+            "key": "site_category_filter_10000031",
+            "multi_value": true,
+            "name": "Вид упаковки",
+            "permalink": "plastikovaya-butylka-1043",
+            "position": 174,
+            "value": "Пластиковая бутылка"
+          },
+          {
+            "dictionary_value_id": "2091",
+            "filter": true,
+            "key": "site_category_filter_10000052",
+            "multi_value": true,
+            "name": "Объём, л",
+            "permalink": "0-51-1-2091",
+            "position": 3,
+            "value": "0,51 - 1"
+          }
+        ],
+        "id": "164538",
+        "leaf": true,
+        "name": "Растительное масло",
+        "permalink": "katalog-globus-02bfb49/rastitelnoe-maslo-sousi-spetsii-824f031/rastitelnoe-maslo-233c935",
+        "position": 1
+      }
+    ],
+    "promo_badges": []
+  }
+}
