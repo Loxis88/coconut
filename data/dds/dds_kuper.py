@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import psycopg2
 from psycopg2.extras import execute_values
 
@@ -10,8 +12,38 @@ log = logging.getLogger(__name__)
 
 from config import DB_CONFIG
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+KUPER_OFF_MAPPING_FILE = os.path.join(PROJECT_DIR, "kuper_off_category_mapping.json")
+
+
+def load_kuper_off_mapping() -> dict[str, int]:
+    """Load kuper leaf category name → product_catalog.category.id mapping."""
+    if not os.path.exists(KUPER_OFF_MAPPING_FILE):
+        log.warning("%s not found — kuper categories will be NULL. Run staging/map_kuper_off_categories.py first.", KUPER_OFF_MAPPING_FILE)
+        return {}
+
+    with open(KUPER_OFF_MAPPING_FILE, "r", encoding="utf-8") as f:
+        raw: dict[str, str | None] = json.load(f)
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, name FROM product_catalog.category")
+        name_to_id = {name: cid for cid, name in cur.fetchall()}
+    conn.close()
+
+    result = {}
+    for kuper_name, off_id in raw.items():
+        if off_id and off_id in name_to_id:
+            result[kuper_name] = name_to_id[off_id]
+
+    log.info("Loaded kuper→OFF category mapping: %d entries", len(result))
+    return result
+
 
 def load_kuper_dds():
+    kuper_to_cat_id = load_kuper_off_mapping()
+
     conn = psycopg2.connect(**DB_CONFIG)
 
     with conn.cursor() as cur:
@@ -106,6 +138,16 @@ def load_kuper_dds():
         )
         log.info("Built temp enriched products table")
 
+        # Build temporary category mapping table from pre-built OFF mapping
+        cur.execute("CREATE TEMP TABLE tmp_kuper_cat_map (category_name TEXT PRIMARY KEY, category_id BIGINT)")
+        if kuper_to_cat_id:
+            execute_values(
+                cur,
+                "INSERT INTO tmp_kuper_cat_map (category_name, category_id) VALUES %s",
+                list(kuper_to_cat_id.items()),
+            )
+        log.info("Loaded %d kuper category mappings into temp table", len(kuper_to_cat_id))
+
         # Insert products (skip those with barcode overlap)
         cur.execute("""
             INSERT INTO product_catalog.product
@@ -113,14 +155,14 @@ def load_kuper_dds():
             SELECT
                 tp.sku,
                 'kuper',
-                c.category_id,
+                cm.category_id,
                 tp.total_rating,
                 tp.brand,
                 tp.image_link,
                 tp.name,
                 tp.ingredients
             FROM tmp_kuper_products tp
-                LEFT JOIN product_catalog.category c ON c.title = tp.category_name
+                LEFT JOIN tmp_kuper_cat_map cm ON cm.category_name = tp.category_name
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM tmp_kuper_eans te

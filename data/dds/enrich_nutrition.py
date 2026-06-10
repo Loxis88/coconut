@@ -61,7 +61,7 @@ def enrich():
             FROM product_catalog.product p
             JOIN product_catalog.product_barcode pb ON pb.product_id = p.id
             JOIN staging.raw_openfood_products off ON off.code = pb.barcode
-            WHERE p.source = 'rosqual'
+            WHERE p.source IN ('rosqual', 'kuper')
               AND (off.sugars_100g IS NOT NULL AND off.sugars_100g != ''
                 OR off.salt_100g IS NOT NULL AND off.salt_100g != ''
                 OR off.saturated_fat_100g IS NOT NULL AND off.saturated_fat_100g != '')
@@ -133,7 +133,7 @@ def enrich():
             SELECT DISTINCT c.name
             FROM product_catalog.product p
             JOIN product_catalog.category c ON c.id = p.category_id
-            WHERE p.source = 'rosqual'
+            WHERE p.source IN ('rosqual', 'kuper')
         """)
         rosqual_categories = [r[0] for r in cur.fetchall()]
         log.info("Distinct rosqual OFF categories: %d", len(rosqual_categories))
@@ -200,7 +200,7 @@ def enrich():
             SELECT p.id, c.name
             FROM product_catalog.product p
             JOIN product_catalog.category c ON c.id = p.category_id
-            WHERE p.source = 'rosqual'
+            WHERE p.source IN ('rosqual', 'kuper')
         """)
         products_with_cat = cur.fetchall()
 
@@ -265,7 +265,7 @@ def enrich():
                    count(saturated_fat_g)
             FROM product_catalog.nutrition_facts nf
             JOIN product_catalog.product p ON p.id = nf.product_id
-            WHERE p.source = 'rosqual'
+            WHERE p.source IN ('rosqual', 'kuper')
         """)
         total, n_sugar, n_salt, n_sat = cur.fetchone()
 

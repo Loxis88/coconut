@@ -1,22 +1,23 @@
 """
 extract_ingredients.py
 
-Parses ingredient composition strings from rosqual products into
-individual ingredient names using LLM (gpt-4o-mini).
+Parses ingredient composition strings from rosqual + kuper products
+using OpenAI Batch API (50% cheaper, async).
 
-Writes results to staging.raw_product_ingredients.
-Tracks progress in .ingredients_progress.json — safe to restart.
+Deduplicates by ingredient text — one LLM request per unique composition string.
 
 Usage:
-    python staging/extract_ingredients.py
+    python staging/extract_ingredients.py          # auto: submit if no pending batch, else collect
+    python staging/extract_ingredients.py submit   # force submit
+    python staging/extract_ingredients.py collect  # force collect (check status + save if done)
 """
 
 import os
+import sys
 import json
-import time
+import hashlib
 import logging
 from typing import Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import psycopg2
 from psycopg2.extras import execute_values
@@ -31,11 +32,12 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-LLM_BATCH = 1          # products per LLM call
-MAX_WORKERS = 1         # parallel LLM calls
+MODEL = "gpt-4o-mini"
+BATCH_SIZE = 5000  # requests per OpenAI batch
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROGRESS_FILE = os.path.join(SCRIPT_DIR, ".ingredients_progress.json")
+PROGRESS_FILE   = os.path.join(SCRIPT_DIR, ".ingredients_progress.json")
+BATCH_STATE_FILE = os.path.join(SCRIPT_DIR, ".ingredients_batch_state.json")
 
 
 # ── Pydantic models ──────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ class ExtractionResponse(BaseModel):
     products: list[ProductIngredients]
 
 
-# ── LLM extraction ──────────────────────────────────────────────────────────
+# ── Prompt ───────────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """\
 Ты парсер составов продуктов питания. Тебе дан список продуктов с полем "ingredients" (строка состава).
@@ -85,73 +87,16 @@ name = функция в единственном числе ("ароматиз�
 """
 
 
-def extract_batch(
-    client: OpenAI,
-    products: list[dict],
-) -> list[ProductIngredients]:
-    """Extract ingredients. Retries individual missed products."""
-    results = _call_llm(client, products)
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
-    # Retry missed products individually
-    returned_ids = {r.source_id for r in results}
-    missed = [p for p in products if p["source_id"] not in returned_ids]
-    if missed:
-        log.warning("    Missed %d products, retrying individually...", len(missed))
-        for product in missed:
-            retry_results = _call_llm(client, [product])
-            results.extend(retry_results)
+def text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()[:24]
 
-    return results
-
-
-def _call_llm(
-    client: OpenAI,
-    products: list[dict],
-) -> list[ProductIngredients]:
-    log.info("    Calling LLM for %d products...", len(products))
-    user_content = json.dumps({"products": products}, ensure_ascii=False)
-
-    for attempt in range(3):
-        try:
-            completion = client.beta.chat.completions.parse(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_content},
-                ],
-                response_format=ExtractionResponse,
-                temperature=0.0,
-            )
-            usage = completion.usage
-            log.info(
-                "    Tokens: %d prompt + %d completion = %d total",
-                usage.prompt_tokens, usage.completion_tokens, usage.total_tokens,
-            )
-            parsed = completion.choices[0].message.parsed
-            if parsed is None:
-                raw_content = completion.choices[0].message.content
-                log.warning("    Parsed is None! finish_reason=%s raw=%s",
-                            completion.choices[0].finish_reason,
-                            raw_content[:500] if raw_content else "EMPTY")
-                continue
-            log.info("    Sent: %d  Returned: %d", len(products), len(parsed.products))
-            return parsed.products
-        except Exception as e:
-            wait = 2 ** attempt
-            log.warning("    attempt %d failed: %s — retry in %ds", attempt + 1, e, wait)
-            time.sleep(wait)
-
-    log.error("    LLM failed after 3 attempts for %d products", len(products))
-    return []
-
-
-# ── Progress ─────────────────────────────────────────────────────────────────
 
 def load_progress() -> set[str]:
     if os.path.exists(PROGRESS_FILE):
         with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return set(data.get("done_source_ids", []))
+            return set(json.load(f).get("done_source_ids", []))
     return set()
 
 
@@ -160,9 +105,268 @@ def save_progress(done_ids: set[str]):
         json.dump({"done_source_ids": sorted(done_ids)}, f)
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+def load_batch_state() -> dict:
+    if os.path.exists(BATCH_STATE_FILE):
+        with open(BATCH_STATE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-def run_extraction():
+
+def save_batch_state(state: dict):
+    with open(BATCH_STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False)
+
+
+def build_jsonl_request(text_id: str, ingredients_text: str) -> dict:
+    return {
+        "custom_id": text_id,
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "body": {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": json.dumps(
+                    {"products": [{"source_id": text_id, "ingredients": ingredients_text}]},
+                    ensure_ascii=False,
+                )},
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ExtractionResponse",
+                    "schema": ExtractionResponse.model_json_schema(),
+                    "strict": False,
+                },
+            },
+            "temperature": 0.0,
+        },
+    }
+
+
+# ── Submit ────────────────────────────────────────────────────────────────────
+
+def _upload_and_create_batch(client: OpenAI, requests: list[dict], index: int) -> tuple[str, str]:
+    """Upload a JSONL chunk and create one OpenAI batch. Returns (batch_id, file_id)."""
+    import io
+    jsonl_bytes = "\n".join(json.dumps(r, ensure_ascii=False) for r in requests).encode("utf-8")
+    uploaded = client.files.create(
+        file=io.BytesIO(jsonl_bytes),
+        purpose="batch",
+    )
+    log.info("  Chunk %d: uploaded file %s (%d requests)", index, uploaded.id, len(requests))
+    batch = client.batches.create(
+        input_file_id=uploaded.id,
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+    )
+    log.info("  Chunk %d: batch %s  status=%s", index, batch.id, batch.status)
+    return batch.id, uploaded.id
+
+
+def submit(conn, client: OpenAI):
+    # Already done: from progress file + staging table
+    done_ids = load_progress()
+    with conn.cursor() as cur:
+        cur.execute("SELECT DISTINCT source_id FROM staging.raw_product_ingredients")
+        done_ids |= {row[0] for row in cur.fetchall()}
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT source_id, ingredients
+            FROM product_catalog.product
+            WHERE source IN ('rosqual', 'kuper')
+              AND ingredients IS NOT NULL
+        """)
+        all_products = cur.fetchall()
+
+    to_process = [(sid, ing) for sid, ing in all_products if sid not in done_ids]
+    log.info(
+        "Products: %d total, %d already done, %d to process",
+        len(all_products), len(done_ids), len(to_process),
+    )
+
+    if not to_process:
+        log.info("Nothing to process")
+        return
+
+    # Deduplicate by ingredients text
+    text_to_source_ids: dict[str, list[str]] = {}
+    for sid, ing in to_process:
+        text_to_source_ids.setdefault(ing, []).append(sid)
+
+    unique_texts = list(text_to_source_ids.items())
+    unique_count = len(unique_texts)
+    log.info(
+        "Unique ingredient texts: %d (from %d products, saved %d LLM calls)",
+        unique_count, len(to_process), len(to_process) - unique_count,
+    )
+
+    # Split unique texts into chunks of BATCH_SIZE and submit each as a separate OpenAI batch
+    submitted_batches = []
+    for chunk_start in range(0, unique_count, BATCH_SIZE):
+        chunk = unique_texts[chunk_start:chunk_start + BATCH_SIZE]
+        chunk_index = chunk_start // BATCH_SIZE + 1
+        total_chunks = (unique_count + BATCH_SIZE - 1) // BATCH_SIZE
+
+        hash_to_source_ids: dict[str, list[str]] = {}
+        requests = []
+        for text, sids in chunk:
+            h = text_hash(text)
+            hash_to_source_ids[h] = sids
+            requests.append(build_jsonl_request(h, text))
+
+        log.info("Submitting chunk %d/%d (%d requests)...", chunk_index, total_chunks, len(requests))
+        batch_id, file_id = _upload_and_create_batch(client, requests, chunk_index)
+        submitted_batches.append({
+            "batch_id": batch_id,
+            "file_id": file_id,
+            "hash_to_source_ids": hash_to_source_ids,
+        })
+
+    save_batch_state({
+        "batches": submitted_batches,
+        "done_source_ids": sorted(done_ids),
+    })
+    log.info(
+        "Submitted %d batch(es). State saved to %s",
+        len(submitted_batches), BATCH_STATE_FILE,
+    )
+    log.info("Run with 'collect' once batches are complete (check at platform.openai.com/batches)")
+
+
+# ── Collect ───────────────────────────────────────────────────────────────────
+
+def _collect_one_batch(conn, client: OpenAI, batch_info: dict, done_ids: set[str]) -> tuple[int, int]:
+    """Download and process one completed batch. Returns (rows_inserted, failed_count)."""
+    batch_id = batch_info["batch_id"]
+    hash_to_source_ids: dict[str, list[str]] = batch_info["hash_to_source_ids"]
+
+    raw = client.files.content(batch_info["output_file_id"]).content
+    lines = raw.decode("utf-8").strip().splitlines()
+    log.info("  Batch %s: downloaded %d result lines", batch_id, len(lines))
+
+    total_rows = 0
+    failed = 0
+
+    for line in lines:
+        result = json.loads(line)
+        custom_id = result["custom_id"]
+
+        if result.get("error"):
+            log.warning("  Request %s failed: %s", custom_id, result["error"])
+            failed += 1
+            continue
+
+        content = result["response"]["body"]["choices"][0]["message"]["content"]
+        try:
+            parsed = ExtractionResponse.model_validate_json(content)
+        except Exception as e:
+            log.warning("  Parse error for %s: %s", custom_id, e)
+            failed += 1
+            continue
+
+        if not parsed.products:
+            continue
+
+        ingredients = parsed.products[0].ingredients
+        source_ids = hash_to_source_ids.get(custom_id, [])
+        if not source_ids:
+            log.warning("  No source_ids for hash %s", custom_id)
+            continue
+
+        staging_rows = []
+        for sid in source_ids:
+            for pos, ing in enumerate(ingredients, start=1):
+                name = ing.name.strip().lower()
+                if not name:
+                    continue
+                staging_rows.append((
+                    sid, name, pos,
+                    ing.is_transparent,
+                    ing.qty, ing.unit, ing.qualifier,
+                ))
+            done_ids.add(sid)
+
+        if staging_rows:
+            with conn.cursor() as cur:
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO staging.raw_product_ingredients
+                        (source_id, ingredient_name, position, is_transparent,
+                         qty, unit, qualifier)
+                    VALUES %s
+                    """,
+                    staging_rows,
+                )
+            total_rows += len(staging_rows)
+
+    conn.commit()
+    return total_rows, failed
+
+
+def collect(conn, client: OpenAI):
+    state = load_batch_state()
+    if not state:
+        log.error("No batch state found. Run 'submit' first.")
+        return
+
+    batches: list[dict] = state["batches"]
+    done_ids = set(state.get("done_source_ids", []))
+
+    total_rows = 0
+    total_failed = 0
+    still_pending = []
+
+    for batch_info in batches:
+        batch_id = batch_info["batch_id"]
+        batch = client.batches.retrieve(batch_id)
+        counts = batch.request_counts
+        log.info(
+            "Batch %s: status=%s  completed=%d/%d  failed=%d",
+            batch_id, batch.status,
+            counts.completed, counts.total, counts.failed,
+        )
+
+        if batch.status not in ("completed", "failed", "expired", "cancelled"):
+            still_pending.append(batch_info)
+            continue
+
+        if batch.status != "completed":
+            log.error("Batch %s ended with status=%s, skipping.", batch_id, batch.status)
+            continue
+
+        batch_info["output_file_id"] = batch.output_file_id
+        rows, failed = _collect_one_batch(conn, client, batch_info, done_ids)
+        total_rows += rows
+        total_failed += failed
+        log.info("  Batch %s: +%d rows, %d failed", batch_id, rows, failed)
+
+    save_progress(done_ids)
+
+    if still_pending:
+        state["batches"] = still_pending
+        state["done_source_ids"] = sorted(done_ids)
+        save_batch_state(state)
+        log.info("%d batch(es) still pending — run 'collect' again later.", len(still_pending))
+    else:
+        os.remove(BATCH_STATE_FILE)
+        log.info("All batches collected and state cleared.")
+
+    log.info(
+        "Done. Inserted %d rows total. Failed requests: %d",
+        total_rows, total_failed,
+    )
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def run():
+    mode = sys.argv[1] if len(sys.argv) > 1 else ("collect" if load_batch_state() else "submit")
+    log.info("Mode: %s", mode)
+
+    client = OpenAI(api_key=OPENAI_API_KEY)
     conn = psycopg2.connect(**DB_CONFIG)
 
     with conn.cursor() as cur:
@@ -183,111 +387,15 @@ def run_extraction():
         """)
     conn.commit()
 
-    # 1. Fetch rosqual products with ingredients
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT source_id, ingredients
-            FROM product_catalog.product
-            WHERE source = 'rosqual'
-              AND ingredients IS NOT NULL
-        """)
-        all_products = cur.fetchall()
+    if mode == "submit":
+        submit(conn, client)
+    elif mode == "collect":
+        collect(conn, client)
+    else:
+        log.error("Unknown mode '%s'. Use: submit | collect", mode)
 
-    # Filter out already processed
-    done_ids = load_progress()
-
-    with conn.cursor() as cur:
-        cur.execute("SELECT DISTINCT source_id FROM staging.raw_product_ingredients")
-        done_in_staging = {row[0] for row in cur.fetchall()}
-    done_ids |= done_in_staging
-
-    products = [p for p in all_products if p[0] not in done_ids]
-
-    log.info(
-        "Products with ingredients: %d total, %d already done, %d to process",
-        len(all_products), len(done_ids), len(products),
-    )
-
-    if not products:
-        log.info("Nothing to process")
-        conn.close()
-        return
-
-    # 2. Process in batches via LLM
-    import httpx
-    client = OpenAI(
-        api_key=OPENAI_API_KEY,
-        http_client=httpx.Client(
-            limits=httpx.Limits(
-                max_connections=MAX_WORKERS,
-                max_keepalive_connections=MAX_WORKERS,
-            )
-        ),
-    )
-    total_rows = 0
-
-    # Split all products into LLM-sized batches
-    batches = []
-    for i in range(0, len(products), LLM_BATCH):
-        sub = products[i:i + LLM_BATCH]
-        llm_input = [
-            {"source_id": source_id, "ingredients": ingredients}
-            for source_id, ingredients in sub
-        ]
-        batches.append((sub, llm_input))
-
-    log.info("Total batches: %d (batch size=%d, workers=%d)", len(batches), LLM_BATCH, MAX_WORKERS)
-    completed = 0
-
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {
-            pool.submit(extract_batch, client, llm_input): sub
-            for sub, llm_input in batches
-        }
-        for future in as_completed(futures):
-            sub = futures[future]
-            results = future.result()
-            completed += 1
-
-            staging_rows = []
-            sub_done = []
-            for product_result in results:
-                for pos, ing in enumerate(product_result.ingredients, start=1):
-                    name = ing.name.strip().lower()
-                    if not name:
-                        continue
-                    staging_rows.append((
-                        product_result.source_id, name, pos,
-                        ing.is_transparent,
-                        ing.qty, ing.unit, ing.qualifier,
-                    ))
-                sub_done.append(product_result.source_id)
-
-            if staging_rows:
-                with conn.cursor() as cur:
-                    execute_values(
-                        cur,
-                        """
-                        INSERT INTO staging.raw_product_ingredients
-                            (source_id, ingredient_name, position, is_transparent,
-                             qty, unit, qualifier)
-                        VALUES %s
-                        """,
-                        staging_rows,
-                    )
-                total_rows += len(staging_rows)
-
-            for sid in sub_done:
-                done_ids.add(sid)
-
-            conn.commit()
-            save_progress(done_ids)
-            log.info("  Batch %d/%d done. Products: %d/%d, rows: %d",
-                     completed, len(batches), len(done_ids), len(all_products), total_rows)
-
-    log.info("Done. Total staging rows inserted: %d", total_rows)
     conn.close()
 
 
 if __name__ == "__main__":
-    run_extraction()
+    run()
