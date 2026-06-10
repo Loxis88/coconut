@@ -142,20 +142,24 @@ jobs:
         channel: stable
         cache: true
 
-    - name: Complete Flutter Android scaffold
-      run: |
-        cd flutter
-        flutter create --platforms android --project-name coconut_flutter .
-
     - name: Install Flutter dependencies
       run: |
         cd flutter
         flutter pub get
 
+    - name: Decode Keystore
+      env:
+        ENCODED_STRING: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+      run: |
+        cd flutter/android/app
+        echo "$ENCODED_STRING" | base64 --decode > debug.keystore
+
     - name: Build Flutter Debug APK
       run: |
         cd flutter
-        flutter build apk --debug
+        flutter build apk --debug \
+          --dart-define=BACKEND_URL=http://62.233.43.33:8080 \
+          --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
 
     - name: Rename Flutter APK
       run: |
