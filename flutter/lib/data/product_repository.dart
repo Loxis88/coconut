@@ -60,6 +60,7 @@ class ProductRepository {
         mapped.add(
           Product(
             id: item.id.hashCode,
+            barcode: item.barcode,
             title: item.title,
             totalRating: item.score / 20.0,
             description: '',

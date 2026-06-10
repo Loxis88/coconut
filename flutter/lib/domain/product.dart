@@ -1,6 +1,7 @@
 class Product {
   const Product({
     required this.id,
+    this.barcode,
     required this.title,
     required this.totalRating,
     required this.description,
@@ -19,6 +20,7 @@ class Product {
   });
 
   final int id;
+  final String? barcode;
   final String title;
   final double totalRating;
   final String description;
@@ -39,6 +41,7 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
         id: (json['id'] as num?)?.toInt() ?? 0,
+        barcode: json['barcode'] as String?,
         title: json['title'] as String? ?? 'Unknown',
         totalRating: (json['totalRating'] as num?)?.toDouble() ?? 0,
         description: json['description'] as String? ?? '',
@@ -66,6 +69,7 @@ class Product {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'barcode': barcode,
         'title': title,
         'totalRating': totalRating,
         'description': description,

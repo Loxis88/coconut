@@ -135,6 +135,7 @@ class ApiClient {
 
     return Product(
       id: (dto['id'] as num?)?.toInt() ?? 0,
+      barcode: dto['barcode'] as String?,
       title: dto['name'] as String? ?? 'Unknown',
       totalRating: (dto['total_rating'] as num?)?.toDouble() ?? 0,
       description: '',

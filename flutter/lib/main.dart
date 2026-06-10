@@ -244,9 +244,17 @@ class _HomeShellState extends State<HomeShell> {
           streak: widget.streak,
           onScan: () => setState(() => _route = AppRoute.scan),
           onProfile: () => setState(() => _route = AppRoute.profile),
-          onShowProduct: (product) {
-            widget.onShowProduct(product);
-            setState(() => _route = AppRoute.detail);
+          onShowProduct: (product) async {
+            if (product.barcode != null && product.criteriaRatings.isEmpty) {
+              final realProduct = await widget.onSearchBarcode(product.barcode!);
+              if (realProduct != null && mounted) {
+                widget.onShowProduct(realProduct);
+                setState(() => _route = AppRoute.detail);
+              }
+            } else {
+              widget.onShowProduct(product);
+              setState(() => _route = AppRoute.detail);
+            }
           },
           onClearHistory: widget.onClearHistory,
           onDeleteProduct: widget.onDeleteProduct,
