@@ -21,7 +21,7 @@ backend/build/
 .idea/
 *.iml
 .vscode/
-
+GEMINI.md
 
 
 # Backend secrets
