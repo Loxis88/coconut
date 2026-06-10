@@ -10,12 +10,10 @@ class AuthScreen extends StatelessWidget {
     super.key,
     required this.loading,
     required this.error,
-    required this.onGoogleLogin,
   });
 
   final bool loading;
   final String? error;
-  final VoidCallback onGoogleLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +48,7 @@ class AuthScreen extends StatelessWidget {
                 if (loading)
                   const CenteredLoader(compact: true)
                 else ...[
-                  PillButton(label: 'Войти через Google', kind: PillKind.brand, onTap: onGoogleLogin),
-                  const SizedBox(height: 12),
-                  PillButton(label: 'Войти через Apple ID', kind: PillKind.ink, onTap: () {}),
-                  const SizedBox(height: 12),
-                  PillButton(label: 'Войти по почте', kind: PillKind.ghost, icon: Icons.email, onTap: () {}),
+                  PillButton(label: 'Войти по почте', kind: PillKind.brand, icon: Icons.email, onTap: () {}),
                 ],
                 if (error != null) ...[
                   const SizedBox(height: 12),

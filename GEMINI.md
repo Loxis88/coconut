@@ -20,7 +20,7 @@ We follow **Clean Architecture** principles across both the mobile and backend m
   - **Scanning**: CameraX + ML Kit Barcode Scanning.
   - **Networking**: Retrofit + OkHttp (configured with custom CookieJar and User-Agent to bypass Bitrix redirects from Roskachestvo).
   - **Images**: Coil.
-  - **Auth**: Google Sign-In via Android Credentials Manager.
+  - **Auth**: Email login.
   - **Persistence**: SharedPreferences (JSON storage via Gson).
 
 ### Backend
@@ -29,13 +29,12 @@ We follow **Clean Architecture** principles across both the mobile and backend m
   - **Language**: Go (1.23+).
   - **Web Framework**: Fiber (v2).
   - **Database**: PostgreSQL (pgx/v5).
-  - **Auth**: JWT for sessions, Google ID Token verification for login.
+  - **Auth**: JWT for sessions.
 
 ## Building and Running
 
 ### CI/CD
-Automated builds and testing are performed via **GitHub Actions**. All secrets, including `GOOGLE_CLIENT_ID` and other environment variables, are stored as GitHub Actions secrets and injected during the workflow.
-- **Local Builds**: Local Android builds will not support Google Authentication unless the appropriate client IDs are manually configured in a local environment.
+Automated builds and testing are performed via **GitHub Actions**. All secrets are stored as GitHub Actions secrets and injected during the workflow.
 - **Database**: For development, the PostgreSQL database is accessible at:
   - **Host**: `62.233.43.33`
   - **User**: `postgres`

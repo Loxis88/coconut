@@ -23,8 +23,6 @@ func NewAuthHandler(authService ports.AuthService, jwtSecret string) *AuthHandle
 func (h *AuthHandler) SetupRoutes(router fiber.Router) {
 	authGroup := router.Group("/auth")
 
-	// Mobile-first Google Auth route
-	authGroup.Post("/google", h.GoogleLogin)
 	authGroup.Post("/refresh", h.RefreshTokens)
 
 	// Protected routes
@@ -80,37 +78,6 @@ func (h *AuthHandler) UpdateNickname(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "nickname updated successfully"})
 }
 
-type GoogleLoginRequest struct {
-	IDToken string `json:"id_token"`
-}
-
-func (h *AuthHandler) GoogleLogin(c *fiber.Ctx) error {
-	var req GoogleLoginRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
-	}
-
-	if req.IDToken == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id_token is required"})
-	}
-
-	accessToken, refreshToken, user, err := h.authService.VerifyGoogleToken(c.UserContext(), req.IDToken)
-	if err != nil {
-		// Log the full error for debugging
-		println("Auth Error:", err.Error())
-		
-		if strings.Contains(err.Error(), "failed to validate id_token") {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid google token", "details": err.Error()})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error during auth", "details": err.Error()})
-	}
-
-	return c.JSON(fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-		"user":          user,
-	})
-}
 
 // AuthMiddleware protects routes requiring a valid JWT token
 func (h *AuthHandler) AuthMiddleware() fiber.Handler {

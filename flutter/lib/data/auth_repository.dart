@@ -1,25 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import '../core/constants.dart';
 import '../domain/auth_user.dart';
 import 'api_client.dart';
 
 class AuthRepository {
-  AuthRepository(this._api, {FlutterSecureStorage? storage, GoogleSignIn? googleSignIn})
-      : _storage = storage ?? const FlutterSecureStorage(),
-        _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              clientId: googleClientId,
-              serverClientId: googleClientId,
-              scopes: const ['email'],
-            );
+  AuthRepository(this._api, {FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage();
 
   final ApiClient _api;
   final FlutterSecureStorage _storage;
-  final GoogleSignIn _googleSignIn;
 
   Future<AuthUser?> cachedUser() async {
     final raw = await _storage.read(key: 'user');
@@ -29,18 +21,7 @@ class AuthRepository {
 
   Future<String?> accessToken() => _storage.read(key: 'access_token');
 
-  Future<AuthUser> signInWithGoogle() async {
-    final account = await _googleSignIn.signIn();
-    final auth = await account?.authentication;
-    final idToken = auth?.idToken;
-    if (idToken == null || idToken.isEmpty) {
-      throw ApiException('Google Sign-In failed or was cancelled.');
-    }
 
-    final response = await _api.loginWithGoogle(idToken);
-    await _saveAuth(response.accessToken, response.refreshToken, response.user);
-    return response.user;
-  }
 
   Future<AuthUser?> fetchCurrentUser() async {
     final token = await accessToken();
@@ -68,7 +49,6 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await _googleSignIn.signOut();
     await _storage.deleteAll();
   }
 

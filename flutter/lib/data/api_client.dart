@@ -24,10 +24,7 @@ class ApiClient {
         'Content-Type': 'application/json',
       };
 
-  Future<AuthResponse> loginWithGoogle(String idToken) async {
-    final response = await _post('/auth/google', body: {'id_token': idToken});
-    return AuthResponse.fromJson(response);
-  }
+
 
   Future<AuthUser> getMe(String token) async {
     final response = await _get('/api/me', headers: _authHeaders(token));

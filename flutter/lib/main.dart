@@ -73,22 +73,7 @@ class _CoconutAppState extends State<CoconutApp> {
     }
   }
 
-  Future<void> _login() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final user = await _authRepository.signInWithGoogle();
-      final token = await _authRepository.accessToken();
-      if (token != null) await _productRepository.syncHistory(token);
-      setState(() => _user = user);
-    } catch (error) {
-      setState(() => _error = error.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
+
 
   Future<Product?> _searchBarcode(String barcode) async {
     setState(() {
@@ -130,7 +115,7 @@ class _CoconutAppState extends State<CoconutApp> {
       home: _loading && _user == null
           ? const CenteredLoader()
           : _user == null
-              ? AuthScreen(loading: _loading, error: _error, onGoogleLogin: _login)
+              ? AuthScreen(loading: _loading, error: _error)
               : HomeShell(
                   user: _user!,
                   history: _history,
@@ -257,12 +242,10 @@ class AuthScreen extends StatelessWidget {
     super.key,
     required this.loading,
     required this.error,
-    required this.onGoogleLogin,
   });
 
   final bool loading;
   final String? error;
-  final VoidCallback onGoogleLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -296,12 +279,7 @@ class AuthScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 if (loading)
                   const CenteredLoader(compact: true)
-                else ...[
-                  PillButton(label: 'Войти через Google', kind: PillKind.brand, onTap: onGoogleLogin),
-                  const SizedBox(height: 12),
-                  PillButton(label: 'Войти через Apple ID', kind: PillKind.ink, onTap: () {}),
-                  const SizedBox(height: 12),
-                  PillButton(label: 'Войти по почте', kind: PillKind.ghost, icon: Icons.email, onTap: () {}),
+                  PillButton(label: 'Войти по почте', kind: PillKind.brand, icon: Icons.email, onTap: () {}),
                 ],
                 if (error != null) ...[
                   const SizedBox(height: 12),

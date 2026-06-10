@@ -62,7 +62,6 @@ jobs:
           sudo bash -c 'cat << EOF > /opt/coconut/backend/.env
           PORT=8080
           DATABASE_URL=${{ secrets.DATABASE_URL }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           EOF'
 
@@ -120,8 +119,7 @@ jobs:
       run: |
         cd flutter
         flutter build apk --debug \
-          --dart-define=BACKEND_URL=http://62.233.43.33:8080 \
-          --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          --dart-define=BACKEND_URL=http://62.233.43.33:8080
 
     - name: Rename Flutter APK
       run: |
