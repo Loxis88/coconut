@@ -2,7 +2,8 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "feature/**", "codex/**", "flutter" ]
+    branches: [ "main", "feature/**", "codex/**", "flutter", "new-reference" ]
+    tags: [ "*" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -137,8 +138,8 @@ jobs:
         name: coconut-flutter-debug
         path: build-artifacts/coconut-flutter-debug.apk
 
-  publish-latest-beta-release:
-    name: Publish Latest Beta Release
+  publish-release:
+    name: Publish Release
     runs-on: ubuntu-latest
     needs:
       - build-flutter-android-apk
@@ -153,25 +154,24 @@ jobs:
       with:
         path: release-artifacts
 
-    - name: Move latest-beta tag to this commit
+    - name: Move latest-beta tag to this commit (if not a tag push)
+      if: "!startsWith(github.ref, 'refs/tags/')"
       run: |
         git tag -f latest-beta "$GITHUB_SHA"
         git push origin refs/tags/latest-beta --force
 
-    - name: Update Latest Beta Release
-      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    - name: Publish Release
       uses: ncipollo/release-action@v1
       with:
         artifacts: "release-artifacts/**/*.apk"
-        name: "Latest Beta"
-        tag: "latest-beta"
+        name: "${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Beta' }}"
+        tag: "${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest-beta' }}"
         body: |
-          Latest beta APKs for Coconut.
+          Release artifacts for Coconut.
 
           - `coconut-flutter-debug.apk`: migrated Flutter Android build.
 
           Updated from `${{ github.ref_name }}` at `${{ github.sha }}`.
-        prerelease: true
         allowUpdates: true
         removeArtifacts: true
         replacesArtifacts: true
