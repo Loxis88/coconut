@@ -340,6 +340,7 @@ class _HomeShellState extends State<HomeShell> {
           },
         ),
       AppRoute.journal => JournalScreen(
+          history: widget.history,
           onShowProduct: (product) {
             widget.onShowProduct(product);
             setState(() => _route = AppRoute.detail);
