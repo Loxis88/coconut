@@ -13,24 +13,25 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// 1. Load Configuration
-	// In a real app, use a library like viper or godotenv to load these from .env or environment
+	// Load .env if present (local development only)
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		log.Printf("Warning: could not load .env file: %v", err)
+	}
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
-
-jwtSecret := os.Getenv("JWT_SECRET")
-
+	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
 
-	// 2. Initialize Database Connection
 	ctx := context.Background()
 	dbPool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -38,18 +39,15 @@ jwtSecret := os.Getenv("JWT_SECRET")
 	}
 	defer dbPool.Close()
 
-	// Verify connection
 	if err := dbPool.Ping(ctx); err != nil {
 		log.Fatalf("Database ping failed: %v\n", err)
 	}
 	log.Println("Connected to PostgreSQL successfully")
 
-	// 3. Initialize Repositories
 	userRepo := repositories.NewPostgresUserRepository(dbPool)
 	historyRepo := repositories.NewPostgresHistoryRepository(dbPool)
 	productRepo := repositories.NewPostgresProductRepository(dbPool)
 
-	// 4. Initialize Services
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPortStr := os.Getenv("SMTP_PORT")
 	smtpUser := os.Getenv("SMTP_USER")
@@ -64,32 +62,38 @@ jwtSecret := os.Getenv("JWT_SECRET")
 	emailService := services.NewSMTPEmailService(smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom)
 	authService := services.NewAuthService(userRepo, emailService, jwtSecret)
 
-	// 5. Initialize Fiber App
+	// Честный Знак fallback (requires CHESTNY_ZNAK_API_KEY and OPENAI_API_KEY)
+	cznKey := os.Getenv("CHESTNY_ZNAK_API_KEY")
+	openaiKey := os.Getenv("OPENAI_API_KEY")
+	var fallbackSvc *services.FallbackService
+	if cznKey != "" {
+		fallbackSvc = services.NewFallbackService(productRepo, cznKey, openaiKey)
+		log.Println("Честный Знак fallback enabled")
+	} else {
+		log.Println("CHESTNY_ZNAK_API_KEY not set — fallback disabled")
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName: "Coconut Backend",
 	})
 
-	// Middleware
 	app.Use(logger.New())
 	app.Use(recover.New())
 
-	// 6. Setup Routes
 	authHandler := handlers.NewAuthHandler(authService, jwtSecret)
 	authHandler.SetupRoutes(app)
 
 	historyHandler := handlers.NewHistoryHandler(historyRepo)
-	productHandler := handlers.NewProductHandler(productRepo)
-	// Apply AuthMiddleware to /api group
+	productHandler := handlers.NewProductHandler(productRepo, fallbackSvc)
+
 	api := app.Group("/api", authHandler.AuthMiddleware())
 	historyHandler.SetupRoutes(api)
 	productHandler.SetupRoutes(api)
 
-	// Health check
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
 
-	// 7. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
