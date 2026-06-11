@@ -326,7 +326,6 @@ class _HomeShellState extends State<HomeShell> {
         ),
       AppRoute.search => SearchScreen(
           history: widget.history,
-          onBack: () => setState(() => _route = AppRoute.home),
           onShowProduct: (product) async {
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               final realProduct = await widget.onSearchBarcode(product.barcode!);
@@ -341,7 +340,6 @@ class _HomeShellState extends State<HomeShell> {
           },
         ),
       AppRoute.journal => JournalScreen(
-          onBack: () => setState(() => _route = AppRoute.home),
           onShowProduct: (product) {
             widget.onShowProduct(product);
             setState(() => _route = AppRoute.detail);

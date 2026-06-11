@@ -13,14 +13,14 @@ class PillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (kind) {
-      PillKind.ink => Coco.ink,
-      PillKind.brand => null,
-      PillKind.ghost => Coco.hairline,
+      PillKind.ink => MayakTheme.fg,
+      PillKind.brand => MayakTheme.primary,
+      PillKind.ghost => MayakTheme.muted,
     };
     final content = switch (kind) {
-      PillKind.brand => Coco.brownDeep,
+      PillKind.brand => Colors.white,
       PillKind.ink => Colors.white,
-      PillKind.ghost => label.contains('Удалить') || label.contains('Выйти') ? Coco.red : Coco.ink,
+      PillKind.ghost => label.contains('Удалить') || label.contains('Выйти') ? Colors.red : MayakTheme.fg,
     };
     return InkWell(
       borderRadius: BorderRadius.circular(999),
@@ -30,7 +30,6 @@ class PillButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: color,
-          gradient: kind == PillKind.brand ? Coco.brandGradient : null,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(

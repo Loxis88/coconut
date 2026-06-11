@@ -11,8 +11,8 @@ class SwapCard extends StatelessWidget {
           ProductLetter(label: 'Ч'),
           SizedBox(height: 8),
           Text('Чистая Линия', style: TextStyle(fontWeight: FontWeight.w900)),
-          Text('Мороженое Пломбир ванильный в вафельном стаканчике', textAlign: TextAlign.center, style: TextStyle(color: Coco.muted)),
-          Text('95', style: TextStyle(color: Coco.emerald, fontSize: 32, fontWeight: FontWeight.w900)),
+          Text('Мороженое Пломбир ванильный в вафельном стаканчике', textAlign: TextAlign.center, style: TextStyle(color: MayakTheme.mutedFg)),
+          Text('95', style: TextStyle(color: MayakTheme.scoreExcellent, fontSize: 32, fontWeight: FontWeight.w900)),
         ]),
       );
 }
@@ -26,7 +26,7 @@ class ProductLetter extends StatelessWidget {
         width: 64,
         height: 64,
         decoration: BoxDecoration(color: const Color(0xffd9f99d), borderRadius: BorderRadius.circular(18)),
-        child: Center(child: Text(label, style: const TextStyle(color: Coco.emerald, fontSize: 28, fontWeight: FontWeight.w900))),
+        child: Center(child: Text(label, style: const TextStyle(color: MayakTheme.scoreExcellent, fontSize: 28, fontWeight: FontWeight.w900))),
       );
 }
 
@@ -41,9 +41,9 @@ class DeltaRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(children: [
           Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800))),
-          Text(from, style: const TextStyle(color: Coco.muted, decoration: TextDecoration.lineThrough)),
-          const Icon(Icons.arrow_forward, size: 14, color: Coco.muted),
-          Text(to, style: const TextStyle(color: Coco.emerald, fontWeight: FontWeight.w900)),
+          Text(from, style: const TextStyle(color: MayakTheme.mutedFg, decoration: TextDecoration.lineThrough)),
+          const Icon(Icons.arrow_forward, size: 14, color: MayakTheme.mutedFg),
+          Text(to, style: const TextStyle(color: MayakTheme.scoreExcellent, fontWeight: FontWeight.w900)),
         ]),
       );
 }

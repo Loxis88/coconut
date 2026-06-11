@@ -361,8 +361,8 @@ class _RecentScanItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: product.imageUrl != null 
-                ? Image.network(product.imageUrl!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+              child: product.thumbnail != null 
+                ? Image.network(product.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
                 : const Icon(Icons.fastfood, color: Colors.white),
             ),
             const SizedBox(width: 16),
@@ -371,13 +371,13 @@ class _RecentScanItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
+                    product.title,
                     style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14, color: MayakTheme.fg),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    product.brand ?? 'Неизвестно',
+                    product.manufacturer.isNotEmpty ? product.manufacturer : 'Неизвестно',
                     style: GoogleFonts.dmSans(fontSize: 12, color: MayakTheme.mutedFg),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

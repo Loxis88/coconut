@@ -11,8 +11,8 @@ class RoundIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
         onPressed: onTap,
-        icon: Icon(icon, color: dark ? Colors.white : Coco.ink),
-        style: IconButton.styleFrom(backgroundColor: dark ? Colors.white24 : Coco.hairline),
+        icon: Icon(icon, color: dark ? Colors.white : MayakTheme.fg),
+        style: IconButton.styleFrom(backgroundColor: dark ? Colors.white24 : MayakTheme.muted),
       );
 }
 
@@ -24,8 +24,8 @@ class CircleIcon extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 70,
         height: 70,
-        decoration: const BoxDecoration(shape: BoxShape.circle, gradient: Coco.brandGradient),
-        child: Icon(icon, color: Coco.brownDeep, size: 30),
+        decoration: const BoxDecoration(shape: BoxShape.circle, color: MayakTheme.primary),
+        child: Icon(icon, color: Colors.white, size: 30),
       );
 }
 
@@ -39,7 +39,7 @@ class SmallCounter extends StatelessWidget {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-        child: Row(children: [Icon(icon, color: value > 0 ? Coco.coral : Coco.muted, size: 16), Text('$value')]),
+        child: Row(children: [Icon(icon, color: value > 0 ? Colors.red : MayakTheme.mutedFg, size: 16), Text('$value')]),
       );
 }
 
@@ -62,8 +62,8 @@ class Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         width: size, height: size,
-        decoration: const BoxDecoration(gradient: Coco.brandGradient, shape: BoxShape.circle),
-        child: Center(child: Text(initials, style: TextStyle(color: Coco.brownDeep, fontSize: size * .38, fontWeight: FontWeight.w800))),
+        decoration: const BoxDecoration(color: MayakTheme.primary, shape: BoxShape.circle),
+        child: Center(child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * .38, fontWeight: FontWeight.w800))),
       );
 }
 
