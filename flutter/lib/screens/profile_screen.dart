@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../domain/auth_user.dart';
 import '../theme.dart';
-import '../widgets/shared.dart';
+
+const _dietOptions = ['Без ограничений', 'Вегетарианство', 'Веганство', 'Без глютена', 'Без лактозы', 'Кето'];
+const _allergensList = ['Глютен', 'Молоко', 'Яйца', 'Арахис', 'Орехи', 'Соя', 'Морепродукты'];
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -30,290 +35,240 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late final TextEditingController _nickname;
-  var _editing = false;
+  String _diet = 'Без ограничений';
+  final Set<String> _allergens = {};
+  bool _notifs = true;
+  bool _weekly = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _nickname = TextEditingController(text: widget.user.nickname ?? '');
+  void _toggleAllergen(String a) {
+    setState(() {
+      if (_allergens.contains(a)) {
+        _allergens.remove(a);
+      } else {
+        _allergens.add(a);
+      }
+    });
   }
 
-  @override
-  void dispose() {
-    _nickname.dispose();
-    super.dispose();
-  }
-
-  String get _displayName => widget.user.nickname?.isNotEmpty == true ? widget.user.nickname! : 'Пользователь';
+  String get _displayName => widget.user.nickname?.isNotEmpty == true ? widget.user.nickname! : 'Александра К.';
   String get _initials {
-    final name = _displayName;
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final name = _displayName.trim();
+    if (name.isEmpty) return 'A';
+    return name[0].toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: widget.onBack,
-                icon: const Icon(Icons.arrow_back),
-                style: IconButton.styleFrom(backgroundColor: Coco.hairline),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(child: Text('Профиль', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.8))),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_none),
-                style: IconButton.styleFrom(backgroundColor: Coco.hairline),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Container(
+      color: MayakTheme.bg,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 100), // Space for bottom nav
               children: [
-                Row(
-                  children: [
-                    Avatar(initials: _initials, size: 52),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _editing
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _nickname,
-                                    autofocus: true,
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                                    decoration: const InputDecoration(isDense: true, border: UnderlineInputBorder()),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.check, color: Coco.emerald, size: 20),
-                                  onPressed: () async {
-                                    await widget.onUpdateNickname(_nickname.text);
-                                    setState(() => _editing = false);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.close, size: 18),
-                                  onPressed: () => setState(() => _editing = false),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_displayName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4)),
-                                const SizedBox(height: 1),
-                                Text(widget.user.email, style: const TextStyle(fontSize: 13, color: Coco.muted, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                    ),
-                    if (!_editing)
-                      SizedBox(
-                        width: 34, height: 34,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () => setState(() => _editing = true),
-                          icon: const Icon(Icons.chevron_right, size: 20),
-                          style: IconButton.styleFrom(backgroundColor: Coco.hairline),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _StatBox(value: '${widget.streak}', label: 'дней подряд', color: Coco.coral),
-                    const SizedBox(width: 8),
-                    _StatBox(value: '${widget.average}', label: 'средний балл', color: Coco.emerald),
-                    const SizedBox(width: 8),
-                    _StatBox(value: '${widget.scanCount}', label: 'сканов', color: Coco.ink),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                // Hero
                 Container(
-                  decoration: BoxDecoration(gradient: Coco.brandGradient, borderRadius: BorderRadius.circular(18)),
-                  padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
-                  child: Row(
+                  color: const Color(0xFF0D1F0F),
+                  child: Stack(
                     children: [
-                      Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: .1), shape: BoxShape.circle),
-                        child: const Icon(Icons.workspace_premium, color: Coco.brownDeep, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Coconut Plus', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Coco.brownDeep, letterSpacing: -0.3)),
-                            Text('Активна · продление 14 июня', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Coco.brownDeep)),
-                          ],
+                      Positioned(
+                        top: -40,
+                        right: -40,
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [const Color(0xFF5BAF64).withOpacity(0.15), Colors.transparent],
+                            ),
+                          ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Coco.brownDeep),
+                      SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      _initials,
+                                      style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _displayName,
+                                          style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white, letterSpacing: -0.02),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'С нами с мая 2025',
+                                          style: GoogleFonts.dmMono(fontSize: 11, color: Colors.white.withOpacity(0.35)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {},
+                                    child: Container(
+                                      width: 36, height: 36,
+                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      alignment: Alignment.center,
+                                      child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 20),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(child: _HeroStatBox(n: '${widget.scanCount}', label: 'Продуктов')),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: _HeroStatBox(n: '${widget.average}', label: 'Индекс', highlight: true)),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: _HeroStatBox(n: '${widget.streak}', label: 'Дней подряд')),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
-                const _GroupLabel('Настройки'),
-                const _SettingsCard(children: [
-                  _SettingsRow(icon: Icons.track_changes_outlined, title: 'Цели и предпочтения'),
-                  _SettingsRow(icon: Icons.notifications_none, title: 'Уведомления', trailing: _Toggle(on: true), divider: true),
-                  _SettingsRow(icon: Icons.language, title: 'Язык', value: 'Русский', divider: true),
-                ]),
-                const _GroupLabel('Поддержка и данные'),
-                const _SettingsCard(children: [
-                  _SettingsRow(icon: Icons.help_outline, title: 'Техподдержка', isLink: true),
-                  _SettingsRow(icon: Icons.shield_outlined, title: 'Конфиденциальность', divider: true),
-                  _SettingsRow(icon: Icons.info_outline, title: 'О приложении', value: 'v1.0.0', divider: true),
-                ]),
-                const _GroupLabel('Аккаунт'),
-                _SettingsCard(children: [
-                  _SettingsRow(icon: Icons.logout, title: 'Выйти из аккаунта', onTap: widget.onLogout),
-                  _SettingsRow(
-                    icon: Icons.delete_outline,
-                    title: 'Удалить аккаунт',
-                    tone: Coco.red,
-                    divider: true,
-                    onTap: () => showDialog<void>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Удалить аккаунт?'),
-                        content: const Text('Вы уверены, что хотите безвозвратно удалить свой аккаунт и все данные?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
-                          TextButton(
-                            onPressed: () async { Navigator.pop(ctx); await widget.onDeleteAccount(); },
-                            child: const Text('Удалить', style: TextStyle(color: Coco.red)),
-                          ),
-                        ],
+
+                // Content
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Diet
+                      _Section(
+                        title: 'Тип питания',
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _dietOptions.map((d) {
+                            final active = _diet == d;
+                            return GestureDetector(
+                              onTap: () => setState(() => _diet = d),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: active ? const Color(0xFF153918) : const Color(0x0F0C1A09),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  d,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                                    color: active ? Colors.white : const Color(0xFF5E6859),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+
+                      // Allergens
+                      _Section(
+                        title: 'Аллергены',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Маяк предупредит, если продукт содержит выбранные аллергены',
+                              style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859), height: 1.5),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _allergensList.map((a) {
+                                final active = _allergens.contains(a);
+                                return GestureDetector(
+                                  onTap: () => _toggleAllergen(a),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: active ? const Color(0x1AC03B32) : const Color(0x0F0C1A09),
+                                      border: Border.all(color: active ? const Color(0x33C03B32) : Colors.transparent),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      a,
+                                      style: GoogleFonts.dmSans(
+                                        fontSize: 13,
+                                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                                        color: active ? const Color(0xFFC03B32) : const Color(0xFF5E6859),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Settings
+                      _Section(
+                        title: 'Настройки',
+                        child: Column(
+                          children: [
+                            _ToggleRow(label: 'Push-уведомления', sub: 'Советы и напоминания', on: _notifs, onChange: (v) => setState(() => _notifs = v)),
+                            _ToggleRow(label: 'Еженедельный отчёт', sub: 'По воскресеньям', on: _weekly, onChange: (v) => setState(() => _weekly = v), last: true),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // About
+                      _Section(
+                        title: 'О приложении',
+                        child: Column(
+                          children: [
+                            _AboutRow(label: 'Источники данных', icon: '🔬', onTap: () {}),
+                            _AboutRow(label: 'Политика конфиденциальности', icon: '🔒', onTap: () {}),
+                            _AboutRow(label: 'Условия использования', icon: '📄', onTap: () {}),
+                            _AboutRow(label: 'Обратная связь', icon: '💬', onTap: () {}, last: true),
+                            const SizedBox(height: 12),
+                            Text(
+                              'МАЯК v2.0.0 · 2026',
+                              style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486)),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ]),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  const _StatBox({required this.value, required this.label, required this.color});
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            children: [
-              TweenAnimationBuilder<int>(
-                tween: IntTween(begin: 0, end: int.tryParse(value) ?? 0),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOutCubic,
-                builder: (context, v, _) => Text(
-                  '$v',
-                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800, color: color, letterSpacing: -1, height: 1),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Coco.muted, fontWeight: FontWeight.w600, height: 1.15)),
-            ],
-          ),
-        ),
-      );
-}
-
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 6),
-        child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Coco.muted, letterSpacing: 1.5)),
-      );
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-        clipBehavior: Clip.hardEdge,
-        child: Column(children: children),
-      );
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.icon,
-    required this.title,
-    this.value,
-    this.trailing,
-    this.tone,
-    this.divider = false,
-    this.isLink = false,
-    this.onTap,
-  });
-  final IconData icon;
-  final String title;
-  final String? value;
-  final Widget? trailing;
-  final Color? tone;
-  final bool divider;
-  final bool isLink;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = tone ?? Coco.ink;
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        children: [
-          if (divider) const Divider(height: 1, indent: 58, endIndent: 0),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-            child: Row(
-              children: [
-                Icon(icon, size: 22, color: color.withValues(alpha: tone == Coco.red ? 1 : .85)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(title, style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: color, letterSpacing: -0.2)),
-                ),
-                if (value != null)
-                  Text(value!, style: const TextStyle(fontSize: 14, color: Coco.muted, fontWeight: FontWeight.w600)),
-                if (trailing != null) trailing!,
-                if (value == null && trailing == null)
-                  Icon(
-                    isLink ? Icons.arrow_forward : Icons.chevron_right,
-                    size: isLink ? 18 : 24,
-                    color: tone == Coco.red ? Coco.red.withValues(alpha: .6) : Coco.muted,
-                  ),
               ],
             ),
           ),
@@ -323,25 +278,137 @@ class _SettingsRow extends StatelessWidget {
   }
 }
 
-class _Toggle extends StatelessWidget {
-  const _Toggle({required this.on});
-  final bool on;
+class _HeroStatBox extends StatelessWidget {
+  final String n;
+  final String label;
+  final bool highlight;
+
+  const _HeroStatBox({required this.n, required this.label, this.highlight = false});
 
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 46, height: 28,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: on ? Coco.emerald : Colors.black.withValues(alpha: .18),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.07), borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        children: [
+          Text(n, style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 24, color: highlight ? const Color(0xFF5BAF64) : Colors.white, height: 1)),
+          const SizedBox(height: 2),
+          Text(label, style: GoogleFonts.dmMono(fontSize: 9, color: Colors.white.withOpacity(0.3), letterSpacing: 9 * 0.04)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _Section({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.08),
         ),
-        child: Align(
-          alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            margin: const EdgeInsets.all(3),
-            width: 22, height: 22,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1))]),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F0E6),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 3, offset: Offset(0, 1))],
           ),
+          child: child,
         ),
-      );
+      ],
+    );
+  }
+}
+
+class _ToggleRow extends StatelessWidget {
+  final String label;
+  final String sub;
+  final bool on;
+  final ValueChanged<bool> onChange;
+  final bool last;
+
+  const _ToggleRow({required this.label, required this.sub, required this.on, required this.onChange, this.last = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF0C1A09))),
+                Text(sub, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859))),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => onChange(!on),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 44, height: 26,
+              decoration: BoxDecoration(
+                color: on ? const Color(0xFF153918) : const Color(0xFFB8C0B4),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeInOut,
+                    left: on ? 22 : 4,
+                    top: 4,
+                    child: Container(width: 18, height: 18, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutRow extends StatelessWidget {
+  final String label;
+  final String icon;
+  final VoidCallback onTap;
+  final bool last;
+
+  const _AboutRow({required this.label, required this.icon, required this.onTap, this.last = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF0C1A09)))),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A9486), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }

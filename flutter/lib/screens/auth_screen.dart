@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../widgets/adaptive_screen.dart';
-import '../widgets/coconut_mark.dart';
-import '../widgets/pill_button.dart';
-import '../widgets/score_widgets.dart';
-import '../widgets/shared.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-enum AuthRoute { welcome, login, register }
+import '../theme.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
@@ -27,120 +23,283 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  var _route = AuthRoute.welcome;
   var _email = '';
   var _password = '';
-  var _isLoading = false;
+  var _isLogin = true;
 
   void _submit() async {
-    setState(() => _isLoading = true);
-    try {
-      if (_route == AuthRoute.login) {
-        await widget.onLogin(_email, _password);
-      } else {
-        await widget.onRegister(_email, _password);
-        setState(() => _route = AuthRoute.login);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Регистрация успешна! Подтвердите почту по ссылке из письма, а затем войдите.')),
-          );
-        }
+    if (_isLogin) {
+      await widget.onLogin(_email, _password);
+    } else {
+      await widget.onRegister(_email, _password);
+      if (mounted) {
+        setState(() => _isLogin = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Регистрация успешна! Подтвердите почту и войдите.')),
+        );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_route == AuthRoute.login || _route == AuthRoute.register) {
-      return AdaptiveScreen(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RoundIcon(icon: Icons.arrow_back, onTap: () => setState(() => _route = AuthRoute.welcome)),
-              const SizedBox(height: 24),
-              Text(
-                _route == AuthRoute.login ? 'С возвращением.' : 'Добро пожаловать.',
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (v) => _email = v,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
-                obscureText: true,
-                onChanged: (v) => _password = v,
-              ),
-              const SizedBox(height: 32),
-              if (_isLoading || widget.loading)
-                const CenteredLoader(compact: true)
-              else
-                PillButton(
-                  label: _route == AuthRoute.login ? 'Войти' : 'Зарегистрироваться',
-                  kind: PillKind.brand,
-                  onTap: _submit,
-                ),
-              if (widget.error != null) ...[
-                const SizedBox(height: 12),
-                Text(widget.error!, textAlign: TextAlign.center, style: const TextStyle(color: Coco.red)),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
-
-    return AdaptiveScreen(
-      child: Column(
+    return Scaffold(
+      backgroundColor: MayakTheme.bg,
+      body: Column(
         children: [
-          Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(size: Size.infinite, painter: GlowPainter()),
-                const CoconutMark(size: 180),
-                const Positioned(left: 28, top: 70, child: ScoreChip(score: 92, big: true)),
-                const Positioned(right: 36, top: 120, child: ScoreChip(score: 48, big: true)),
-                const Positioned(left: 36, bottom: 140, child: ScoreChip(score: 71, big: true)),
-                const Positioned(right: 40, bottom: 90, child: ScoreChip(score: 88, big: true)),
-              ],
+          // Dark Header
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: MayakTheme.darkHeader,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Stack(
+                children: [
+                  // Ambient glow
+                  Positioned(
+                    top: -48,
+                    right: -48,
+                    child: Container(
+                      width: 192,
+                      height: 192,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [Color(0x1F5BAF64), Colors.transparent], // 0.12 opacity approx
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 28, right: 28, top: 24, bottom: 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Logo row
+                        Row(
+                          children: [
+                            CustomPaint(
+                              size: const Size(28, 36),
+                              painter: MiniLighthousePainter(),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'МАЯК',
+                              style: GoogleFonts.fraunces(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 22,
+                                color: Colors.white,
+                                letterSpacing: 22 * 0.15,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 60),
+                        // Hero text
+                        Text(
+                          'Навигатор\nпитания',
+                          style: GoogleFonts.fraunces(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 36,
+                            color: Colors.white,
+                            height: 1.1,
+                            letterSpacing: 36 * -0.02,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Ваши данные хранятся на устройстве\nи не передаются третьим лицам',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.35),
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Coconut.', style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900, height: .96)),
-                const SizedBox(height: 10),
-                const Text(
-                  'Раскуси каждый кусочек. Получи честную оценку любого продукта в один скан.',
-                  style: TextStyle(color: Coco.ink2, fontSize: 19, height: 1.3),
-                ),
-                const SizedBox(height: 24),
-                if (widget.loading)
-                  const CenteredLoader(compact: true)
-                else ...[
-                  PillButton(label: 'Войти', kind: PillKind.brand, onTap: () => setState(() => _route = AuthRoute.login)),
+          
+          // Form Area
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _isLogin ? 'Email и пароль' : 'Регистрация',
+                    style: GoogleFonts.dmSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: MayakTheme.fg,
+                      letterSpacing: 18 * -0.02,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _Field(
+                    label: 'Email',
+                    hint: 'you@example.com',
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (v) => _email = v,
+                  ),
                   const SizedBox(height: 12),
-                  PillButton(label: 'Зарегистрироваться', kind: PillKind.ghost, onTap: () => setState(() => _route = AuthRoute.register)),
+                  _Field(
+                    label: 'Пароль',
+                    hint: '••••••••',
+                    obscureText: true,
+                    onChanged: (v) => _password = v,
+                  ),
+                  const SizedBox(height: 24),
+                  if (widget.error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        widget.error!,
+                        style: GoogleFonts.dmSans(color: MayakTheme.scorePoor, fontSize: 13),
+                      ),
+                    ),
+                  widget.loading
+                      ? const Center(child: CircularProgressIndicator(color: MayakTheme.primary))
+                      : GestureDetector(
+                          onTap: _submit,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: MayakTheme.primary,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              _isLogin ? 'Войти' : 'Создать аккаунт',
+                              style: GoogleFonts.dmSans(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _isLogin = !_isLogin),
+                      child: Text(
+                        _isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          color: MayakTheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-                if (widget.error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(widget.error!, textAlign: TextAlign.center, style: const TextStyle(color: Coco.red)),
-                ],
-              ],
+              ).animate().fade().slideX(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _Field extends StatelessWidget {
+  final String label;
+  final String hint;
+  final bool obscureText;
+  final TextInputType keyboardType;
+  final ValueChanged<String> onChanged;
+
+  const _Field({
+    required this.label,
+    required this.hint,
+    required this.onChanged,
+    this.obscureText = false,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            color: MayakTheme.mutedFg,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          onChanged: onChanged,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: GoogleFonts.dmSans(fontSize: 15, color: MayakTheme.fg),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.dmSans(color: MayakTheme.muted),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0x1A0C1A09), width: 1.5), // 0.1 opacity
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0x1A0C1A09), width: 1.5),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: MayakTheme.primary, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class MiniLighthousePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    
+    paint.color = Colors.white.withOpacity(0.85);
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(10, 14, 8, 20), const Radius.circular(1)), paint);
+    
+    paint.color = Colors.white.withOpacity(0.25);
+    canvas.drawRect(const Rect.fromLTWH(10, 21, 8, 4), paint);
+    
+    paint.color = Colors.white;
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(6, 8, 16, 8), const Radius.circular(2)), paint);
+    
+    paint.color = const Color(0xFFFFD566);
+    canvas.drawCircle(const Offset(14, 12), 3, paint);
+    
+    paint.color = Colors.white.withOpacity(0.85);
+    final path = Path()
+      ..moveTo(8, 8)
+      ..quadraticBezierTo(14, 3, 20, 8);
+    canvas.drawPath(path, paint);
+    
+    paint.color = Colors.white.withOpacity(0.5);
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(8, 33, 12, 3), const Radius.circular(1)), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

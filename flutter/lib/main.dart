@@ -11,6 +11,8 @@ import 'data/auth_repository.dart';
 import 'data/product_repository.dart';
 import 'domain/auth_user.dart';
 import 'domain/product.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/journal_screen.dart';
@@ -21,6 +23,7 @@ import 'screens/search_screen.dart';
 import 'screens/swap_screen.dart';
 import 'theme.dart';
 import 'widgets/adaptive_screen.dart';
+import 'widgets/bottom_nav.dart';
 import 'widgets/shared.dart';
 
 void main() {
@@ -43,7 +46,8 @@ class _CoconutAppState extends State<CoconutApp> {
   Product? _currentProduct;
   List<Product> _history = const [];
   String? _error;
-  bool _loading = true;
+  bool _loading = false;
+  AppPhase _phase = AppPhase.splash;
   StreamSubscription<List<Product>>? _historySub;
 
   late final AppLinks _appLinks;
@@ -90,10 +94,11 @@ class _CoconutAppState extends State<CoconutApp> {
       if (mounted) setState(() => _history = items);
     });
     final cached = await _authRepository.cachedUser();
-    setState(() {
-      _user = cached;
-      _loading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _user = cached;
+      });
+    }
     try {
       final fresh = await _authRepository.fetchCurrentUser();
       final token = await _authRepository.accessToken();
@@ -135,73 +140,96 @@ class _CoconutAppState extends State<CoconutApp> {
     });
   }
 
+  void _onSplashComplete() {
+    if (_user != null) {
+      setState(() => _phase = AppPhase.app);
+    } else {
+      setState(() => _phase = AppPhase.onboarding);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Coconut',
+      title: 'МАЯК',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Coco.emerald),
-        scaffoldBackgroundColor: Coco.cream,
-        fontFamily: 'Roboto',
+        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, background: MayakTheme.bg),
+        scaffoldBackgroundColor: MayakTheme.bg,
+        fontFamily: 'DM Sans', // Set in pubspec / google_fonts ideally, or here
         useMaterial3: true,
       ),
-      home: _loading && _user == null
-          ? const CenteredLoader()
-          : _user == null
-              ? AuthScreen(
-                  loading: _loading,
-                  error: _error,
-                  onLogin: (email, password) async {
-                    setState(() => _error = null);
-                    try {
-                      final user = await _authRepository.login(email, password);
-                      final token = await _authRepository.accessToken();
-                      if (token != null) await _productRepository.syncHistory(token);
-                      setState(() => _user = user);
-                    } catch (e) {
-                      setState(() => _error = e.toString());
-                      rethrow;
-                    }
-                  },
-                  onRegister: (email, password) async {
-                    setState(() => _error = null);
-                    try {
-                      await _authRepository.register(email, password);
-                    } catch (e) {
-                      setState(() => _error = e.toString());
-                      rethrow;
-                    }
-                  },
-                )
-              : HomeShell(
-                  user: _user!,
-                  history: _history,
-                  average: _productRepository.dailyAverage(),
-                  streak: _productRepository.streak(),
-                  loading: _loading,
-                  error: _error,
-                  currentProduct: _currentProduct,
-                  onSearchBarcode: _searchBarcode,
-                  onShowProduct: (product) => setState(() => _currentProduct = product),
-                  onClearHistory: () async {
-                    final token = await _authRepository.accessToken();
-                    await _productRepository.clearHistory(token);
-                  },
-                  onDeleteProduct: _productRepository.deleteFromHistory,
-                  onLogout: _logout,
-                  onUpdateNickname: (nickname) async {
-                    final updated = await _authRepository.updateNickname(nickname);
-                    setState(() => _user = updated);
-                  },
-                  onDeleteAccount: () async {
-                    await _authRepository.deleteAccount();
-                    setState(() => _user = null);
-                  },
-                ),
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child: switch (_phase) {
+          AppPhase.splash => SplashScreen(key: const ValueKey('splash'), onComplete: _onSplashComplete),
+          AppPhase.onboarding => OnboardingScreen(key: const ValueKey('onboarding'), onComplete: () => setState(() => _phase = AppPhase.auth)),
+          AppPhase.auth => AuthScreen(
+              key: const ValueKey('auth'),
+              loading: _loading,
+              error: _error,
+              onLogin: (email, password) async {
+                setState(() { _error = null; _loading = true; });
+                try {
+                  final user = await _authRepository.login(email, password);
+                  final token = await _authRepository.accessToken();
+                  if (token != null) await _productRepository.syncHistory(token);
+                  setState(() { _user = user; _phase = AppPhase.app; });
+                } catch (e) {
+                  setState(() => _error = e.toString());
+                  rethrow;
+                } finally {
+                  setState(() => _loading = false);
+                }
+              },
+              onRegister: (email, password) async {
+                setState(() { _error = null; _loading = true; });
+                try {
+                  await _authRepository.register(email, password);
+                } catch (e) {
+                  setState(() => _error = e.toString());
+                  rethrow;
+                } finally {
+                  setState(() => _loading = false);
+                }
+              },
+            ),
+          AppPhase.app => HomeShell(
+              key: const ValueKey('app'),
+              user: _user!,
+              history: _history,
+              average: _productRepository.dailyAverage(),
+              streak: _productRepository.streak(),
+              loading: _loading,
+              error: _error,
+              currentProduct: _currentProduct,
+              onSearchBarcode: _searchBarcode,
+              onShowProduct: (product) => setState(() => _currentProduct = product),
+              onClearHistory: () async {
+                final token = await _authRepository.accessToken();
+                await _productRepository.clearHistory(token);
+              },
+              onDeleteProduct: _productRepository.deleteFromHistory,
+              onLogout: () async {
+                await _logout();
+                setState(() => _phase = AppPhase.auth);
+              },
+              onUpdateNickname: (nickname) async {
+                final updated = await _authRepository.updateNickname(nickname);
+                setState(() => _user = updated);
+              },
+              onDeleteAccount: () async {
+                await _authRepository.deleteAccount();
+                setState(() => _phase = AppPhase.auth);
+              },
+            ),
+        },
+      ),
     );
   }
 }
+
+enum AppPhase { splash, onboarding, auth, app }
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -252,10 +280,7 @@ class _HomeShellState extends State<HomeShell> {
           history: widget.history,
           average: widget.average,
           streak: widget.streak,
-          onScan: () => setState(() => _route = AppRoute.scan),
-          onProfile: () => setState(() => _route = AppRoute.profile),
-          onSearch: () => setState(() => _route = AppRoute.search),
-          onJournal: () => setState(() => _route = AppRoute.journal),
+          onNavigateToHistory: () => setState(() => _route = AppRoute.journal),
           onShowProduct: (product) async {
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               final realProduct = await widget.onSearchBarcode(product.barcode!);
@@ -268,8 +293,6 @@ class _HomeShellState extends State<HomeShell> {
               setState(() => _route = AppRoute.detail);
             }
           },
-          onClearHistory: widget.onClearHistory,
-          onDeleteProduct: widget.onDeleteProduct,
         ),
       AppRoute.scan => ScanScreen(
           loading: widget.loading,
@@ -325,7 +348,16 @@ class _HomeShellState extends State<HomeShell> {
           },
         ),
     };
-    return AdaptiveScreen(child: body);
+
+    final showNav = _route == AppRoute.home || _route == AppRoute.search || _route == AppRoute.journal || _route == AppRoute.profile;
+
+    return AdaptiveScreen(
+      child: body,
+      bottomNav: showNav ? BottomNav(
+        currentRoute: _route,
+        onRouteChanged: (r) => setState(() => _route = r),
+      ) : null,
+    );
   }
 }
 
