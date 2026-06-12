@@ -104,10 +104,10 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "data/*.py,data/dds/*.py,data/staging/*.py,data/requirements.txt"
+        source: "data/*.py,data/dds/*.py,data/staging/*.py,data/requirements.txt,data/deploy/*.service"
         target: "/tmp/coconut_data_deploy"
 
-    - name: Install and restart services
+    - name: Install dependencies and restart services
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -130,9 +130,14 @@ jobs:
           # Установить/обновить зависимости
           sudo /opt/coconut/data/.venv/bin/pip install -q -r /opt/coconut/data/requirements.txt
 
-          # Перезапустить 24/7 сервисы если они уже существуют
-          sudo systemctl restart kuper-parser || true
-          sudo systemctl restart kuper-enricher || true
+          # Установить systemd unit-файлы
+          sudo cp /tmp/coconut_data_deploy/data/deploy/*.service /etc/systemd/system/
+          sudo systemctl daemon-reload
+          sudo systemctl enable kuper-parser kuper-enricher
+
+          # Перезапустить сервисы
+          sudo systemctl restart kuper-parser
+          sudo systemctl restart kuper-enricher
 
           rm -rf /tmp/coconut_data_deploy
 
