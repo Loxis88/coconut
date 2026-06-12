@@ -91,6 +91,8 @@ func main() {
 	historyHandler.SetupRoutes(api)
 	productHandler.SetupRoutes(api)
 
+	app.Get("/proxy/image", handlers.ProxyImage)
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
