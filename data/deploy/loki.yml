@@ -36,6 +36,7 @@ storage_config:
 compactor:
   working_directory: /var/lib/loki/compactor
   retention_enabled: true
+  delete_request_store: filesystem
 
 limits_config:
   reject_old_samples: true
