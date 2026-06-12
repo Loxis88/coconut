@@ -28,14 +28,32 @@ class _ScanScreenState extends State<ScanScreen> {
     formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
     detectionTimeoutMs: 500,
     detectionSpeed: DetectionSpeed.noDuplicates,
-    useNewCameraSelector: true,
+    useNewCameraSelector: false,
     returnImage: false,
   );
-  
+
   var _manual = false;
   var _barcode = '';
   var _lastBarcode = '';
   var _flash = false;
+
+  @override
+  void didUpdateWidget(ScanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.error != null && widget.error != oldWidget.error) {
+      _lastBarcode = '';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.error!),
+            backgroundColor: MayakTheme.scorePoor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -51,20 +69,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Show error via snackbar if needed
-    if (widget.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.error!),
-            backgroundColor: MayakTheme.scorePoor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      });
-      // Clear last barcode to allow scanning again
-      _lastBarcode = '';
-    }
 
     final isScanningState = widget.loading; // When loading, we show scanning animation
 
@@ -75,16 +79,16 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           // Camera or dark background
           if (!_manual)
-            MobileScanner(
-              controller: _controller,
-              onDetect: (capture) {
-                if (capture.barcodes.isEmpty) return;
-                final barcode = capture.barcodes.first.rawValue;
-                if (barcode != null && barcode != _lastBarcode) {
-                  _lastBarcode = barcode;
-                  widget.onFound(barcode);
-                }
-              },
+            RepaintBoundary(
+              child: _CameraPreview(
+                controller: _controller,
+                onDetect: (barcode) {
+                  if (barcode != _lastBarcode) {
+                    _lastBarcode = barcode;
+                    widget.onFound(barcode);
+                  }
+                },
+              ),
             )
           else
             Container(color: const Color(0xFF080F09)),
@@ -432,6 +436,25 @@ class _TabButton extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _CameraPreview extends StatelessWidget {
+  const _CameraPreview({required this.controller, required this.onDetect});
+
+  final MobileScannerController controller;
+  final void Function(String barcode) onDetect;
+
+  @override
+  Widget build(BuildContext context) {
+    return MobileScanner(
+      controller: controller,
+      onDetect: (capture) {
+        if (capture.barcodes.isEmpty) return;
+        final barcode = capture.barcodes.first.rawValue;
+        if (barcode != null) onDetect(barcode);
+      },
     );
   }
 }
