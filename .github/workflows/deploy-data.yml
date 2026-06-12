@@ -44,8 +44,11 @@ jobs:
           sudo /opt/coconut/data/.venv/bin/pip install -q -r /opt/coconut/data/requirements.txt
 
           sudo cp /tmp/coconut_data_deploy/data/deploy/*.service /etc/systemd/system/
+          sudo mkdir -p /etc/loki /etc/promtail /var/lib/loki /var/lib/promtail
+          sudo cp /tmp/coconut_data_deploy/data/deploy/loki.yml /etc/loki/config.yml
+          sudo cp /tmp/coconut_data_deploy/data/deploy/promtail.yml /etc/promtail/config.yml
           sudo systemctl daemon-reload
-          sudo systemctl enable kuper-parser kuper-enricher
-          sudo systemctl restart kuper-parser kuper-enricher
+          sudo systemctl enable kuper-parser kuper-enricher loki promtail
+          sudo systemctl restart kuper-parser kuper-enricher loki promtail
 
           rm -rf /tmp/coconut_data_deploy
