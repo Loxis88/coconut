@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../core/constants.dart';
 import '../domain/auth_user.dart';
 import 'api_client.dart';
 
@@ -38,30 +37,66 @@ class AuthRepository {
   Future<AuthUser?> fetchCurrentUser() async {
     final token = await accessToken();
     if (token == null) return null;
-    final user = await _api.getMe(token);
-    await _saveUser(user);
-    return user;
+    try {
+      return await withRefresh((t) async {
+        final user = await _api.getMe(t);
+        await _saveUser(user);
+        return user;
+      });
+    } on ApiException {
+      return null;
+    }
   }
 
   Future<AuthUser> updateNickname(String nickname) async {
-    final token = await accessToken();
-    if (token == null) throw ApiException('Not logged in');
-    await _api.updateNickname(token, nickname);
-    final current = await cachedUser();
-    final updated = (current ?? const AuthUser(id: '', email: '')).copyWith(nickname: nickname);
-    await _saveUser(updated);
-    return updated;
+    return withRefresh((t) async {
+      await _api.updateNickname(t, nickname);
+      final current = await cachedUser();
+      final updated = (current ?? const AuthUser(id: '', email: '')).copyWith(nickname: nickname);
+      await _saveUser(updated);
+      return updated;
+    });
   }
 
   Future<void> deleteAccount() async {
-    final token = await accessToken();
-    if (token == null) throw ApiException('Not logged in');
-    await _api.deleteAccount(token);
-    await logout();
+    await withRefresh((t) async {
+      await _api.deleteAccount(t);
+      await logout();
+    });
   }
 
   Future<void> logout() async {
     await _storage.deleteAll();
+  }
+
+  Future<T> withRefresh<T>(Future<T> Function(String token) call) async {
+    final token = await accessToken();
+    if (token == null) throw ApiException('Not logged in');
+    try {
+      return await call(token);
+    } on ApiException catch (e) {
+      if (!e.isUnauthorized) rethrow;
+      final refreshed = await _tryRefresh();
+      if (!refreshed) {
+        await logout();
+        throw ApiException('Session expired, please log in again', statusCode: 401);
+      }
+      final newToken = await accessToken();
+      return await call(newToken!);
+    }
+  }
+
+  Future<bool> _tryRefresh() async {
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken == null) return false;
+    try {
+      final response = await _api.refresh(refreshToken);
+      await _storage.write(key: 'access_token', value: response.accessToken);
+      await _storage.write(key: 'refresh_token', value: response.refreshToken);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _saveAuth(String accessToken, String refreshToken, AuthUser user) async {

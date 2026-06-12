@@ -65,7 +65,7 @@ func main() {
 	// Честный Знак fallback (requires CHESTNY_ZNAK_API_KEY and OPENAI_API_KEY)
 	cznKey := os.Getenv("CHESTNY_ZNAK_API_KEY")
 	openaiKey := os.Getenv("OPENAI_API_KEY")
-	var fallbackSvc *services.FallbackService
+	var fallbackSvc ports.FallbackService
 	if cznKey != "" {
 		fallbackSvc = services.NewFallbackService(productRepo, cznKey, openaiKey)
 		log.Println("Честный Знак fallback enabled")

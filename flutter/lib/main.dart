@@ -58,7 +58,7 @@ class _CoconutAppState extends State<CoconutApp> {
     super.initState();
     _api = ApiClient();
     _authRepository = AuthRepository(_api);
-    _productRepository = ProductRepository(_api);
+    _productRepository = ProductRepository(_api, _authRepository);
     _bootstrap();
     _initAppLinks();
   }
@@ -101,9 +101,8 @@ class _CoconutAppState extends State<CoconutApp> {
     }
     try {
       final fresh = await _authRepository.fetchCurrentUser();
-      final token = await _authRepository.accessToken();
-      if (fresh != null && token != null) {
-        await _productRepository.syncHistory(token);
+      if (fresh != null) {
+        await _productRepository.syncHistory();
         setState(() => _user = fresh);
       }
     } catch (_) {
@@ -120,8 +119,7 @@ class _CoconutAppState extends State<CoconutApp> {
       _error = null;
     });
     try {
-      final token = await _authRepository.accessToken();
-      final product = await _productRepository.searchByBarcode(barcode, token);
+      final product = await _productRepository.searchByBarcode(barcode);
       setState(() => _currentProduct = product);
       return product;
     } catch (error) {
@@ -172,8 +170,7 @@ class _CoconutAppState extends State<CoconutApp> {
                 setState(() { _error = null; _loading = true; });
                 try {
                   final user = await _authRepository.login(email, password);
-                  final token = await _authRepository.accessToken();
-                  if (token != null) await _productRepository.syncHistory(token);
+                  await _productRepository.syncHistory();
                   setState(() { _user = user; _phase = AppPhase.app; });
                 } catch (e) {
                   setState(() => _error = e.toString());
@@ -205,10 +202,7 @@ class _CoconutAppState extends State<CoconutApp> {
               currentProduct: _currentProduct,
               onSearchBarcode: _searchBarcode,
               onShowProduct: (product) => setState(() => _currentProduct = product),
-              onClearHistory: () async {
-                final token = await _authRepository.accessToken();
-                await _productRepository.clearHistory(token);
-              },
+              onClearHistory: () => _productRepository.clearHistory(),
               onDeleteProduct: _productRepository.deleteFromHistory,
               onLogout: () async {
                 await _logout();

@@ -37,6 +37,11 @@ class ApiClient {
     await _post('/auth/resend-verification', body: {'email': email});
   }
 
+  Future<RefreshResponse> refresh(String refreshToken) async {
+    final response = await _post('/auth/refresh', body: {'refresh_token': refreshToken});
+    return RefreshResponse.fromJson(response as Map<String, dynamic>);
+  }
+
   Future<AuthUser> getMe(String token) async {
     final response = await _get('/api/me', headers: _authHeaders(token));
     return AuthUser.fromJson(response);
@@ -119,7 +124,7 @@ class ApiClient {
 
   dynamic _decode(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException('HTTP ${response.statusCode}: ${response.body}');
+      throw ApiException('HTTP ${response.statusCode}: ${response.body}', statusCode: response.statusCode);
     }
     if (response.body.isEmpty) return null;
     return jsonDecode(utf8.decode(response.bodyBytes));
@@ -164,11 +169,25 @@ class ApiClient {
 }
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, {this.statusCode});
   final String message;
+  final int? statusCode;
+
+  bool get isUnauthorized => statusCode == 401;
 
   @override
   String toString() => message;
+}
+
+class RefreshResponse {
+  const RefreshResponse({required this.accessToken, required this.refreshToken});
+  final String accessToken;
+  final String refreshToken;
+
+  factory RefreshResponse.fromJson(Map<String, dynamic> json) => RefreshResponse(
+        accessToken: json['access_token'] as String? ?? '',
+        refreshToken: json['refresh_token'] as String? ?? '',
+      );
 }
 
 class AuthResponse {

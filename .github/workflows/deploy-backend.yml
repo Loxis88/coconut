@@ -64,6 +64,8 @@ jobs:
           SMTP_USER=${{ secrets.SMTP_USER }}
           SMTP_PASS=${{ secrets.SMTP_PASS }}
           SMTP_FROM=${{ secrets.SMTP_FROM }}
+          CHESTNY_ZNAK_API_KEY=${{ secrets.CHESTNY_ZNAK_API_KEY }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           EOF'
           sudo rm -f /opt/coconut/backend/api
           sudo mv /tmp/coconut_deploy/backend/api /opt/coconut/backend/api
