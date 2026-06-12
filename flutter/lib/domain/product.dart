@@ -37,7 +37,7 @@ class Product {
   final bool hasQualityMark;
   final bool hasBadQualityMark;
 
-  int get score => (totalRating * 20).round().clamp(0, 100).toInt();
+  int get score => totalRating.toInt();
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
         id: (json['id'] as num?)?.toInt() ?? 0,

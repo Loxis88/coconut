@@ -265,6 +265,38 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   var _route = AppRoute.home;
+  var _sheetOpen = false;
+  Product? _peekProduct;
+  DraggableScrollableController? _peekCtrl;
+
+  @override
+  void dispose() {
+    _peekCtrl?.dispose();
+    super.dispose();
+  }
+
+  void _showProductSheet(Product product) {
+    if (_sheetOpen) return;
+
+    _peekCtrl?.dispose();
+    final ctrl = DraggableScrollableController();
+
+    ctrl.addListener(() {
+      if (!ctrl.isAttached || !_sheetOpen) return;
+      if (ctrl.size > 0.85) {
+        _peekCtrl = null;
+        setState(() { _peekProduct = null; _sheetOpen = false; _route = AppRoute.detail; });
+        WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
+      } else if (ctrl.size < 0.01) {
+        _peekCtrl = null;
+        setState(() { _peekProduct = null; _sheetOpen = false; });
+        WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
+      }
+    });
+
+    _peekCtrl = ctrl;
+    setState(() { _peekProduct = product; _sheetOpen = true; });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -290,11 +322,12 @@ class _HomeShellState extends State<HomeShell> {
         ),
       AppRoute.scan => ScanScreen(
           loading: widget.loading,
+          scanLocked: _sheetOpen,
           error: widget.error,
           onBack: () => setState(() => _route = AppRoute.home),
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
-            if (product != null && mounted) setState(() => _route = AppRoute.detail);
+            if (product != null && mounted) _showProductSheet(product);
           },
         ),
       AppRoute.detail => widget.currentProduct == null
@@ -345,7 +378,24 @@ class _HomeShellState extends State<HomeShell> {
     final showNav = _route == AppRoute.home || _route == AppRoute.search || _route == AppRoute.journal || _route == AppRoute.profile;
 
     return AdaptiveScreen(
-      child: body,
+      child: Stack(
+        children: [
+          body,
+          if (_peekProduct != null)
+            DraggableScrollableSheet(
+              controller: _peekCtrl!,
+              initialChildSize: 0.45,
+              minChildSize: 0.0,
+              maxChildSize: 1.0,
+              snap: true,
+              snapSizes: const [0.45],
+              builder: (_, scrollController) => ProductSheet(
+                product: _peekProduct!,
+                scrollController: scrollController,
+              ),
+            ),
+        ],
+      ),
       bottomNav: showNav ? BottomNav(
         currentRoute: _route,
         onRouteChanged: (r) => setState(() => _route = r),

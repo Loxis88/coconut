@@ -369,7 +369,7 @@ class _AlternativesTab extends StatelessWidget {
           ),
         ),
         ...product.recommendations.map((alt) {
-          final altScore = (alt.totalRating * 20).round().clamp(0, 100).toInt();
+          final altScore = alt.totalRating.toInt();
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
@@ -569,12 +569,13 @@ class _ArcPainter extends CustomPainter {
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
-  _TabBarDelegate(this.tabBar);
+  final Color color;
+  _TabBarDelegate(this.tabBar, {this.color = MayakTheme.bg});
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: MayakTheme.bg,
+      color: color,
       child: tabBar,
     );
   }
@@ -585,4 +586,153 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => tabBar.preferredSize.height;
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+}
+
+// ── Scan result bottom sheet (used from main.dart via DraggableScrollableSheet) ─
+
+class ProductSheet extends StatefulWidget {
+  const ProductSheet({super.key, required this.product, required this.scrollController});
+
+  final Product product;
+  final ScrollController scrollController;
+
+  @override
+  State<ProductSheet> createState() => _ProductSheetState();
+}
+
+class _ProductSheetState extends State<ProductSheet> with SingleTickerProviderStateMixin {
+  late final TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  Color _scoreColor(int s) {
+    if (s >= 70) return MayakTheme.scoreExcellent;
+    if (s >= 40) return MayakTheme.scoreModerate;
+    return MayakTheme.scorePoor;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.product;
+    final score = p.score;
+    final accent = _scoreColor(score);
+    return Container(
+      decoration: const BoxDecoration(
+        color: MayakTheme.card,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Color(0x40000000), blurRadius: 32, offset: Offset(0, -8))],
+      ),
+      child: CustomScrollView(
+          controller: widget.scrollController,
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 20),
+                    child: Center(
+                      child: Container(
+                        width: 36, height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0x290C1A09),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Product header card
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MayakTheme.card,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 2))],
+                        border: Border(left: BorderSide(color: accent, width: 4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 80, height: 80,
+                            decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(16)),
+                            clipBehavior: Clip.antiAlias,
+                            child: p.thumbnail != null
+                                ? Image.network(p.thumbnail!, fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.fastfood, color: Colors.white))
+                                : const Icon(Icons.fastfood, color: Colors.white),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${p.manufacturer} · ${p.categoryName}'.toUpperCase(),
+                                  style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.07),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  p.title,
+                                  style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 17, color: const Color(0xFF0C1A09), height: 1.25, letterSpacing: 17 * -0.02),
+                                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _ScoreArc(score: score),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
+                  controller: _tabs,
+                  indicator: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Color(0xFF153918), width: 2.5)),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelColor: const Color(0xFF0C1A09),
+                  unselectedLabelColor: const Color(0xFF8A9486),
+                  labelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
+                  unselectedLabelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w400, fontSize: 14),
+                  dividerColor: const Color(0x140C1A09),
+                  tabs: const [Tab(text: 'Обзор'), Tab(text: 'Альтернативы')],
+                ),
+                color: MayakTheme.card,
+              ),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: true,
+              child: TabBarView(
+                controller: _tabs,
+                children: [
+                  _OverviewTab(product: p, composition: p.composition ?? 'Состав не указан'),
+                  _AlternativesTab(product: p),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+  }
 }
