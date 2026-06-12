@@ -519,7 +519,7 @@ payload = {
 }
 
 response = session.get(
-    "https://kuper.ru/api/v3/stores/960/categories",
+    "https://kuper.ru/api/v3/stores/241478/departments/katalog-fs2/gotovaya-eda?offers_limit=10&page=1&per_page=3",
     headers=headers,
 )
 

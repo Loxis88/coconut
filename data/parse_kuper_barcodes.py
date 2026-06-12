@@ -19,6 +19,11 @@ log = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+EFFICIENCY_WINDOW = 100
+EFFICIENCY_THRESHOLD = 0.5
+INTER_STORE_SLEEP = 5.0   # пауза между магазинами
+SWEEP_MIN_SLEEP = 300.0   # минимальная пауза между полными обходами (сек)
+
 
 class SessionExpiredError(Exception):
     pass
@@ -43,7 +48,6 @@ class KuperParser:
 
         self.cookies = self._cookies_to_dict(raw_cookies)
         self.csrf_token = self.config["csrf_token"]
-        self.store_id = self.config["store_id"]
 
         self.session = curl_requests.Session(impersonate="chrome124")
         self.session.cookies.update(self.cookies)
@@ -58,7 +62,7 @@ class KuperParser:
                 result[cookie["name"]] = cookie["value"]
         return result
 
-    def get_recommendations(self, sku: str) -> dict:
+    def get_recommendations(self, sku: str, store_id: int) -> dict:
         headers = {
             "accept": "application/json, text/plain, */*",
             "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8",
@@ -78,7 +82,7 @@ class KuperParser:
                 "site": {
                     "domain": "",
                     "ext": {
-                        "store_id": self.store_id,
+                        "store_id": store_id,
                         "tenant_id": 0,
                         "tenant_name": "sbermarket",
                         "skus": [sku],
@@ -106,7 +110,7 @@ class KuperParser:
             resp.raise_for_status()
             return resp.json()
 
-        raise Exception(f"Rate limited after 4 retries for SKU {sku}")
+        raise Exception(f"Rate limited after 4 retries for SKU {sku} store {store_id}")
 
 
 class KuperGraphParser:
@@ -116,6 +120,9 @@ class KuperGraphParser:
         self.conn = psycopg2.connect(**DB_CONFIG)
         self.conn.autocommit = True
         self._ensure_tables()
+
+        self.saved_skus: set[str] = set()
+        self.visited_skus: set[str] = set()
 
     def _ensure_tables(self):
         with self.conn.cursor() as cur:
@@ -129,10 +136,19 @@ class KuperGraphParser:
                 )
             """)
             cur.execute("""
-                ALTER TABLE staging.raw_kuper ADD COLUMN IF NOT EXISTS visited BOOLEAN DEFAULT FALSE
+                ALTER TABLE staging.raw_kuper
+                ADD COLUMN IF NOT EXISTS visited BOOLEAN DEFAULT FALSE
+            """)
+            cur.execute("""
+                ALTER TABLE dds.kuper_store
+                ADD COLUMN IF NOT EXISTS last_crawl_efficiency FLOAT
+            """)
+            cur.execute("""
+                ALTER TABLE dds.kuper_store
+                ADD COLUMN IF NOT EXISTS last_crawled_at TIMESTAMP
             """)
 
-    def load_state(self):
+    def _load_global_state(self):
         with self.conn.cursor() as cur:
             cur.execute("SELECT sku, visited FROM staging.raw_kuper")
             rows = cur.fetchall()
@@ -144,12 +160,56 @@ class KuperGraphParser:
             if visited:
                 self.visited_skus.add(sku)
 
-        seed_skus = self.parser.config.get("seed_skus", [])
-        candidates = (self.saved_skus | set(seed_skus)) - self.visited_skus
-        self.sku_queue = deque(candidates)
+        log.info("Global state: %d saved, %d visited", len(self.saved_skus), len(self.visited_skus))
 
-        log.info("DB state: %d visited, %d saved, %d in queue",
-                 len(self.visited_skus), len(self.saved_skus), len(self.sku_queue))
+    def _load_stores_bfs_order(self) -> list[dict]:
+        """
+        Возвращает магазины в BFS-порядке по ритейлерам:
+        [ритейлер_A магазин_1, ритейлер_B магазин_1, ..., ритейлер_A магазин_2, ...]
+        """
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT store_id, retailer_id, retailer_slug, seed_skus
+                FROM (
+                    SELECT store_id, retailer_id, retailer_slug, seed_skus,
+                           ROW_NUMBER() OVER (PARTITION BY retailer_id ORDER BY store_id) AS rn
+                    FROM dds.kuper_store
+                    WHERE seed_skus IS NOT NULL
+                      AND array_length(seed_skus, 1) > 0
+                ) ranked
+                ORDER BY rn, retailer_id
+            """)
+            rows = cur.fetchall()
+
+        stores = [
+            {
+                "store_id": r[0],
+                "retailer_id": r[1],
+                "retailer_slug": r[2],
+                "seed_skus": r[3],
+            }
+            for r in rows
+        ]
+        log.info("Loaded %d stores for BFS sweep", len(stores))
+        return stores
+
+    def _reset_seed_visited(self, stores: list[dict]):
+        """Сбрасывает visited для seed SKU чтобы следующий обход мог заново обойти граф."""
+        all_seeds = set()
+        for store in stores:
+            all_seeds.update(store["seed_skus"] or [])
+
+        if not all_seeds:
+            return
+
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "UPDATE staging.raw_kuper SET visited = FALSE WHERE sku = ANY(%s)",
+                (list(all_seeds),),
+            )
+        for sku in all_seeds:
+            self.visited_skus.discard(sku)
+        log.info("Reset visited for %d seed SKUs", len(all_seeds))
 
     def mark_visited(self, sku: str):
         with self.conn.cursor() as cur:
@@ -168,6 +228,14 @@ class KuperGraphParser:
                 )
             self.saved_skus.add(sku)
 
+    def save_store_stats(self, store_id: int, efficiency: float):
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                UPDATE dds.kuper_store
+                SET last_crawl_efficiency = %s, last_crawled_at = now()
+                WHERE store_id = %s
+            """, (efficiency, store_id))
+
     @staticmethod
     def extract_from_response(data: dict) -> list[dict]:
         items = []
@@ -183,68 +251,121 @@ class KuperGraphParser:
                     })
         return items
 
-    def parse_from_seeds(self):
-        self.load_state()
+    def parse_store(self, store: dict) -> float:
+        """
+        BFS-обход одного магазина. Возвращает итоговую эффективность.
+        Останавливается когда efficiency < EFFICIENCY_THRESHOLD.
+        """
+        store_id = store["store_id"]
+        slug = store["retailer_slug"]
+        seed_skus = store["seed_skus"] or []
+
+        queue = deque(s for s in seed_skus if s not in self.visited_skus)
+        if not queue:
+            log.info("[store=%d/%s] Все seeds уже посещены, пропуск", store_id, slug)
+            return 1.0
+
+        log.info("[store=%d/%s] BFS start, %d seeds в очереди", store_id, slug, len(queue))
 
         iteration = 0
-        recent_new = []
-        total_new_products = 0
+        recent_new: list[int] = []
+        total_new = 0
+        final_efficiency = 1.0
 
-        try:
-            while self.sku_queue:
-                sku = self.sku_queue.popleft()
+        while queue:
+            sku = queue.popleft()
 
-                if sku in self.visited_skus:
-                    continue
+            if sku in self.visited_skus:
+                continue
 
-                self.mark_visited(sku)
-                iteration += 1
+            self.mark_visited(sku)
+            iteration += 1
 
+            try:
+                data = self.parser.get_recommendations(sku, store_id)
+            except SessionExpiredError:
+                raise
+            except Exception as e:
+                log.warning("[store=%d] Ошибка SKU %s: %s", store_id, sku, e)
+                continue
+
+            items = self.extract_from_response(data)
+            new_count = 0
+
+            for item in items:
+                item_sku = item["sku"]
+                if item_sku not in self.visited_skus and item_sku not in self.saved_skus:
+                    queue.append(item_sku)
+                if item_sku not in self.saved_skus:
+                    self.save_item(item_sku, item["raw"])
+                    new_count += 1
+
+            total_new += new_count
+            recent_new.append(new_count)
+            if len(recent_new) > EFFICIENCY_WINDOW:
+                recent_new.pop(0)
+
+            efficiency = sum(recent_new) / len(recent_new) if recent_new else 0.0
+            final_efficiency = efficiency
+
+            log.info(
+                "[store=%d/%s] [%d] sku=%s recs=%d new=%d queue=%d eff=%.2f",
+                store_id, slug, iteration, sku, len(items), new_count, len(queue), efficiency,
+            )
+
+            if len(recent_new) >= EFFICIENCY_WINDOW and efficiency < EFFICIENCY_THRESHOLD:
+                log.info(
+                    "[store=%d/%s] Efficiency %.2f < %.2f — переход к следующему магазину",
+                    store_id, slug, efficiency, EFFICIENCY_THRESHOLD,
+                )
+                break
+
+            time.sleep(random.uniform(0.5, 1.5))
+
+        self.save_store_stats(store_id, final_efficiency)
+        log.info(
+            "[store=%d/%s] Завершён. итераций=%d новых=%d eff=%.2f",
+            store_id, slug, iteration, total_new, final_efficiency,
+        )
+        return final_efficiency
+
+    def parse_all_stores(self):
+        """Бесконечный BFS-обход всех магазинов всех ритейлеров."""
+        while True:
+            self._load_global_state()
+            stores = self._load_stores_bfs_order()
+
+            if not stores:
+                log.warning("Нет магазинов с seed_skus в dds.kuper_store. Ожидание 60s...")
+                time.sleep(60)
+                continue
+
+            log.info("=== Начало нового обхода: %d магазинов ===", len(stores))
+            sweep_start = time.time()
+
+            for store in stores:
                 try:
-                    data = self.parser.get_recommendations(sku)
+                    self.parse_store(store)
                 except SessionExpiredError as e:
-                    log.error(str(e))
+                    log.error("Сессия истекла: %s", e)
                     return
                 except Exception as e:
-                    log.warning("[%d] Failed SKU %s: %s", iteration, sku, e)
-                    continue
+                    log.error("Критическая ошибка на store=%d: %s", store["store_id"], e)
 
-                items = self.extract_from_response(data)
-                new_products = 0
+                time.sleep(INTER_STORE_SLEEP)
 
-                for item in items:
-                    if item["sku"] not in self.visited_skus and item["sku"] not in self.saved_skus:
-                        self.sku_queue.append(item["sku"])
+            elapsed = time.time() - sweep_start
+            log.info("=== Обход завершён за %.0fs ===", elapsed)
 
-                    if item["sku"] not in self.saved_skus:
-                        self.save_item(item["sku"], item["raw"])
-                        new_products += 1
+            self._reset_seed_visited(stores)
 
-                total_new_products += new_products
-                recent_new.append(new_products)
-                if len(recent_new) > 100:
-                    recent_new.pop(0)
-
-                efficiency = sum(recent_new) / len(recent_new) if recent_new else 0
-
-                log.info("[%d] SKU %s -> %d recs, %d new | queue: %d | saved: %d | eff: %.1f",
-                         iteration, sku, len(items), new_products,
-                         len(self.sku_queue), len(self.saved_skus), efficiency)
-
-                if efficiency < 0.5 and len(recent_new) >= 100:
-                    log.warning("Efficiency below 0.5 — graph saturated. "
-                                "Add new seed SKUs from other categories.")
-
-                time.sleep(random.uniform(0.5, 1.5))
-
-        except KeyboardInterrupt:
-            log.info("Interrupted by user")
-
-        self.conn.close()
-        log.info("Done. %d iterations, %d new products saved", iteration, total_new_products)
+            sleep_time = max(0.0, SWEEP_MIN_SLEEP - elapsed)
+            if sleep_time > 0:
+                log.info("Пауза %.0fs перед следующим обходом...", sleep_time)
+                time.sleep(sleep_time)
 
 
 if __name__ == "__main__":
     parser = KuperParser()
     graph = KuperGraphParser(parser)
-    graph.parse_from_seeds()
+    graph.parse_all_stores()
