@@ -42,6 +42,7 @@ jobs:
           fi
 
           sudo /opt/coconut/data/.venv/bin/pip install -q -r /opt/coconut/data/requirements.txt
+          sudo /opt/coconut/data/.venv/bin/playwright install chromium
 
           sudo cp /tmp/coconut_data_deploy/data/deploy/*.service /etc/systemd/system/
           sudo mkdir -p /etc/loki /etc/promtail /var/lib/loki /var/lib/promtail

@@ -17,7 +17,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MULTICARDS_URL = "https://kuper.ru/api/v3/multicards"
+MULTICARDS_URL = "https://web.kuper.ru/api/v3/multicards"
 
 
 def enrich():
@@ -67,12 +67,12 @@ def enrich():
         page = context.new_page()
 
         # Map store_id -> retailer_slug via API
-        page.goto("https://kuper.ru", wait_until="domcontentloaded", timeout=30000)
+        page.goto("https://web.kuper.ru", wait_until="domcontentloaded", timeout=30000)
         slug_map = {}
         for sid in store_ids:
             store_info = page.evaluate("""
                 async (storeId) => {
-                    const resp = await fetch(`https://kuper.ru/api/stores/${storeId}`, { credentials: "include" });
+                    const resp = await fetch(`https://web.kuper.ru/api/stores/${storeId}`, { credentials: "include" });
                     return await resp.json();
                 }
             """, sid)
@@ -81,7 +81,7 @@ def enrich():
 
         # Default to first slug for catalog navigation
         default_slug = list(slug_map.values())[0] if slug_map else "metro"
-        catalog_url = f"https://kuper.ru/{default_slug}?referrer=landing_retailer_list"
+        catalog_url = f"https://web.kuper.ru/{default_slug}?referrer=landing_retailer_list"
 
         page.goto(catalog_url, wait_until="domcontentloaded", timeout=30000)
         log.info("Connected to Chrome. Page loaded. Starting enrichment...")
@@ -94,7 +94,7 @@ def enrich():
             batch_count += 1
             sid = row_store_id or str(store_id)
             slug = slug_map.get(sid, default_slug)
-            cur_catalog_url = f"https://kuper.ru/{slug}?referrer=landing_retailer_list"
+            cur_catalog_url = f"https://web.kuper.ru/{slug}?referrer=landing_retailer_list"
 
             # Reset session every ~20-25 requests
             if batch_count >= batch_size:
