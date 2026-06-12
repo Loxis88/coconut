@@ -1,3 +1,53 @@
+class NormalizedIngredient {
+  const NormalizedIngredient({
+    required this.ingredientId,
+    required this.originalName,
+    required this.name,
+    this.nameRu,
+    this.eNumber,
+    this.category,
+    required this.isAllergen,
+    required this.isAdditive,
+    required this.riskLevel,
+  });
+
+  final int ingredientId;
+  final String originalName;
+  final String name;
+  final String? nameRu;
+  final String? eNumber;
+  final String? category;
+  final bool isAllergen;
+  final bool isAdditive;
+  final int riskLevel;
+
+  String get displayName => nameRu ?? name;
+
+  factory NormalizedIngredient.fromJson(Map<String, dynamic> json) => NormalizedIngredient(
+        ingredientId: (json['ingredient_id'] as num?)?.toInt() ?? 0,
+        originalName: json['original_name'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameRu: json['name_ru'] as String?,
+        eNumber: json['e_number'] as String?,
+        category: json['category'] as String?,
+        isAllergen: json['is_allergen'] as bool? ?? false,
+        isAdditive: json['is_additive'] as bool? ?? false,
+        riskLevel: (json['risk_level'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'ingredient_id': ingredientId,
+        'original_name': originalName,
+        'name': name,
+        'name_ru': nameRu,
+        'e_number': eNumber,
+        'category': category,
+        'is_allergen': isAllergen,
+        'is_additive': isAdditive,
+        'risk_level': riskLevel,
+      };
+}
+
 class Product {
   const Product({
     required this.id,
@@ -17,6 +67,7 @@ class Product {
     required this.composition,
     required this.hasQualityMark,
     required this.hasBadQualityMark,
+    this.normalizedIngredients = const [],
   });
 
   final int id;
@@ -36,8 +87,13 @@ class Product {
   final String? composition;
   final bool hasQualityMark;
   final bool hasBadQualityMark;
+  final List<NormalizedIngredient> normalizedIngredients;
 
   int get score => totalRating.toInt();
+
+  List<NormalizedIngredient> get additives =>
+      normalizedIngredients.where((i) => i.isAdditive).toList()
+        ..sort((a, b) => b.riskLevel.compareTo(a.riskLevel));
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
         id: (json['id'] as num?)?.toInt() ?? 0,
@@ -65,6 +121,9 @@ class Product {
         composition: json['composition'] as String?,
         hasQualityMark: json['hasQualityMark'] as bool? ?? false,
         hasBadQualityMark: json['hasBadQualityMark'] as bool? ?? false,
+        normalizedIngredients: (json['normalizedIngredients'] as List? ?? [])
+            .map((item) => NormalizedIngredient.fromJson(item as Map<String, dynamic>))
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -85,6 +144,7 @@ class Product {
         'composition': composition,
         'hasQualityMark': hasQualityMark,
         'hasBadQualityMark': hasBadQualityMark,
+        'normalizedIngredients': normalizedIngredients.map((i) => i.toJson()).toList(),
       };
 }
 

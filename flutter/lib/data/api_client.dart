@@ -137,6 +137,9 @@ class ApiClient {
         .where((item) => item.isNotEmpty)
         .toList();
     final category = dto['category'] as Map<String, dynamic>?;
+    final ingredients = (dto['normalized_ingredients'] as List? ?? [])
+        .map((item) => NormalizedIngredient.fromJson(item as Map<String, dynamic>))
+        .toList();
 
     return Product(
       id: (dto['id'] as num?)?.toInt() ?? 0,
@@ -164,6 +167,7 @@ class ApiClient {
       composition: dto['ingredients'] as String?,
       hasQualityMark: false,
       hasBadQualityMark: risks.isNotEmpty,
+      normalizedIngredients: ingredients,
     );
   }
 }
