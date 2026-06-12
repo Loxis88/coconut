@@ -8,6 +8,7 @@ import (
 
 	"github.com/coconut/backend/internal/adapters/handlers"
 	"github.com/coconut/backend/internal/adapters/repositories"
+	"github.com/coconut/backend/internal/core/ports"
 	"github.com/coconut/backend/internal/core/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
