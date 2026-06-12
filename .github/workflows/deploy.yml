@@ -91,6 +91,51 @@ jobs:
 
 
 
+  deploy-data-scripts:
+    name: Deploy Data Scripts
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Copy scripts to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "data/*.py,data/dds/*.py,data/staging/*.py,data/requirements.txt"
+        target: "/tmp/coconut_data_deploy"
+
+    - name: Install and restart services
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          sudo mkdir -p /opt/coconut/data/dds /opt/coconut/data/staging
+
+          # Обновить скрипты (config.json и cookies.json остаются нетронутыми)
+          sudo cp /tmp/coconut_data_deploy/data/*.py /opt/coconut/data/
+          sudo cp /tmp/coconut_data_deploy/data/dds/*.py /opt/coconut/data/dds/
+          sudo cp /tmp/coconut_data_deploy/data/staging/*.py /opt/coconut/data/staging/
+          sudo cp /tmp/coconut_data_deploy/data/requirements.txt /opt/coconut/data/
+
+          # Создать venv если не существует
+          if [ ! -f /opt/coconut/data/.venv/bin/pip ]; then
+            sudo python3 -m venv /opt/coconut/data/.venv
+          fi
+
+          # Установить/обновить зависимости
+          sudo /opt/coconut/data/.venv/bin/pip install -q -r /opt/coconut/data/requirements.txt
+
+          # Перезапустить 24/7 сервисы если они уже существуют
+          sudo systemctl restart kuper-parser || true
+          sudo systemctl restart kuper-enricher || true
+
+          rm -rf /tmp/coconut_data_deploy
+
   build-flutter-android-apk:
     name: Build Flutter Android APK
     runs-on: ubuntu-latest

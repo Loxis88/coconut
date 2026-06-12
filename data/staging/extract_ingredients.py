@@ -21,7 +21,7 @@ from typing import Optional
 
 import psycopg2
 from psycopg2.extras import execute_values
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from openai import OpenAI
 
 from config import DB_CONFIG, OPENAI_API_KEY
@@ -48,6 +48,25 @@ class Ingredient(BaseModel):
     qty: Optional[float] = None
     unit: Optional[str] = None
     qualifier: Optional[str] = None
+
+    @field_validator("qty", mode="before")
+    @classmethod
+    def coerce_qty(cls, v):
+        if not isinstance(v, dict):
+            return v
+        if v.get("type") == "null":
+            return None
+        # {"min": 5, "max": 12} → midpoint
+        if "min" in v and "max" in v:
+            return (v["min"] + v["max"]) / 2
+        return None
+
+    @field_validator("unit", "qualifier", mode="before")
+    @classmethod
+    def coerce_nullable_str(cls, v):
+        if isinstance(v, dict) and v.get("type") == "null":
+            return None
+        return v
 
 
 class ProductIngredients(BaseModel):
@@ -333,9 +352,18 @@ def collect(conn, client: OpenAI):
             still_pending.append(batch_info)
             continue
 
-        if batch.status != "completed":
+        if batch.status in ("failed", "cancelled"):
             log.error("Batch %s ended with status=%s, skipping.", batch_id, batch.status)
             continue
+
+        if batch.status == "expired":
+            if not batch.output_file_id:
+                log.error("Batch %s expired with no partial output, skipping.", batch_id)
+                continue
+            log.warning(
+                "Batch %s expired (%d/%d completed) — collecting partial results.",
+                batch_id, counts.completed, counts.total,
+            )
 
         batch_info["output_file_id"] = batch.output_file_id
         rows, failed = _collect_one_batch(conn, client, batch_info, done_ids)
@@ -360,10 +388,57 @@ def collect(conn, client: OpenAI):
     )
 
 
+def recover(conn, client: OpenAI, batch_id: str):
+    """Collect partial results from an expired/lost batch by batch_id alone."""
+    batch = client.batches.retrieve(batch_id)
+    counts = batch.request_counts
+    log.info(
+        "Batch %s: status=%s  completed=%d/%d",
+        batch_id, batch.status, counts.completed, counts.total,
+    )
+
+    if not batch.output_file_id:
+        log.error("No output file available for batch %s.", batch_id)
+        return
+
+    # Rebuild hash_to_source_ids from local state history or progress file.
+    # Without the original mapping we use hash==source_id fallback:
+    # each result's custom_id IS the hash, and source_ids must be re-derived
+    # from the DB by matching the ingredient text hash.
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT source_id, ingredients FROM product_catalog.product
+            WHERE source IN ('rosqual', 'kuper') AND ingredients IS NOT NULL
+        """)
+        rows = cur.fetchall()
+
+    hash_to_source_ids: dict[str, list[str]] = {}
+    for sid, ing in rows:
+        h = text_hash(ing)
+        hash_to_source_ids.setdefault(h, []).append(sid)
+
+    done_ids = load_progress()
+    batch_info = {
+        "batch_id": batch_id,
+        "output_file_id": batch.output_file_id,
+        "hash_to_source_ids": hash_to_source_ids,
+    }
+    rows_inserted, failed = _collect_one_batch(conn, client, batch_info, done_ids)
+    save_progress(done_ids)
+    log.info("Recovered %d rows, %d failed.", rows_inserted, failed)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def run():
-    mode = sys.argv[1] if len(sys.argv) > 1 else ("collect" if load_batch_state() else "submit")
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
+    elif load_batch_state():
+        mode = "collect"
+    else:
+        log.info("No pending batches. Run with 'submit' to start a new batch, or 'collect' to force-collect.")
+        return
+
     log.info("Mode: %s", mode)
 
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -391,8 +466,13 @@ def run():
         submit(conn, client)
     elif mode == "collect":
         collect(conn, client)
+    elif mode == "recover":
+        if len(sys.argv) < 3:
+            log.error("Usage: recover <batch_id>")
+        else:
+            recover(conn, client, sys.argv[2])
     else:
-        log.error("Unknown mode '%s'. Use: submit | collect", mode)
+        log.error("Unknown mode '%s'. Use: submit | collect | recover <batch_id>", mode)
 
     conn.close()
 

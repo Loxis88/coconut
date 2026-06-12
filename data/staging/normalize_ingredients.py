@@ -14,8 +14,10 @@ Writes results to product_catalog.ingredient_alias (alias → canonical_name).
 
 Usage:
     python staging/normalize_ingredients.py
+    python staging/normalize_ingredients.py --no-llm
 """
 
+import argparse
 import os
 import json
 import re
@@ -216,7 +218,7 @@ def get_embeddings(client: OpenAI, texts: list[str]) -> np.ndarray:
 
 # ── Main ────────────────────────────────────────────────────────────────────
 
-def run_normalization():
+def run_normalization(no_llm: bool = False):
     # 1. Parse taxonomy files
     log.info("Parsing %s", INGREDIENTS_TXT)
     ingredients_tax = parse_taxonomy_txt(INGREDIENTS_TXT)
@@ -382,7 +384,12 @@ def run_normalization():
                  matched, len(llm_items), no_match, SIMILARITY_THRESHOLD, LLM_THRESHOLD)
 
         # 8. LLM fallback for uncertain matches
-        if llm_items:
+        if llm_items and no_llm:
+            log.info("Skipping LLM fallback for %d ingredients (--no-llm)", len(llm_items))
+            for name in llm_names:
+                done[name] = None
+
+        if llm_items and not no_llm:
             log.info("Running LLM fallback for %d ingredients...", len(llm_items))
             llm_matched = 0
             llm_null = 0
@@ -448,4 +455,7 @@ def run_normalization():
 
 
 if __name__ == "__main__":
-    run_normalization()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-llm", action="store_true", help="Skip LLM fallback, mark uncertain as null")
+    args = parser.parse_args()
+    run_normalization(no_llm=args.no_llm)
