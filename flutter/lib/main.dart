@@ -265,8 +265,12 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   var _route = AppRoute.home;
+  var _sheetOpen = false;
 
   void _showProductSheet(Product product) {
+    if (_sheetOpen) return;
+    _sheetOpen = true;
+
     final sheetCtrl = DraggableScrollableController();
     var _opened = false;
 
@@ -298,7 +302,10 @@ class _HomeShellState extends State<HomeShell> {
           scrollController: scrollController,
         ),
       ),
-    ).whenComplete(sheetCtrl.dispose);
+    ).whenComplete(() {
+      sheetCtrl.dispose();
+      if (mounted) setState(() => _sheetOpen = false);
+    });
   }
 
   @override
