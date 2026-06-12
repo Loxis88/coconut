@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/product.dart';
 import '../theme.dart';
+import '../widgets/product_widgets.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key, required this.history, required this.onShowProduct});
@@ -180,7 +181,7 @@ class _JournalScreenState extends State<JournalScreen> {
                                       decoration: BoxDecoration(color: const Color(0xFFDDD8CB), borderRadius: BorderRadius.circular(12)),
                                       clipBehavior: Clip.antiAlias,
                                       child: p.thumbnail != null
-                                          ? Image.network(p.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+                                          ? NetImg(p.thumbnail!)
                                           : const Icon(Icons.fastfood, color: Colors.white),
                                     ),
                                     const SizedBox(width: 16),

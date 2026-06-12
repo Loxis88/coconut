@@ -71,7 +71,7 @@ class RingPainter extends CustomPainter {
     const thickness = 12.0;
     final rect = Rect.fromLTWH(thickness / 2, thickness / 2, size.width - thickness, size.height - thickness);
     final bg = Paint()
-      ..color = Coco.hairline
+      ..color = MayakTheme.muted
       ..style = PaintingStyle.stroke
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round;
@@ -121,7 +121,7 @@ class WeekBars extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(labels[index], style: TextStyle(color: index == values.length - 1 ? Coco.ink : Coco.muted, fontWeight: FontWeight.w800)),
+                  Text(labels[index], style: TextStyle(color: index == values.length - 1 ? MayakTheme.fg : MayakTheme.mutedFg, fontWeight: FontWeight.w800)),
                 ],
               ),
             ),

@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/product.dart';
 import '../theme.dart';
+import '../widgets/product_widgets.dart';
+
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -101,7 +103,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 child: widget.product.thumbnail != null
-                                    ? Image.network(widget.product.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+                                    ? NetImg(widget.product.thumbnail!)
                                     : const Icon(Icons.fastfood, color: Colors.white),
                               ),
                               const SizedBox(width: 16),
@@ -267,12 +269,29 @@ class _OverviewTab extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Additives - Mocked from "info" or just display empty if none
+        // Health risks
         _Card(
+          color: product.worth.isEmpty ? null : const Color(0xFFFFF0F0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Label(text: 'Особенности'),
+              Row(
+                children: [
+                  Expanded(child: _Label(text: 'Особенности')),
+                  if (product.worth.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0x1AC03B32),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${product.worth.length}',
+                        style: GoogleFonts.dmMono(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFFC03B32)),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               if (product.worth.isEmpty)
                 Text('Ничего особенного не обнаружено', style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF4A9152)))
@@ -282,12 +301,15 @@ class _OverviewTab extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 4, right: 8),
-                        child: Icon(Icons.circle, size: 6, color: Color(0xFF1E6B28)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5, right: 8),
+                        child: Container(
+                          width: 6, height: 6,
+                          decoration: const BoxDecoration(color: Color(0xFFC03B32), shape: BoxShape.circle),
+                        ),
                       ),
                       Expanded(
-                        child: Text(w, style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF0C1A09))),
+                        child: Text(w, style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF7A1A1A))),
                       ),
                     ],
                   ),
@@ -296,6 +318,12 @@ class _OverviewTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+
+        // Additives
+        if (product.additives.isNotEmpty) ...[
+          _AdditivesCard(additives: product.additives),
+          const SizedBox(height: 16),
+        ],
 
         // Composition
         _Card(
@@ -385,7 +413,7 @@ class _AlternativesTab extends StatelessWidget {
                   decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(12)),
                   clipBehavior: Clip.antiAlias,
                   child: alt.thumbnail != null
-                      ? Image.network(alt.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+                      ? NetImg(alt.thumbnail!)
                       : const Icon(Icons.fastfood, color: Colors.white),
                 ),
                 const SizedBox(width: 16),
@@ -430,13 +458,14 @@ class _AlternativesTab extends StatelessWidget {
 
 class _Card extends StatelessWidget {
   final Widget child;
-  const _Card({required this.child});
+  final Color? color;
+  const _Card({required this.child, this.color});
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: MayakTheme.card,
+        color: color ?? MayakTheme.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))],
       ),
@@ -567,6 +596,122 @@ class _ArcPainter extends CustomPainter {
   bool shouldRepaint(covariant _ArcPainter oldDelegate) => score != oldDelegate.score;
 }
 
+class _AdditivesCard extends StatelessWidget {
+  final List<NormalizedIngredient> additives;
+  const _AdditivesCard({required this.additives});
+
+  static const _riskColor = [
+    Color(0xFF4A9152), // 0 safe
+    Color(0xFFB87D28), // 1 caution
+    Color(0xFFD4621A), // 2 moderate
+    Color(0xFFC03B32), // 3 danger
+  ];
+
+  static const _riskBg = [
+    Color(0xFFF0F6CF), // 0
+    Color(0xFFFFE2CC), // 1
+    Color(0xFFFFD4A0), // 2
+    Color(0xFFFFD9DF), // 3
+  ];
+
+  static const _riskLabel = ['Безопасно', 'Осторожно', 'Умеренный риск', 'Опасно'];
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(child: _Label(text: 'Добавки')),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: additives.any((a) => a.riskLevel >= 2)
+                      ? const Color(0x1AC03B32)
+                      : const Color(0x14153918),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${additives.length}',
+                  style: GoogleFonts.dmMono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: additives.any((a) => a.riskLevel >= 2)
+                        ? const Color(0xFFC03B32)
+                        : const Color(0xFF153918),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...additives.map((a) {
+            final level = a.riskLevel.clamp(0, 3);
+            final color = _riskColor[level];
+            final bg = _riskBg[level];
+            final label = _riskLabel[level];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (a.eNumber != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: bg,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  a.eNumber!,
+                                  style: GoogleFonts.dmMono(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            Expanded(
+                              child: Text(
+                                a.displayName,
+                                style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0C1A09)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          label,
+                          style: GoogleFonts.dmSans(fontSize: 11, color: color),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
   final Color color;
@@ -670,8 +815,7 @@ class _ProductSheetState extends State<ProductSheet> with SingleTickerProviderSt
                             decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(16)),
                             clipBehavior: Clip.antiAlias,
                             child: p.thumbnail != null
-                                ? Image.network(p.thumbnail!, fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.fastfood, color: Colors.white))
+                                ? NetImg(p.thumbnail!)
                                 : const Icon(Icons.fastfood, color: Colors.white),
                           ),
                           const SizedBox(width: 16),

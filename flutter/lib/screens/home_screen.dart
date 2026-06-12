@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import '../widgets/product_widgets.dart';
 
 import '../domain/auth_user.dart';
 import '../domain/product.dart';
@@ -361,8 +362,8 @@ class _RecentScanItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: product.thumbnail != null 
-                ? Image.network(product.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+              child: product.thumbnail != null
+                ? NetImg(product.thumbnail!)
                 : const Icon(Icons.fastfood, color: Colors.white),
             ),
             const SizedBox(width: 16),

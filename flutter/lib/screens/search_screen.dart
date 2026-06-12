@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/product.dart';
 import '../theme.dart';
+import '../widgets/product_widgets.dart';
 
 const _categories = [
   {'label': 'Молочные', 'icon': '🥛', 'key': 'Молочные продукты'},
@@ -393,7 +394,7 @@ class _ResultItem extends StatelessWidget {
               decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(12)),
               clipBehavior: Clip.antiAlias,
               child: product.thumbnail != null
-                  ? Image.network(product.thumbnail!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white))
+                  ? NetImg(product.thumbnail!)
                   : const Icon(Icons.fastfood, color: Colors.white),
             ),
             const SizedBox(width: 12),
