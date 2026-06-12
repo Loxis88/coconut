@@ -8,12 +8,14 @@ import (
 )
 
 type ProductHandler struct {
-	productRepo ports.ProductRepository
+	productRepo     ports.ProductRepository
+	fallbackService ports.FallbackService
 }
 
-func NewProductHandler(productRepo ports.ProductRepository) *ProductHandler {
+func NewProductHandler(productRepo ports.ProductRepository, fallbackService ports.FallbackService) *ProductHandler {
 	return &ProductHandler{
-		productRepo: productRepo,
+		productRepo:     productRepo,
+		fallbackService: fallbackService,
 	}
 }
 
@@ -30,8 +32,18 @@ func (h *ProductHandler) GetProductByBarcode(c *fiber.Ctx) error {
 
 	product, err := h.productRepo.GetByBarcode(c.UserContext(), barcode)
 	if err != nil {
-		log.Printf("ERROR: Failed to fetch product [%s]: %v", barcode, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch product", "details": err.Error()})
+		log.Printf("ERROR: GetByBarcode [%s]: %v", barcode, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch product"})
+	}
+
+	// Fallback to Честный Знак if not found locally
+	if (product == nil || product.ID == 0) && h.fallbackService != nil {
+		log.Printf("INFO: barcode [%s] not in DB, trying Честный Знак fallback", barcode)
+		product, err = h.fallbackService.FetchAndSave(c.UserContext(), barcode)
+		if err != nil {
+			log.Printf("ERROR: fallback [%s]: %v", barcode, err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch product from external source", "details": err.Error()})
+		}
 	}
 
 	if product == nil || product.ID == 0 {

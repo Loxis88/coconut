@@ -1,5 +1,14 @@
 package domain
 
+// ParsedIngredient mirrors the Python Ingredient Pydantic model from extract_ingredients.py.
+type ParsedIngredient struct {
+	Name          string   `json:"name"`
+	IsTransparent bool     `json:"is_transparent"`
+	Qty           *float64 `json:"qty"`
+	Unit          *string  `json:"unit"`
+	Qualifier     *string  `json:"qualifier"`
+}
+
 type Category struct {
 	ID        int64   `json:"id"`
 	Title     string  `json:"title"`
