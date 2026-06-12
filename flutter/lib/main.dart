@@ -266,6 +266,41 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   var _route = AppRoute.home;
 
+  void _showProductSheet(Product product) {
+    final sheetCtrl = DraggableScrollableController();
+    var _opened = false;
+
+    void open() {
+      if (_opened) return;
+      _opened = true;
+      Navigator.of(context).pop();
+      if (mounted) setState(() => _route = AppRoute.detail);
+    }
+
+    sheetCtrl.addListener(() {
+      if (sheetCtrl.isAttached && sheetCtrl.size > 0.85) open();
+    });
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        controller: sheetCtrl,
+        initialChildSize: 0.45,
+        minChildSize: 0.0,
+        maxChildSize: 1.0,
+        snap: true,
+        snapSizes: const [0.45],
+        builder: (_, scrollController) => ProductSheet(
+          product: product,
+          scrollController: scrollController,
+        ),
+      ),
+    ).whenComplete(sheetCtrl.dispose);
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget body = switch (_route) {
@@ -294,7 +329,7 @@ class _HomeShellState extends State<HomeShell> {
           onBack: () => setState(() => _route = AppRoute.home),
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
-            if (product != null && mounted) setState(() => _route = AppRoute.detail);
+            if (product != null && mounted) _showProductSheet(product);
           },
         ),
       AppRoute.detail => widget.currentProduct == null
