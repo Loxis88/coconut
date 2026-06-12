@@ -5,14 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/product.dart';
 import 'api_client.dart';
+import 'auth_repository.dart';
 
 class ProductRepository {
-  ProductRepository(this._api);
+  ProductRepository(this._api, this._auth);
 
   static const _historyKey = 'scan_history';
   static const _datesKey = 'scan_dates';
 
   final ApiClient _api;
+  final AuthRepository _auth;
   final _historyController = StreamController<List<Product>>.broadcast();
   SharedPreferences? _prefs;
   List<Product> _history = const [];
@@ -26,28 +28,25 @@ class ProductRepository {
     _emit();
   }
 
-  Future<Product> searchByBarcode(String barcode, String? token) async {
+  Future<Product> searchByBarcode(String barcode) async {
     if (barcode.trim().isEmpty) throw ApiException('Barcode is empty');
-    if (token == null) throw ApiException('Authentication required');
 
-    final product = await _api.getProduct(token, barcode.trim());
+    final product = await _auth.withRefresh((token) => _api.getProduct(token, barcode.trim()));
     final next = _history.where((item) => item.id != product.id).toList();
     _history = [product, ...next];
     await _saveHistory();
     await _trackScanDate();
 
     try {
-      await _api.saveHistory(token, barcode.trim(), product);
-    } catch (_) {
-      // Local history remains the source of immediate UI feedback.
-    }
+      await _auth.withRefresh((token) => _api.saveHistory(token, barcode.trim(), product));
+    } catch (_) {}
 
     return product;
   }
 
-  Future<void> syncHistory(String token) async {
+  Future<void> syncHistory() async {
     try {
-      final serverHistory = await _api.getHistory(token);
+      final serverHistory = await _auth.withRefresh((token) => _api.getHistory(token));
       final mapped = <Product>[];
       for (final item in serverHistory) {
         final matches = _history.where((product) => product.title == item.title);
@@ -93,15 +92,13 @@ class ProductRepository {
     await _saveHistory();
   }
 
-  Future<void> clearHistory(String? token) async {
+  Future<void> clearHistory() async {
     _history = const [];
     await _prefs?.remove(_historyKey);
     _emit();
-    if (token != null) {
-      try {
-        await _api.clearHistory(token);
-      } catch (_) {}
-    }
+    try {
+      await _auth.withRefresh((token) => _api.clearHistory(token));
+    } catch (_) {}
   }
 
   int dailyAverage() {
