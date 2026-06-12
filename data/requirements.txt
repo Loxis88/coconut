@@ -2,3 +2,4 @@ curl-cffi
 psycopg2-binary
 python-dotenv
 pyyaml
+playwright
