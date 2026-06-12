@@ -32,18 +32,34 @@ type HealthRisk struct {
 	Fact string `json:"fact"`
 }
 
+type NormalizedIngredient struct {
+	IngredientID int64    `json:"ingredient_id"`
+	OriginalName string   `json:"original_name"`
+	Name         string   `json:"name"`
+	NameRu       *string  `json:"name_ru,omitempty"`
+	ENumber      *string  `json:"e_number,omitempty"`
+	Category     *string  `json:"category,omitempty"`
+	IsAllergen   bool     `json:"is_allergen"`
+	IsAdditive   bool     `json:"is_additive"`
+	RiskLevel    int16    `json:"risk_level"`
+	Qty          *float64 `json:"qty,omitempty"`
+	Unit         *string  `json:"unit,omitempty"`
+	Qualifier    *string  `json:"qualifier,omitempty"`
+}
+
 type Product struct {
-	ID             int64           `json:"id"`
-	SourceID       *string         `json:"source_id,omitempty"`
-	Source         *string         `json:"source,omitempty"`
-	CategoryID     *int64          `json:"category_id,omitempty"`
-	Category       *Category       `json:"category,omitempty"`
-	TotalRating    *float64        `json:"total_rating,omitempty"`
-	Brand          *string         `json:"brand,omitempty"`
-	ImageLink      *string         `json:"image_link,omitempty"`
-	Barcode        *string         `json:"barcode,omitempty"`
-	Name           *string         `json:"name,omitempty"`
-	Ingredients    *string         `json:"ingredients,omitempty"`
-	NutritionFacts *NutritionFacts `json:"nutrition_facts,omitempty"`
-	HealthRisks    []HealthRisk    `json:"health_risks,omitempty"`
+	ID                    int64                  `json:"id"`
+	SourceID              *string                `json:"source_id,omitempty"`
+	Source                *string                `json:"source,omitempty"`
+	CategoryID            *int64                 `json:"category_id,omitempty"`
+	Category              *Category              `json:"category,omitempty"`
+	TotalRating           *float64               `json:"total_rating,omitempty"`
+	Brand                 *string                `json:"brand,omitempty"`
+	ImageLink             *string                `json:"image_link,omitempty"`
+	Barcode               *string                `json:"barcode,omitempty"`
+	Name                  *string                `json:"name,omitempty"`
+	Ingredients           *string                `json:"ingredients,omitempty"`
+	NutritionFacts        *NutritionFacts        `json:"nutrition_facts,omitempty"`
+	NormalizedIngredients []NormalizedIngredient `json:"normalized_ingredients,omitempty"`
+	HealthRisks           []HealthRisk           `json:"health_risks,omitempty"`
 }

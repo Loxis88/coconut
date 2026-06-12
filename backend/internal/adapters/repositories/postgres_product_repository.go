@@ -61,6 +61,31 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 		p.NutritionFacts = nf
 	}
 
+	ingRows, err := r.db.Query(ctx, `
+		SELECT
+			pi.ingredient_id, pi.original_name,
+			i.name, i.name_ru, i.e_number, i.category, i.is_allergen,
+			COALESCE(i.is_additive, false), COALESCE(i.risk_level, 0),
+			pi.qty, pi.unit, pi.qualifier
+		FROM product_catalog.product_ingredient pi
+		JOIN product_catalog.ingredient i ON i.id = pi.ingredient_id
+		WHERE pi.product_id = $1 AND pi.ingredient_id IS NOT NULL
+	`, p.ID)
+	if err == nil {
+		defer ingRows.Close()
+		for ingRows.Next() {
+			var ni domain.NormalizedIngredient
+			if err := ingRows.Scan(
+				&ni.IngredientID, &ni.OriginalName,
+				&ni.Name, &ni.NameRu, &ni.ENumber, &ni.Category, &ni.IsAllergen,
+				&ni.IsAdditive, &ni.RiskLevel,
+				&ni.Qty, &ni.Unit, &ni.Qualifier,
+			); err == nil {
+				p.NormalizedIngredients = append(p.NormalizedIngredients, ni)
+			}
+		}
+	}
+
 	riskRows, err := r.db.Query(ctx, `SELECT id, fact FROM product_catalog.health_risks WHERE product_id = $1`, p.ID)
 	if err == nil {
 		defer riskRows.Close()
