@@ -1,0 +1,17 @@
+[Unit]
+Description=Kuper enricher
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=/opt/coconut/data
+ExecStart=/opt/coconut/data/.venv/bin/python enrich_kuper.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kuper-enricher
+
+[Install]
+WantedBy=multi-user.target

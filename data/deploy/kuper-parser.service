@@ -1,0 +1,17 @@
+[Unit]
+Description=Kuper barcode parser
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=/opt/coconut/data
+ExecStart=/opt/coconut/data/.venv/bin/python parse_kuper_barcodes.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kuper-parser
+
+[Install]
+WantedBy=multi-user.target

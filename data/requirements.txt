@@ -1,0 +1,13 @@
+curl-cffi
+openai
+mistralai
+psycopg2-binary
+numpy
+playwright
+python-dotenv
+pypdfium2
+requests
+tqdm
+pydantic
+easyocr
+openfoodfacts
