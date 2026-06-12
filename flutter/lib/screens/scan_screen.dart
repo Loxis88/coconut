@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,12 +11,14 @@ class ScanScreen extends StatefulWidget {
   const ScanScreen({
     super.key,
     required this.loading,
+    this.scanLocked = false,
     required this.error,
     required this.onBack,
     required this.onFound,
   });
 
   final bool loading;
+  final bool scanLocked;
   final String? error;
   final VoidCallback onBack;
   final Future<void> Function(String barcode) onFound;
@@ -26,8 +31,7 @@ class _ScanScreenState extends State<ScanScreen> {
   final _controller = MobileScannerController(
     torchEnabled: false,
     formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
-    detectionTimeoutMs: 500,
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    detectionSpeed: DetectionSpeed.normal,
     useNewCameraSelector: false,
     returnImage: false,
   );
@@ -36,10 +40,21 @@ class _ScanScreenState extends State<ScanScreen> {
   var _barcode = '';
   var _lastBarcode = '';
   var _flash = false;
+  static final _barcodeRe = RegExp(r'^\d{6,8}$|^\d{12,13}$');
+
+  var _detected = false;
+  var _localLock = false;
+  Rect? _focusRect;
+  Timer? _detectedTimer;
+  DateTime? _lastRectUpdate;
 
   @override
   void didUpdateWidget(ScanScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if ((oldWidget.scanLocked == true) && !widget.scanLocked) {
+      _lastBarcode = '';
+      _localLock = false;
+    }
     if (widget.error != null && widget.error != oldWidget.error) {
       _lastBarcode = '';
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -57,8 +72,61 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   void dispose() {
+    _detectedTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onCapture(BarcodeCapture capture) {
+    if (widget.loading || widget.scanLocked || _localLock) return;
+    if (capture.barcodes.isEmpty) return;
+    final barcode = capture.barcodes.first;
+    final rawValue = barcode.rawValue;
+    if (rawValue == null) return;
+
+    // Always compute rect from live corners regardless of barcode dedup
+    final corners = barcode.corners;
+    final camSize = _controller.value.size;
+    Rect? newFocusRect;
+    if (corners != null && corners.length >= 4 && camSize != Size.zero) {
+      final sw = MediaQuery.of(context).size.width;
+      final sh = MediaQuery.of(context).size.height;
+      var minX = double.infinity, minY = double.infinity;
+      var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+      for (final c in corners) {
+        final px = c.dx / camSize.width * sw;
+        final py = c.dy / camSize.height * sh;
+        if (px < minX) minX = px;
+        if (py < minY) minY = py;
+        if (px > maxX) maxX = px;
+        if (py > maxY) maxY = py;
+      }
+      const pad = 24.0;
+      newFocusRect = Rect.fromLTRB(minX - pad, minY - pad, maxX + pad, maxY + pad);
+    }
+
+    final now = DateTime.now();
+    final isNew = rawValue != _lastBarcode;
+
+    if (isNew && _barcodeRe.hasMatch(rawValue)) {
+      _lastBarcode = rawValue;
+      _localLock = true;
+      _detectedTimer?.cancel();
+      _detectedTimer = Timer(const Duration(milliseconds: 900), () {
+        if (mounted) setState(() { _detected = false; _focusRect = null; });
+      });
+      _lastRectUpdate = now;
+      setState(() { _focusRect = newFocusRect; _detected = true; });
+      widget.onFound(rawValue);
+    } else if (newFocusRect != null &&
+        (_lastRectUpdate == null || now.difference(_lastRectUpdate!).inMilliseconds >= 300)) {
+      _detectedTimer?.cancel();
+      _detectedTimer = Timer(const Duration(milliseconds: 900), () {
+        if (mounted) setState(() { _detected = false; _focusRect = null; });
+      });
+      _lastRectUpdate = now;
+      setState(() { _focusRect = newFocusRect; });
+    }
   }
 
   void _submitManual() {
@@ -69,8 +137,18 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isScanningState = widget.loading;
+    final size = MediaQuery.of(context).size;
+    const bottomPanel = 148.0;
+    const defaultW = 248.0;
+    const defaultH = 164.0;
+    final defaultLeft = (size.width - defaultW) / 2;
+    final defaultTop = (size.height - bottomPanel - defaultH) / 2;
 
-    final isScanningState = widget.loading; // When loading, we show scanning animation
+    final vfLeft = _focusRect?.left ?? defaultLeft;
+    final vfTop = _focusRect?.top ?? defaultTop;
+    final vfW = _focusRect?.width ?? defaultW;
+    final vfH = _focusRect?.height ?? defaultH;
 
     return Scaffold(
       backgroundColor: const Color(0xFF080F09),
@@ -81,13 +159,9 @@ class _ScanScreenState extends State<ScanScreen> {
           if (!_manual)
             RepaintBoundary(
               child: _CameraPreview(
+                key: const ValueKey('camera'),
                 controller: _controller,
-                onDetect: (barcode) {
-                  if (barcode != _lastBarcode) {
-                    _lastBarcode = barcode;
-                    widget.onFound(barcode);
-                  }
-                },
+                onCapture: _onCapture,
               ),
             )
           else
@@ -131,38 +205,48 @@ class _ScanScreenState extends State<ScanScreen> {
               ),
             ).animate().fade(duration: 800.ms),
 
-          // Viewfinder
-          Positioned(
-            left: 0, right: 0, top: 0, bottom: 148, // Bottom panel height
-            child: Center(
-              child: SizedBox(
-                width: 248,
-                height: 164,
-                child: Stack(
-                  children: [
-                    // Corners
-                    CustomPaint(
-                      size: const Size(248, 164),
-                      painter: _ScannerFramePainter(isResult: false), // In this app, we navigate away on result, so false
+          // Viewfinder — animates to detected barcode position
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            left: vfLeft,
+            top: vfTop,
+            width: vfW,
+            height: vfH,
+            child: Stack(
+              children: [
+                // Detection flash fill
+                if (_detected)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0x225BAF64),
+                      ),
                     ),
-                    // Scan line animation
-                    if (isScanningState)
-                      Positioned(
-                        left: 8, right: 8,
-                        child: Container(
-                          height: 1,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.transparent, Color(0xFF5BAF64), Color(0xFF5BAF64), Colors.transparent],
-                              stops: [0.0, 0.3, 0.7, 1.0],
-                            ),
-                            boxShadow: [BoxShadow(color: Color(0x995BAF64), blurRadius: 8)],
-                          ),
-                        ),
-                      ).animate(onPlay: (controller) => controller.repeat()).slideY(begin: 0, end: 164, duration: 1600.ms),
-                  ],
+                  ).animate().fade(begin: 1, end: 0, duration: 900.ms),
+                // Corner brackets
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _ScannerFramePainter(isResult: _detected),
+                  ),
                 ),
-              ),
+                // Scan line
+                if (isScanningState)
+                  Positioned(
+                    left: 8, right: 8, top: 0,
+                    child: Container(
+                      height: 1,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.transparent, Color(0xFF5BAF64), Color(0xFF5BAF64), Colors.transparent],
+                          stops: [0.0, 0.3, 0.7, 1.0],
+                        ),
+                        boxShadow: [BoxShadow(color: Color(0x995BAF64), blurRadius: 8)],
+                      ),
+                    ),
+                  ).animate(onPlay: (c) => c.repeat()).slideY(begin: 0, end: 164, duration: 1600.ms),
+              ],
             ),
           ),
 
@@ -441,21 +525,14 @@ class _TabButton extends StatelessWidget {
 }
 
 class _CameraPreview extends StatelessWidget {
-  const _CameraPreview({required this.controller, required this.onDetect});
+  const _CameraPreview({super.key, required this.controller, required this.onCapture});
 
   final MobileScannerController controller;
-  final void Function(String barcode) onDetect;
+  final void Function(BarcodeCapture capture) onCapture;
 
   @override
   Widget build(BuildContext context) {
-    return MobileScanner(
-      controller: controller,
-      onDetect: (capture) {
-        if (capture.barcodes.isEmpty) return;
-        final barcode = capture.barcodes.first.rawValue;
-        if (barcode != null) onDetect(barcode);
-      },
-    );
+    return MobileScanner(controller: controller, onDetect: onCapture);
   }
 }
 
