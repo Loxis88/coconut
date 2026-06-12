@@ -1,0 +1,51 @@
+name: Deploy Data Scripts
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "data/**" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Data Scripts
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Copy scripts to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "data/*.py,data/dds/*.py,data/staging/*.py,data/requirements.txt,data/deploy"
+        target: "/tmp/coconut_data_deploy"
+
+    - name: Install and restart services
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          sudo mkdir -p /opt/coconut/data/dds /opt/coconut/data/staging
+
+          sudo cp /tmp/coconut_data_deploy/data/*.py /opt/coconut/data/
+          sudo cp /tmp/coconut_data_deploy/data/dds/*.py /opt/coconut/data/dds/
+          sudo cp /tmp/coconut_data_deploy/data/staging/*.py /opt/coconut/data/staging/
+          sudo cp /tmp/coconut_data_deploy/data/requirements.txt /opt/coconut/data/
+
+          if [ ! -f /opt/coconut/data/.venv/bin/pip ]; then
+            sudo apt-get install -y python3-venv
+            sudo python3 -m venv /opt/coconut/data/.venv
+          fi
+
+          sudo /opt/coconut/data/.venv/bin/pip install -q -r /opt/coconut/data/requirements.txt
+
+          sudo cp /tmp/coconut_data_deploy/data/deploy/*.service /etc/systemd/system/
+          sudo systemctl daemon-reload
+          sudo systemctl enable kuper-parser kuper-enricher
+          sudo systemctl restart kuper-parser kuper-enricher
+
+          rm -rf /tmp/coconut_data_deploy
