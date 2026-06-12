@@ -1,0 +1,75 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "backend/**" ]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "backend/**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Go Backend
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache-dependency-path: backend/go.sum
+
+    - name: Test Backend
+      run: |
+        cd backend
+        go test -v ./...
+
+    - name: Build Backend Binary
+      run: |
+        cd backend
+        GOOS=linux GOARCH=amd64 go build -o api cmd/api/main.go
+
+    - name: Deploy to Server via SSH
+      if: github.event_name == 'push'
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "backend/api,backend/deploy/coconut-backend.service"
+        target: "/tmp/coconut_deploy"
+
+    - name: Restart Systemd Service
+      if: github.event_name == 'push'
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          sudo systemctl stop coconut-backend.service || true
+          sudo mkdir -p /opt/coconut/backend
+          sudo bash -c 'cat << EOF > /opt/coconut/backend/.env
+          PORT=8080
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          SMTP_FROM=${{ secrets.SMTP_FROM }}
+          EOF'
+          sudo rm -f /opt/coconut/backend/api
+          sudo mv /tmp/coconut_deploy/backend/api /opt/coconut/backend/api
+          sudo chmod +x /opt/coconut/backend/api
+          sudo mv /tmp/coconut_deploy/backend/deploy/coconut-backend.service /etc/systemd/system/coconut-backend.service
+          sudo systemctl daemon-reload
+          sudo systemctl enable coconut-backend.service
+          sudo systemctl restart coconut-backend.service
+          rm -rf /tmp/coconut_deploy
