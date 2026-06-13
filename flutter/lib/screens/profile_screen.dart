@@ -40,6 +40,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _notifs = true;
   bool _weekly = true;
 
+  Future<void> _editNickname(BuildContext context) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => _NicknameDialog(initial: widget.user.nickname ?? ''),
+    );
+    if (name != null && name.isNotEmpty) await widget.onUpdateNickname(name);
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Выйти?', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        content: const Text('Вы выйдете из аккаунта.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Выйти')),
+        ],
+      ),
+    );
+    if (ok == true) await widget.onLogout();
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Удалить аккаунт?', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        content: const Text('Это действие необратимо. Все данные будут удалены.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC03B32)),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await widget.onDeleteAccount();
+  }
+
   void _toggleAllergen(String a) {
     setState(() {
       if (_allergens.contains(a)) {
@@ -127,12 +169,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   GestureDetector(
-                                    onTap: () {},
+                                    onTap: () => _editNickname(context),
                                     child: Container(
                                       width: 36, height: 36,
                                       decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                                       alignment: Alignment.center,
-                                      child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 20),
+                                      child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
                                     ),
                                   ),
                                 ],
@@ -236,17 +278,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Settings
-                      _Section(
-                        title: 'Настройки',
-                        child: Column(
-                          children: [
-                            _ToggleRow(label: 'Push-уведомления', sub: 'Советы и напоминания', on: _notifs, onChange: (v) => setState(() => _notifs = v)),
-                            _ToggleRow(label: 'Еженедельный отчёт', sub: 'По воскресеньям', on: _weekly, onChange: (v) => setState(() => _weekly = v), last: true),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                      // TODO: restore Settings section when push notifications are implemented
+                      // _Section(
+                      //   title: 'Настройки',
+                      //   child: Column(
+                      //     children: [
+                      //       _ToggleRow(label: 'Push-уведомления', sub: 'Советы и напоминания', on: _notifs, onChange: (v) => setState(() => _notifs = v)),
+                      //       _ToggleRow(label: 'Еженедельный отчёт', sub: 'По воскресеньям', on: _weekly, onChange: (v) => setState(() => _weekly = v), last: true),
+                      //     ],
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 20),
 
                       // About
                       _Section(
@@ -262,6 +304,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               'МАЯК v2.0.0 · 2026',
                               style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486)),
                               textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Account actions
+                      _Section(
+                        title: 'Аккаунт',
+                        child: Column(
+                          children: [
+                            _AboutRow(
+                              label: 'Выйти из аккаунта',
+                              icon: '🚪',
+                              onTap: () => _confirmLogout(context),
+                            ),
+                            _AboutRow(
+                              label: 'Удалить аккаунт',
+                              icon: '🗑',
+                              onTap: () => _confirmDelete(context),
+                              last: true,
+                              destructive: true,
                             ),
                           ],
                         ),
@@ -389,11 +453,13 @@ class _AboutRow extends StatelessWidget {
   final String icon;
   final VoidCallback onTap;
   final bool last;
+  final bool destructive;
 
-  const _AboutRow({required this.label, required this.icon, required this.onTap, this.last = false});
+  const _AboutRow({required this.label, required this.icon, required this.onTap, this.last = false, this.destructive = false});
 
   @override
   Widget build(BuildContext context) {
+    final textColor = destructive ? const Color(0xFFC03B32) : const Color(0xFF0C1A09);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -404,11 +470,55 @@ class _AboutRow extends StatelessWidget {
           children: [
             Text(icon, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF0C1A09)))),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A9486), size: 20),
+            Expanded(child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: textColor))),
+            Icon(Icons.chevron_right_rounded, color: destructive ? const Color(0xFFC03B32) : const Color(0xFF8A9486), size: 20),
           ],
         ),
       ),
     );
   }
+}
+
+class _NicknameDialog extends StatefulWidget {
+  const _NicknameDialog({required this.initial});
+  final String initial;
+
+  @override
+  State<_NicknameDialog> createState() => _NicknameDialogState();
+}
+
+class _NicknameDialogState extends State<_NicknameDialog> {
+  late final TextEditingController _ctrl;
+  late final FocusNode _focus;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initial);
+    _focus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text('Имя профиля', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: _ctrl,
+          focusNode: _focus,
+          decoration: const InputDecoration(hintText: 'Введите имя'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, _ctrl.text.trim()),
+            child: const Text('Сохранить'),
+          ),
+        ],
+      );
 }

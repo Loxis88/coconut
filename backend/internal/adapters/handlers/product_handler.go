@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/coconut/backend/internal/core/ports"
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +22,39 @@ func NewProductHandler(productRepo ports.ProductRepository, fallbackService port
 
 func (h *ProductHandler) SetupRoutes(router fiber.Router) {
 	products := router.Group("/products")
+	products.Get("/catalog", h.ListCatalog)
 	products.Get("/:barcode", h.GetProductByBarcode)
+}
+
+func (h *ProductHandler) ListCatalog(c *fiber.Ctx) error {
+	limit, _ := strconv.Atoi(c.Query("limit", "30"))
+	offset, _ := strconv.Atoi(c.Query("offset", "0"))
+	if limit <= 0 || limit > 100 {
+		limit = 30
+	}
+
+	category := c.Query("category", "")
+
+	var minRating, maxRating float64
+	switch c.Query("score", "all") {
+	case "good":
+		minRating = 3.5
+	case "ok":
+		minRating = 2.0
+		maxRating = 3.5
+	case "bad":
+		maxRating = 2.0
+	}
+
+	products, err := h.productRepo.ListCatalog(c.UserContext(), limit, offset, category, minRating, maxRating)
+	if err != nil {
+		log.Printf("ERROR: ListCatalog: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to list catalog"})
+	}
+	if products == nil {
+		return c.JSON([]interface{}{})
+	}
+	return c.JSON(products)
 }
 
 func (h *ProductHandler) GetProductByBarcode(c *fiber.Ctx) error {

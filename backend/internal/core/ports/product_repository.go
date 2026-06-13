@@ -13,4 +13,7 @@ type ProductRepository interface {
 	SaveFallbackProduct(ctx context.Context, barcode string, p *domain.Product, ingredients []domain.ParsedIngredient, ingredientEmbeddings [][]float32) error
 	GetCategoryIDByEmbedding(ctx context.Context, embedding []float32) (*int64, error)
 	GetCategoryMedianNutrition(ctx context.Context, categoryID int64) (*domain.NutritionFacts, error)
+	// ListCatalog returns lightweight product cards for the catalog browse screen.
+	// category="" means no filter; minRating/maxRating=0 means unbounded.
+	ListCatalog(ctx context.Context, limit, offset int, category string, minRating, maxRating float64) ([]*domain.Product, error)
 }

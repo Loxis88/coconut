@@ -2,19 +2,14 @@ package handlers
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-var allowedProxyHosts = []string{
-	"rskrf.ru",
-	"www.rskrf.ru",
-}
 
 var proxyClient = func() *http.Client {
 	jar, _ := cookiejar.New(nil)
@@ -24,7 +19,22 @@ var proxyClient = func() *http.Client {
 	}
 }()
 
-// ProxyImage proxies external images that use cookie-based redirect protection (Bitrix CMS).
+// isProxyAllowed blocks SSRF: loopback, private, and link-local IPs are rejected.
+// Hostnames (including IDN) are allowed — DNS resolution happens inside proxyClient.Do.
+func isProxyAllowed(u *url.URL) bool {
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return false
+	}
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return true // domain name — allow
+	}
+	return !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast()
+}
+
+// ProxyImage proxies external images that use cookie-based redirect protection (Bitrix CMS)
+// or have non-ASCII (IDN/Cyrillic) hostnames that Dart's Uri cannot parse.
 // GET /proxy/image?url=https://rskrf.ru/...
 func ProxyImage(c *fiber.Ctx) error {
 	rawURL := c.Query("url")
@@ -37,14 +47,7 @@ func ProxyImage(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid url"})
 	}
 
-	allowed := false
-	for _, h := range allowedProxyHosts {
-		if strings.EqualFold(parsed.Hostname(), h) {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
+	if !isProxyAllowed(parsed) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "host not allowed"})
 	}
 

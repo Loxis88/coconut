@@ -107,7 +107,10 @@ class _CoconutAppState extends State<CoconutApp> {
       }
     } catch (_) {
       await _authRepository.logout();
-      setState(() => _user = null);
+      setState(() {
+        _user = null;
+        _phase = AppPhase.auth;
+      });
     }
   }
 
@@ -200,6 +203,7 @@ class _CoconutAppState extends State<CoconutApp> {
               loading: _loading,
               error: _error,
               currentProduct: _currentProduct,
+              productRepository: _productRepository,
               onSearchBarcode: _searchBarcode,
               onShowProduct: (product) => setState(() => _currentProduct = product),
               onClearHistory: () => _productRepository.clearHistory(),
@@ -235,6 +239,7 @@ class HomeShell extends StatefulWidget {
     required this.loading,
     required this.error,
     required this.currentProduct,
+    required this.productRepository,
     required this.onSearchBarcode,
     required this.onShowProduct,
     required this.onClearHistory,
@@ -251,6 +256,7 @@ class HomeShell extends StatefulWidget {
   final bool loading;
   final String? error;
   final Product? currentProduct;
+  final ProductRepository productRepository;
   final Future<Product?> Function(String barcode) onSearchBarcode;
   final void Function(Product product) onShowProduct;
   final Future<void> Function() onClearHistory;
@@ -307,16 +313,13 @@ class _HomeShellState extends State<HomeShell> {
           average: widget.average,
           streak: widget.streak,
           onNavigateToHistory: () => setState(() => _route = AppRoute.journal),
-          onShowProduct: (product) async {
+          onShowProduct: (product) {
+            widget.onShowProduct(product);
+            setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
-              final realProduct = await widget.onSearchBarcode(product.barcode!);
-              if (realProduct != null && mounted) {
-                widget.onShowProduct(realProduct);
-                setState(() => _route = AppRoute.detail);
-              }
-            } else {
-              widget.onShowProduct(product);
-              setState(() => _route = AppRoute.detail);
+              widget.onSearchBarcode(product.barcode!).then((realProduct) {
+                if (realProduct != null && mounted) widget.onShowProduct(realProduct);
+              });
             }
           },
         ),
@@ -353,16 +356,15 @@ class _HomeShellState extends State<HomeShell> {
         ),
       AppRoute.search => SearchScreen(
           history: widget.history,
-          onShowProduct: (product) async {
+          onLoadCatalog: ({category, score = 'all', limit = 10, offset = 0}) =>
+              widget.productRepository.loadCatalog(category: category, score: score, limit: limit, offset: offset),
+          onShowProduct: (product) {
+            widget.onShowProduct(product);
+            setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
-              final realProduct = await widget.onSearchBarcode(product.barcode!);
-              if (realProduct != null && mounted) {
-                widget.onShowProduct(realProduct);
-                setState(() => _route = AppRoute.detail);
-              }
-            } else {
-              widget.onShowProduct(product);
-              setState(() => _route = AppRoute.detail);
+              widget.onSearchBarcode(product.barcode!).then((realProduct) {
+                if (realProduct != null && mounted) widget.onShowProduct(realProduct);
+              });
             }
           },
         ),
