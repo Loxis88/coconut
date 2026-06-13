@@ -20,12 +20,21 @@ class ProductRepository {
   List<Product> _history = const [];
 
   Stream<List<Product>> get historyStream => _historyController.stream;
-  List<Product> get history => _history;
+  List<Product> get history => _distinct(_history);
+
+  List<Product> _distinct(List<Product> items) {
+    final seen = <int>{};
+    return items.where((p) => seen.add(p.id != 0 ? p.id : p.title.hashCode)).toList();
+  }
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _history = _loadHistory();
     _emit();
+  }
+
+  Future<List<Product>> loadCatalog({String? category, String score = 'all', int limit = 10, int offset = 0}) {
+    return _auth.withRefresh((token) => _api.getCatalog(token, category: category, score: score, limit: limit, offset: offset));
   }
 
   Future<Product> searchByBarcode(String barcode) async {
@@ -155,5 +164,5 @@ class ProductRepository {
     await _prefs?.setString(_datesKey, jsonEncode(dates.toList()));
   }
 
-  void _emit() => _historyController.add(List.unmodifiable(_history));
+  void _emit() => _historyController.add(List.unmodifiable(_distinct(_history)));
 }

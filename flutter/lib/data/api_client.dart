@@ -55,6 +55,15 @@ class ApiClient {
     await _delete('/api/me', headers: _authHeaders(token));
   }
 
+  Future<List<Product>> getCatalog(String token, {int limit = 30, int offset = 0, String? category, String score = 'all'}) async {
+    final params = <String, String>{'limit': '$limit', 'offset': '$offset', 'score': score};
+    if (category != null && category.isNotEmpty) params['category'] = category;
+    final uri = Uri.parse('$coconutBackendBaseUrl/api/products/catalog').replace(queryParameters: params);
+    final response = await _client.get(uri, headers: _authHeaders(token));
+    final list = _decode(response) as List;
+    return list.map((item) => _mapBackendProduct(item as Map<String, dynamic>)).toList();
+  }
+
   Future<Product> getProduct(String token, String barcode) async {
     final response = await _get('/api/products/$barcode', headers: _authHeaders(token));
     return _mapBackendProduct(response);

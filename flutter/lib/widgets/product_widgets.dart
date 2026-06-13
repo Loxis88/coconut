@@ -6,18 +6,20 @@ import '../theme.dart';
 import 'coco_card.dart';
 import 'score_widgets.dart';
 
-// Hosts whose images need cookie-based redirect handling — proxied through backend.
-const _kProxiedHosts = ['rskrf.ru', 'www.rskrf.ru'];
-
-String _resolveImageUrl(String url) {
+bool _needsProxy(String url) {
   try {
     final uri = Uri.parse(url);
-    if (_kProxiedHosts.contains(uri.host)) {
-      return '$coconutBackendBaseUrl/proxy/image?url=${Uri.encodeComponent(url)}';
-    }
-  } catch (_) {}
-  return url;
+    if (!uri.isAbsolute) return false;
+    final host = uri.host;
+    // Proxy if host contains % (percent-encoded IDN/Cyrillic domain) or is rskrf.ru
+    return host.contains('%') || host.contains('rskrf.ru');
+  } catch (_) {
+    return true; // unparseable URL (raw Cyrillic host etc.) → proxy
+  }
 }
+
+String _resolveImageUrl(String url) =>
+    _needsProxy(url) ? '$coconutBackendBaseUrl/proxy/image?url=${Uri.encodeComponent(url)}' : url;
 
 class NetImg extends StatelessWidget {
   const NetImg(this.url, {super.key, this.fit = BoxFit.cover, this.width, this.height});

@@ -260,6 +260,57 @@ func (r *PostgresProductRepository) SaveFallbackProduct(
 	return tx.Commit(ctx)
 }
 
+// ListCatalog returns lightweight product cards ordered by rating descending.
+func (r *PostgresProductRepository) ListCatalog(ctx context.Context, limit, offset int, category string, minRating, maxRating float64) ([]*domain.Product, error) {
+	query := `
+		SELECT
+			p.id, p.total_rating, p.brand, p.image_link, p.name,
+			(SELECT pb.barcode FROM product_catalog.product_barcode pb WHERE pb.product_id = p.id LIMIT 1),
+			c.id, COALESCE(c.name_ru, c.name),
+			n.calories_kcal
+		FROM product_catalog.product p
+		LEFT JOIN product_catalog.category c ON p.category_id = c.id
+		LEFT JOIN product_catalog.nutrition_facts n ON p.id = n.product_id
+		WHERE ($1 = '' OR c.name ILIKE '%' || $1 || '%' OR c.name_ru ILIKE '%' || $1 || '%')
+		  AND ($2::float8 = 0 OR p.total_rating >= $2)
+		  AND ($3::float8 = 0 OR p.total_rating < $3)
+		ORDER BY p.total_rating DESC NULLS LAST, p.id ASC
+		LIMIT $4 OFFSET $5
+	`
+	rows, err := r.db.Query(ctx, query, category, minRating, maxRating, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []*domain.Product
+	for rows.Next() {
+		p := &domain.Product{}
+		var catID *int64
+		var catName *string
+		var calories *float64
+		if err := rows.Scan(
+			&p.ID, &p.TotalRating, &p.Brand, &p.ImageLink, &p.Name,
+			&p.Barcode,
+			&catID, &catName,
+			&calories,
+		); err != nil {
+			return nil, err
+		}
+		if catID != nil {
+			p.Category = &domain.Category{ID: *catID}
+			if catName != nil {
+				p.Category.Title = *catName
+			}
+		}
+		if calories != nil {
+			p.NutritionFacts = &domain.NutritionFacts{CaloriesKcal: calories}
+		}
+		products = append(products, p)
+	}
+	return products, rows.Err()
+}
+
 func float32SliceToLiteral(v []float32) string {
 	var sb strings.Builder
 	sb.WriteByte('[')

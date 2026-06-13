@@ -22,48 +22,105 @@ const _scoreFilters = [
   {'key': 'bad', 'label': 'Плохие', 'color': Color(0xFFC03B32)},
 ];
 
-const _mockSuggestions = [
-  _MockProduct('Кефир Простоквашино 2.5%', 'Данон', 'Молочные продукты', 84),
-  _MockProduct('Овсяное молоко Oatly', 'Oatly', 'Растительное молоко', 88),
-  _MockProduct('Греческий йогурт Epica', 'Эпика', 'Молочные продукты', 86),
-  _MockProduct('Гречка Увелка', 'Увелка', 'Крупы', 92),
-  _MockProduct('Шоколад Milka Молочный', 'Mondelez', 'Сладости', 45),
-  _MockProduct('Чипсы Lay\'s Сметана и лук', 'PepsiCo', 'Снеки', 19),
-  _MockProduct('Кола Zero', 'The Coca-Cola Company', 'Напитки', 22),
-];
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, required this.history, required this.onShowProduct});
+  const SearchScreen({
+    super.key,
+    required this.history,
+    required this.onShowProduct,
+    required this.onLoadCatalog,
+  });
 
   final List<Product> history;
   final void Function(Product product) onShowProduct;
+  final Future<List<Product>> Function({String? category, String score, int limit, int offset}) onLoadCatalog;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final _controller = TextEditingController();
+  final _textCtrl = TextEditingController();
   final _focusNode = FocusNode();
-  
+  final _scrollCtrl = ScrollController();
+
   String _query = '';
   bool _focused = false;
   String? _categoryFilter;
   String _scoreFilter = 'all';
 
+  List<Product> _catalog = const [];
+  bool _catalogLoading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _offset = 0;
+  static const _pageSize = 10;
+
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      setState(() => _focused = _focusNode.hasFocus);
-    });
+    _focusNode.addListener(() => setState(() => _focused = _focusNode.hasFocus));
+    _scrollCtrl.addListener(_onScroll);
+    _loadCatalog();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _textCtrl.dispose();
     _focusNode.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadCatalog({String? category}) async {
+    setState(() {
+      _catalogLoading = true;
+      _offset = 0;
+      _hasMore = true;
+      _catalog = const [];
+    });
+    try {
+      final items = await widget.onLoadCatalog(category: category, score: 'all', limit: _pageSize, offset: 0);
+      if (mounted) {
+        setState(() {
+          _catalog = items;
+          _offset = items.length;
+          _hasMore = items.length >= _pageSize;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _catalogLoading = false);
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _catalogLoading) return;
+    setState(() => _loadingMore = true);
+    try {
+      final items = await widget.onLoadCatalog(
+        category: _categoryFilter,
+        score: 'all',
+        limit: _pageSize,
+        offset: _offset,
+      );
+      if (mounted) {
+        setState(() {
+          _catalog = [..._catalog, ...items];
+          _offset += items.length;
+          _hasMore = items.length >= _pageSize;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
   }
 
   bool _matchScore(int score, String filter) {
@@ -75,43 +132,32 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<Product> get _results {
     final q = _query.trim().toLowerCase();
-    final allProducts = [...widget.history, ..._mockSuggestions.map((m) => m.toProduct())];
-    
-    // De-duplicate by ID
-    final uniqueProducts = <int, Product>{};
-    for (final p in allProducts) {
-      uniqueProducts[p.id] = p;
-    }
-    
-    return uniqueProducts.values.where((p) {
+    return _catalog.where((p) {
       final matchText = q.isEmpty ||
           p.title.toLowerCase().contains(q) ||
           p.manufacturer.toLowerCase().contains(q);
-      final matchCat = _categoryFilter == null || p.categoryName == _categoryFilter;
       final matchScore = _matchScore(p.score, _scoreFilter);
-      return matchText && matchCat && matchScore;
+      return matchText && matchScore;
     }).toList();
   }
 
-  List<Product> get _topPicks {
-    final all = [...widget.history, ..._mockSuggestions.map((m) => m.toProduct())];
-    all.sort((a, b) => b.score.compareTo(a.score));
-    final unique = <int, Product>{};
-    for (final p in all) {
-      unique[p.id] = p;
-      if (unique.length == 3) break;
-    }
-    return unique.values.toList();
-  }
 
   void _clear() {
-    _controller.clear();
+    _textCtrl.clear();
+    _focusNode.unfocus();
+    final hadCategory = _categoryFilter != null;
     setState(() {
       _query = '';
-      _categoryFilter = null;
       _scoreFilter = 'all';
+      if (hadCategory) {
+        _categoryFilter = null;
+        _catalog = const [];
+        _catalogLoading = true;
+        _offset = 0;
+        _hasMore = true;
+      }
     });
-    _focusNode.unfocus();
+    if (hadCategory) _loadCatalog();
   }
 
   Color _getScoreColor(int score) {
@@ -130,7 +176,12 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final isSearching = _query.trim().isNotEmpty || _categoryFilter != null;
     final results = _results;
-    final topPicks = _topPicks;
+    if (_catalogLoading && _catalog.isEmpty) {
+      return Container(
+        color: MayakTheme.bg,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Container(
       color: MayakTheme.bg,
@@ -156,7 +207,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
-                        controller: _controller,
+                        controller: _textCtrl,
                         focusNode: _focusNode,
                         onChanged: (v) => setState(() => _query = v),
                         style: GoogleFonts.dmSans(fontSize: 15, color: const Color(0xFF0C1A09)),
@@ -185,7 +236,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: isSearching
                   ? _buildResults(results)
-                  : _buildEmptyState(topPicks),
+                  : _buildEmptyState(),
             ),
           ],
         ),
@@ -193,8 +244,9 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildEmptyState(List<Product> topPicks) {
+  Widget _buildEmptyState() {
     return ListView(
+      controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         // Categories
@@ -216,7 +268,17 @@ class _SearchScreenState extends State<SearchScreen> {
           itemBuilder: (context, index) {
             final cat = _categories[index];
             return GestureDetector(
-              onTap: () => setState(() => _categoryFilter = cat['key'] as String),
+              onTap: () {
+                final key = cat['key'] as String;
+                setState(() {
+                  _categoryFilter = key;
+                  _catalog = const [];
+                  _catalogLoading = true;
+                  _offset = 0;
+                  _hasMore = true;
+                });
+                _loadCatalog(category: key);
+              },
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -242,22 +304,35 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         const SizedBox(height: 32),
 
-        // Top picks
+        // Catalog
         Text(
           'ТОП ОЦЕНОК',
           style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486), letterSpacing: 10 * 0.08),
         ),
         const SizedBox(height: 10),
-        ...topPicks.map((p) => Padding(
+        ..._catalog.map((p) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _ResultItem(product: p, onTap: () => widget.onShowProduct(p)),
             )),
+        if (_loadingMore)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        if (!_hasMore && _catalog.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text('Все продукты загружены', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
+            ),
+          ),
       ],
     ).animate().fadeIn(duration: 200.ms);
   }
 
   Widget _buildResults(List<Product> results) {
     return ListView(
+      controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         // Filters
@@ -267,7 +342,16 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             if (_categoryFilter != null)
               GestureDetector(
-                onTap: () => setState(() => _categoryFilter = null),
+                onTap: () {
+                  setState(() {
+                    _categoryFilter = null;
+                    _catalog = const [];
+                    _catalogLoading = true;
+                    _offset = 0;
+                    _hasMore = true;
+                  });
+                  _loadCatalog();
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(color: const Color(0xFF153918), borderRadius: BorderRadius.circular(12)),
@@ -351,6 +435,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _ResultItem(product: p, onTap: () => widget.onShowProduct(p)),
               )),
+        if (_loadingMore)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        if (!_hasMore && results.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text('Все продукты загружены', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
+            ),
+          ),
       ],
     ).animate().fadeIn(duration: 200.ms);
   }
@@ -409,7 +505,7 @@ class _ResultItem extends StatelessWidget {
                     children: [
                       Text('${product.nutrients?.calories ?? 0} ккал', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
                       Container(margin: const EdgeInsets.symmetric(horizontal: 6), width: 2, height: 2, decoration: const BoxDecoration(color: Color(0xFFC4BFB4), shape: BoxShape.circle)),
-                      Text(product.categoryName, style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
+                      Flexible(child: Text(product.categoryName, style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486)), maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                 ],
@@ -431,29 +527,3 @@ class _ResultItem extends StatelessWidget {
   }
 }
 
-class _MockProduct {
-  const _MockProduct(this.title, this.manufacturer, this.category, this.score);
-  final String title;
-  final String manufacturer;
-  final String category;
-  final int score;
-
-  Product toProduct() => Product(
-        id: title.hashCode,
-        title: title,
-        totalRating: score / 20,
-        description: '',
-        categoryName: category,
-        manufacturer: manufacturer,
-        price: '',
-        thumbnail: null,
-        criteriaRatings: const [],
-        worth: const [],
-        info: const [],
-        recommendations: const [],
-        nutrients: null,
-        composition: null,
-        hasQualityMark: false,
-        hasBadQualityMark: false,
-      );
-}
