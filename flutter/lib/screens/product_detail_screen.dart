@@ -364,24 +364,27 @@ class _AlternativesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (product.recommendations.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 32),
-        child: Column(
-          children: [
-            Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(color: const Color(0x14153918), borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF153918), size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text('Это уже лучший выбор', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 15, color: const Color(0xFF0C1A09))),
-            const SizedBox(height: 4),
-            Text(
-              'Маяк не нашёл более полезной альтернативы в этой категории',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF5E6859)),
-            ),
-          ],
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(color: const Color(0x14153918), borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF153918), size: 28),
+              ),
+              const SizedBox(height: 12),
+              Text('Это уже лучший выбор', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 15, color: const Color(0xFF0C1A09))),
+              const SizedBox(height: 4),
+              Text(
+                'Маяк не нашёл более полезной альтернативы в этой категории',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF5E6859)),
+              ),
+            ],
+          ),
         ),
       );
     }
