@@ -136,7 +136,7 @@ export default function Terms() {
           порядке по месту нахождения Маяка.
         </p>
 
-        <h2>9. Реквизиты</h2>
+        {/* <h2>9. Реквизиты</h2>
         <table className="req-table">
           <tbody>
             <tr><td>Наименование</td><td>Индивидуальный предприниматель Головлев Иван Александрович</td></tr>
@@ -148,7 +148,7 @@ export default function Terms() {
             <tr><td>Корреспондентский счёт</td><td>30101810745374525104</td></tr>
             <tr><td>Email</td><td>hi@mayak.app</td></tr>
           </tbody>
-        </table>
+        </table> */}
       </div>
     </LegalLayout>
   )
