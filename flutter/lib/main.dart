@@ -413,13 +413,9 @@ class _HomeShellState extends State<HomeShell> {
         ),
         bottomNav: showNav ? BottomNav(
           currentRoute: _route,
-          onRouteChanged: (r) => setState(() => _route = r),
+          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
         ) : null,
       ),
-      bottomNav: showNav ? BottomNav(
-        currentRoute: _route,
-        onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
-      ) : null,
     );
   }
 }
