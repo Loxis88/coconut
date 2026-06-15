@@ -8,7 +8,7 @@ This folder is the Flutter rewrite of the existing Android app.
 - Secure token storage and cached profile data.
 - Current user loading, nickname update, logout, and account deletion.
 - Barcode scanning with camera plus manual barcode input.
-- Product lookup through `http://62.233.43.33:8080/api/products/{barcode}`.
+- Product lookup through `https://foodmayak.ru/api/products/{barcode}`.
 - Personal scan history sync, save, clear, delete locally, daily average, and streak.
 - Home, scan, product detail, replacement, and profile screens.
 

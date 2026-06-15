@@ -48,7 +48,7 @@ jobs:
       run: |
         cd flutter
         flutter build apk --debug \
-          --dart-define=BACKEND_URL=http://62.233.43.33:8080
+          --dart-define=BACKEND_URL=https://foodmayak.ru
 
     - name: Rename Flutter APK
       run: |
