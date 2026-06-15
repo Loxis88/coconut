@@ -42,7 +42,7 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "backend/api,backend/deploy/coconut-backend.service"
+        source: "backend/api,backend/deploy/coconut-backend.service,backend/deploy/Caddyfile"
         target: "/tmp/coconut_deploy"
 
     - name: Restart Systemd Service
@@ -71,7 +71,9 @@ jobs:
           sudo mv /tmp/coconut_deploy/backend/api /opt/coconut/backend/api
           sudo chmod +x /opt/coconut/backend/api
           sudo mv /tmp/coconut_deploy/backend/deploy/coconut-backend.service /etc/systemd/system/coconut-backend.service
+          sudo mv /tmp/coconut_deploy/backend/deploy/Caddyfile /etc/caddy/Caddyfile
           sudo systemctl daemon-reload
           sudo systemctl enable coconut-backend.service
           sudo systemctl restart coconut-backend.service
+          sudo systemctl reload caddy || true
           rm -rf /tmp/coconut_deploy
