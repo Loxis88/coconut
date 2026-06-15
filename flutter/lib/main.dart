@@ -209,6 +209,7 @@ class _CoconutAppState extends State<CoconutApp> {
               onClearHistory: () => _productRepository.clearHistory(),
               onDeleteProduct: _productRepository.deleteFromHistory,
               onLogout: () async {
+                await _productRepository.clearLocalHistory();
                 await _logout();
                 setState(() => _phase = AppPhase.auth);
               },
@@ -217,6 +218,7 @@ class _CoconutAppState extends State<CoconutApp> {
                 setState(() => _user = updated);
               },
               onDeleteAccount: () async {
+                await _productRepository.clearLocalHistory();
                 await _authRepository.deleteAccount();
                 setState(() => _phase = AppPhase.auth);
               },
@@ -379,29 +381,41 @@ class _HomeShellState extends State<HomeShell> {
 
     final showNav = _route == AppRoute.home || _route == AppRoute.search || _route == AppRoute.journal || _route == AppRoute.profile;
 
-    return AdaptiveScreen(
-      child: Stack(
-        children: [
-          body,
-          if (_peekProduct != null)
-            DraggableScrollableSheet(
-              controller: _peekCtrl!,
-              initialChildSize: 0.45,
-              minChildSize: 0.0,
-              maxChildSize: 1.0,
-              snap: true,
-              snapSizes: const [0.45],
-              builder: (_, scrollController) => ProductSheet(
-                product: _peekProduct!,
-                scrollController: scrollController,
+    return PopScope(
+      canPop: _route == AppRoute.home && !_sheetOpen,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        if (_sheetOpen) {
+          _peekCtrl?.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+          setState(() { _sheetOpen = false; _peekProduct = null; });
+        } else if (_route != AppRoute.home) {
+          setState(() => _route = AppRoute.home);
+        }
+      },
+      child: AdaptiveScreen(
+        child: Stack(
+          children: [
+            body,
+            if (_peekProduct != null)
+              DraggableScrollableSheet(
+                controller: _peekCtrl!,
+                initialChildSize: 0.45,
+                minChildSize: 0.0,
+                maxChildSize: 1.0,
+                snap: true,
+                snapSizes: const [0.45],
+                builder: (_, scrollController) => ProductSheet(
+                  product: _peekProduct!,
+                  scrollController: scrollController,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
+        bottomNav: showNav ? BottomNav(
+          currentRoute: _route,
+          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
+        ) : null,
       ),
-      bottomNav: showNav ? BottomNav(
-        currentRoute: _route,
-        onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
-      ) : null,
     );
   }
 }
