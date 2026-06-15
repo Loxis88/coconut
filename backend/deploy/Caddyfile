@@ -1,0 +1,15 @@
+foodmayak.ru {
+    # 1. Проксируем запросы к бэкенду
+    reverse_proxy /auth/* 127.0.0.1:8080
+    reverse_proxy /api/*  127.0.0.1:8080
+    reverse_proxy /proxy/* 127.0.0.1:8080
+    reverse_proxy /health 127.0.0.1:8080
+
+    # 2. Все остальные запросы (по умолчанию) отдают статику лендинга
+    handle {
+        root * /var/www/coconut-landing
+        encode gzip zstd
+        file_server
+        try_files {path} /index.html
+    }
+}
