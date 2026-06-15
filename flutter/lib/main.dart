@@ -327,7 +327,7 @@ class _HomeShellState extends State<HomeShell> {
           loading: widget.loading,
           scanLocked: _sheetOpen,
           error: widget.error,
-          onBack: () => setState(() => _route = AppRoute.home),
+          onBack: () => setState(() { _route = AppRoute.home; _peekProduct = null; _sheetOpen = false; }),
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
             if (product != null && mounted) _showProductSheet(product);
@@ -400,7 +400,7 @@ class _HomeShellState extends State<HomeShell> {
       ),
       bottomNav: showNav ? BottomNav(
         currentRoute: _route,
-        onRouteChanged: (r) => setState(() => _route = r),
+        onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
       ) : null,
     );
   }
