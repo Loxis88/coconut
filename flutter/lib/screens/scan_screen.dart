@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -88,7 +87,7 @@ class _ScanScreenState extends State<ScanScreen> {
     final corners = barcode.corners;
     final camSize = _controller.value.size;
     Rect? newFocusRect;
-    if (corners != null && corners.length >= 4 && camSize != Size.zero) {
+    if (corners.length >= 4 && camSize != Size.zero) {
       final sw = MediaQuery.of(context).size.width;
       final sh = MediaQuery.of(context).size.height;
       var minX = double.infinity, minY = double.infinity;
@@ -186,7 +185,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 gradient: RadialGradient(
                   center: Alignment(0, -0.1),
                   radius: 0.7,
-                  colors: [Color(0x0FFDC50), Colors.transparent], // rgba(255,220,80,0.06)
+                  colors: [Color(0x0FFFDC50), Colors.transparent], // rgba(255,220,80,0.06)
                   stops: [0.0, 1.0],
                 ),
               ),
@@ -269,7 +268,7 @@ class _ScanScreenState extends State<ScanScreen> {
                     child: Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -278,7 +277,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   ),
                   Text(
                     'Сканер',
-                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white.withOpacity(0.9)),
+                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -289,12 +288,12 @@ class _ScanScreenState extends State<ScanScreen> {
                       duration: const Duration(milliseconds: 200),
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: _flash ? const Color(0x2EFCdc50) : Colors.white.withOpacity(0.08),
+                        color: _flash ? const Color(0x2EFCdc50) : Colors.white.withValues(alpha: 0.08),
                         border: Border.all(color: _flash ? const Color(0x59FFDC50) : Colors.transparent),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: Icon(Icons.flash_on_rounded, color: _flash ? const Color(0xFFFFE04A) : Colors.white.withOpacity(0.7), size: 16),
+                      child: Icon(Icons.flash_on_rounded, color: _flash ? const Color(0xFFFFE04A) : Colors.white.withValues(alpha: 0.7), size: 16),
                     ),
                   ),
                 ],
@@ -542,15 +541,15 @@ class _ScannerFramePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final color = isResult ? const Color(0xFF5BAF64) : Colors.white.withOpacity(0.65);
+    final color = isResult ? const Color(0xFF5BAF64) : Colors.white.withValues(alpha: 0.65);
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..strokeJoin = StrokeJoin.round;
 
-    final length = 24.0;
-    final r = 6.0;
+    const length = 24.0;
+    const r = 6.0;
 
     // Top-Left
     canvas.drawPath(Path()..moveTo(0, length)..lineTo(0, r)..quadraticBezierTo(0, 0, r, 0)..lineTo(length, 0), paint);

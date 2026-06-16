@@ -160,17 +160,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (hadCategory) _loadCatalog();
   }
 
-  Color _getScoreColor(int score) {
-    if (score >= 70) return MayakTheme.scoreExcellent;
-    if (score >= 40) return MayakTheme.scoreModerate;
-    return MayakTheme.scorePoor;
-  }
-
-  String _getScoreLabel(int score) {
-    if (score >= 70) return 'Хорошо';
-    if (score >= 40) return 'Спорно';
-    return 'Плохо';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -377,8 +366,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: active ? color.withOpacity(0.1) : const Color(0x0F0C1A09),
-                    border: Border.all(color: active ? color.withOpacity(0.25) : Colors.transparent),
+                    color: active ? color.withValues(alpha: 0.1) : const Color(0x0F0C1A09),
+                    border: Border.all(color: active ? color.withValues(alpha: 0.25) : Colors.transparent),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

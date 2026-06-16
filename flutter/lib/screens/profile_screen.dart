@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/auth_user.dart';
@@ -37,8 +37,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _diet = 'Без ограничений';
   final Set<String> _allergens = {};
-  bool _notifs = true;
-  bool _weekly = true;
+
 
   Future<void> _editNickname(BuildContext context) async {
     final name = await showDialog<String>(
@@ -123,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
-                              colors: [const Color(0xFF5BAF64).withOpacity(0.15), Colors.transparent],
+                              colors: [const Color(0xFF5BAF64).withValues(alpha: 0.15), Colors.transparent],
                             ),
                           ),
                         ),
@@ -141,8 +140,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     width: 56,
                                     height: 56,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     alignment: Alignment.center,
@@ -163,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         const SizedBox(height: 2),
                                         Text(
                                           'С нами с мая 2025',
-                                          style: GoogleFonts.dmMono(fontSize: 11, color: Colors.white.withOpacity(0.35)),
+                                          style: GoogleFonts.dmMono(fontSize: 11, color: Colors.white.withValues(alpha: 0.35)),
                                         ),
                                       ],
                                     ),
@@ -172,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     onTap: () => _editNickname(context),
                                     child: Container(
                                       width: 36, height: 36,
-                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                       alignment: Alignment.center,
                                       child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
                                     ),
@@ -353,12 +352,12 @@ class _HeroStatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.07), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           Text(n, style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 24, color: highlight ? const Color(0xFF5BAF64) : Colors.white, height: 1)),
           const SizedBox(height: 2),
-          Text(label, style: GoogleFonts.dmMono(fontSize: 9, color: Colors.white.withOpacity(0.3), letterSpacing: 9 * 0.04)),
+          Text(label, style: GoogleFonts.dmMono(fontSize: 9, color: Colors.white.withValues(alpha: 0.3), letterSpacing: 9 * 0.04)),
         ],
       ),
     );
@@ -395,58 +394,6 @@ class _Section extends StatelessWidget {
   }
 }
 
-class _ToggleRow extends StatelessWidget {
-  final String label;
-  final String sub;
-  final bool on;
-  final ValueChanged<bool> onChange;
-  final bool last;
-
-  const _ToggleRow({required this.label, required this.sub, required this.on, required this.onChange, this.last = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF0C1A09))),
-                Text(sub, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859))),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => onChange(!on),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 44, height: 26,
-              decoration: BoxDecoration(
-                color: on ? const Color(0xFF153918) : const Color(0xFFB8C0B4),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeInOut,
-                    left: on ? 22 : 4,
-                    top: 4,
-                    child: Container(width: 18, height: 18, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _AboutRow extends StatelessWidget {
   final String label;

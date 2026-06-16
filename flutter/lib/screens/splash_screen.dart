@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -102,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 'НАВИГАТОР ПИТАНИЯ',
                 style: GoogleFonts.dmSans(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.35),
+                  color: Colors.white.withValues(alpha: 0.35),
                   letterSpacing: 12 * 0.12,
                 ),
               )
@@ -117,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Container(
               width: 64,
               height: 1,
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               alignment: Alignment.centerLeft,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 2000),
@@ -152,8 +151,8 @@ class LighthousePainter extends CustomPainter {
     }
 
     // Tower
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(22, 28, 12, 42), const Radius.circular(1.5)), Paint()..color = Colors.white.withOpacity(0.85));
-    canvas.drawRect(const Rect.fromLTWH(22, 42, 12, 7), Paint()..color = Colors.white.withOpacity(0.25));
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(22, 28, 12, 42), const Radius.circular(1.5)), Paint()..color = Colors.white.withValues(alpha: 0.85));
+    canvas.drawRect(const Rect.fromLTWH(22, 42, 12, 7), Paint()..color = Colors.white.withValues(alpha: 0.25));
 
     // Lantern
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(18, 18, 20, 13), const Radius.circular(2.5)), Paint()..color = Colors.white);
@@ -165,10 +164,10 @@ class LighthousePainter extends CustomPainter {
     final capPath = Path()
       ..moveTo(20, 18)
       ..quadraticBezierTo(28, 11, 36, 18);
-    canvas.drawPath(capPath, Paint()..color = Colors.white.withOpacity(0.85));
+    canvas.drawPath(capPath, Paint()..color = Colors.white.withValues(alpha: 0.85));
 
     // Base
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(18, 68, 20, 4), const Radius.circular(1.0)), Paint()..color = Colors.white.withOpacity(0.55));
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(18, 68, 20, 4), const Radius.circular(1.0)), Paint()..color = Colors.white.withValues(alpha: 0.55));
   }
 
   @override

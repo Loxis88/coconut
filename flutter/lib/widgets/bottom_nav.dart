@@ -19,7 +19,7 @@ class BottomNav extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xE8E8E3D6), // E8E3D6 at 0.94 opacity approx = 240 alpha -> 0xF0
-            border: Border(top: BorderSide(color: MayakTheme.fg.withOpacity(0.07))),
+            border: Border(top: BorderSide(color: MayakTheme.fg.withValues(alpha: 0.07))),
           ),
           padding: const EdgeInsets.only(bottom: 20, top: 8, left: 12, right: 12),
           child: Row(
@@ -48,7 +48,7 @@ class BottomNav extends StatelessWidget {
                     color: MayakTheme.primary,
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
-                      BoxShadow(color: MayakTheme.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 6)),
+                      BoxShadow(color: MayakTheme.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 6)),
                     ],
                   ),
                   alignment: Alignment.center,
@@ -247,11 +247,7 @@ class _ProfileIconPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
       
     canvas.drawCircle(const Offset(11, 8.5), 3.5, paint);
-    final path = Path()
-      ..moveTo(3.5, 20)
-      ..quadraticBezierTo(3.5, 16.1, 7.5, 13) // approx arc
-      ..arcToPoint(const Offset(14.5, 13), radius: const Radius.circular(7))
-      ..quadraticBezierTo(18.5, 16.1, 18.5, 20); // Not exact bezier to the react version but close
+
       
     // React path is: "M3.5 20c0-3.9 3.4-7 7.5-7s7.5 3.1 7.5 7"
     final exactPath = Path()
@@ -273,7 +269,7 @@ class _ScannerIconPainter extends CustomPainter {
     
     final xPos = [3.0, 6.5, 10.0, 13.5, 17.0];
     for (var x in xPos) {
-      paint.color = Colors.white.withOpacity(x == 6.5 || x == 13.5 ? 1.0 : 0.45);
+      paint.color = Colors.white.withValues(alpha: x == 6.5 || x == 13.5 ? 1.0 : 0.45);
       canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 5, 2, 12), const Radius.circular(0.8)), paint);
     }
   }

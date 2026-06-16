@@ -117,7 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           'Ваши данные хранятся на устройстве\nи не передаются третьим лицам',
                           style: GoogleFonts.dmSans(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.35),
+                            color: Colors.white.withValues(alpha: 0.35),
                             height: 1.6,
                           ),
                         ),
@@ -278,10 +278,10 @@ class MiniLighthousePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
     
-    paint.color = Colors.white.withOpacity(0.85);
+    paint.color = Colors.white.withValues(alpha: 0.85);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(10, 14, 8, 20), const Radius.circular(1)), paint);
     
-    paint.color = Colors.white.withOpacity(0.25);
+    paint.color = Colors.white.withValues(alpha: 0.25);
     canvas.drawRect(const Rect.fromLTWH(10, 21, 8, 4), paint);
     
     paint.color = Colors.white;
@@ -290,13 +290,13 @@ class MiniLighthousePainter extends CustomPainter {
     paint.color = const Color(0xFFFFD566);
     canvas.drawCircle(const Offset(14, 12), 3, paint);
     
-    paint.color = Colors.white.withOpacity(0.85);
+    paint.color = Colors.white.withValues(alpha: 0.85);
     final path = Path()
       ..moveTo(8, 8)
       ..quadraticBezierTo(14, 3, 20, 8);
     canvas.drawPath(path, paint);
     
-    paint.color = Colors.white.withOpacity(0.5);
+    paint.color = Colors.white.withValues(alpha: 0.5);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(8, 33, 12, 3), const Radius.circular(1)), paint);
   }
 

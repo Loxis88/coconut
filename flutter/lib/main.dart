@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:app_links/app_links.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-
 import 'data/api_client.dart';
 import 'data/auth_repository.dart';
 import 'data/product_repository.dart';
@@ -155,7 +151,7 @@ class _CoconutAppState extends State<CoconutApp> {
       title: 'МАЯК',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, background: MayakTheme.bg),
+        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, surface: MayakTheme.bg),
         scaffoldBackgroundColor: MayakTheme.bg,
         fontFamily: 'DM Sans', // Set in pubspec / google_fonts ideally, or here
         useMaterial3: true,
@@ -383,7 +379,7 @@ class _HomeShellState extends State<HomeShell> {
 
     return PopScope(
       canPop: _route == AppRoute.home && !_sheetOpen,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_sheetOpen) {
           _peekCtrl?.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
@@ -393,6 +389,10 @@ class _HomeShellState extends State<HomeShell> {
         }
       },
       child: AdaptiveScreen(
+        bottomNav: showNav ? BottomNav(
+          currentRoute: _route,
+          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
+        ) : null,
         child: Stack(
           children: [
             body,
@@ -411,10 +411,6 @@ class _HomeShellState extends State<HomeShell> {
               ),
           ],
         ),
-        bottomNav: showNav ? BottomNav(
-          currentRoute: _route,
-          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
-        ) : null,
       ),
     );
   }

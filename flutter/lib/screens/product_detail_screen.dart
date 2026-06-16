@@ -193,7 +193,7 @@ class _OverviewTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Label(text: 'Калорийность · 100г'),
+              const _Label(text: 'Калорийность · 100г'),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -277,7 +277,7 @@ class _OverviewTab extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: _Label(text: 'Особенности')),
+                  const Expanded(child: _Label(text: 'Особенности')),
                   if (product.worth.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -330,7 +330,7 @@ class _OverviewTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Label(text: 'Состав'),
+              const _Label(text: 'Состав'),
               const SizedBox(height: 8),
               Text(
                 composition,
@@ -569,10 +569,8 @@ class _ArcPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final r = 28.0;
+    const r = 28.0;
     final center = Offset(size.width / 2, size.height / 2);
-    final circ = 2 * math.pi * r;
-    final arc = circ * 0.7;
     
     final bgPaint = Paint()
       ..color = const Color(0x120C1A09)
@@ -586,8 +584,8 @@ class _ArcPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final startAngle = 126 * (math.pi / 180);
-    final sweepAngle = 0.7 * 2 * math.pi;
+    const startAngle = 126 * (math.pi / 180);
+    const sweepAngle = 0.7 * 2 * math.pi;
 
     canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle, sweepAngle, false, bgPaint);
     
