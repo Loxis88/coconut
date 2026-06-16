@@ -18,13 +18,13 @@ type Category struct {
 type NutritionFacts struct {
 	ServingSizeG *float64 `json:"serving_size_g,omitempty"`
 	CaloriesKcal *float64 `json:"calories_kcal,omitempty"`
-	ProteinG      *float64 `json:"protein_g,omitempty"`
-	FatG          *float64 `json:"fat_g,omitempty"`
-	CarbsG        *float64 `json:"carbs_g,omitempty"`
-	FiberG        *float64 `json:"fiber_g,omitempty"`
-	SugarG        *float64 `json:"sugar_g,omitempty"`
-	SaltG         *float64 `json:"salt_g,omitempty"`
-	SodiumMg      *float64 `json:"sodium_mg,omitempty"`
+	ProteinG     *float64 `json:"protein_g,omitempty"`
+	FatG         *float64 `json:"fat_g,omitempty"`
+	CarbsG       *float64 `json:"carbs_g,omitempty"`
+	FiberG       *float64 `json:"fiber_g,omitempty"`
+	SugarG       *float64 `json:"sugar_g,omitempty"`
+	SaltG        *float64 `json:"salt_g,omitempty"`
+	SodiumMg     *float64 `json:"sodium_mg,omitempty"`
 }
 
 type HealthRisk struct {

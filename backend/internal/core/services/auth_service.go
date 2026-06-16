@@ -8,8 +8,8 @@ import (
 	"github.com/coconut/backend/internal/core/domain"
 	"github.com/coconut/backend/internal/core/ports"
 	jwtutil "github.com/coconut/backend/pkg/jwt"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -118,7 +118,6 @@ func (s *authService) VerifyEmail(ctx context.Context, token string) error {
 
 	return nil
 }
-
 
 func (s *authService) RefreshTokens(ctx context.Context, refreshToken string) (string, string, error) {
 	// Validate the refresh token

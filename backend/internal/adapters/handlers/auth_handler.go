@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"strings"
 	"errors"
+	"strings"
 
 	"github.com/coconut/backend/internal/core/ports"
 	"github.com/coconut/backend/internal/core/services"
@@ -183,7 +183,6 @@ func (h *AuthHandler) UpdateNickname(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "nickname updated successfully"})
 }
-
 
 // AuthMiddleware protects routes requiring a valid JWT token
 func (h *AuthHandler) AuthMiddleware() fiber.Handler {
