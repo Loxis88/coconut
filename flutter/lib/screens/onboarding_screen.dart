@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingSlide {
@@ -23,33 +23,33 @@ class OnboardingSlide {
 
 final _slides = [
   OnboardingSlide(
-    num: "01",
-    heading: "Понимайте\nчто вы едите",
-    body: "МАЯК расшифровывает этикетки продуктов и объясняет состав простым и честным языком — без химического жаргона.",
+    num: '01',
+    heading: 'Понимайте\nчто вы едите',
+    body: 'МАЯК расшифровывает этикетки продуктов и объясняет состав простым и честным языком — без химического жаргона.',
     visual: CustomPaint(size: const Size(260, 200), painter: Visual1Painter()),
     bg: const Color(0xFFF4F1E8),
     ink: const Color(0xFF153918),
   ),
   OnboardingSlide(
-    num: "02",
-    heading: "Сканируйте\nза секунду",
-    body: "Наведите камеру на штрихкод — и получите полный научный анализ продукта до того, как положите его в корзину.",
+    num: '02',
+    heading: 'Сканируйте\nза секунду',
+    body: 'Наведите камеру на штрихкод — и получите полный научный анализ продукта до того, как положите его в корзину.',
     visual: CustomPaint(size: const Size(260, 200), painter: Visual2Painter()),
     bg: const Color(0xFFEBF3E8),
     ink: const Color(0xFF153918),
   ),
   OnboardingSlide(
-    num: "03",
-    heading: "Научная\nоснова",
-    body: "Каждая оценка опирается на рецензируемые исследования, критерии ВОЗ и базу данных Open Food Facts.",
+    num: '03',
+    heading: 'Научная\nоснова',
+    body: 'Каждая оценка опирается на рецензируемые исследования, критерии ВОЗ и базу данных Open Food Facts.',
     visual: CustomPaint(size: const Size(260, 200), painter: Visual3Painter()),
     bg: const Color(0xFFF4F1E8),
     ink: const Color(0xFF153918),
   ),
   OnboardingSlide(
-    num: "04",
-    heading: "Найдите\nлучшую замену",
-    body: "Маяк предложит более полезную альтернативу в той же категории и объяснит, чем она лучше.",
+    num: '04',
+    heading: 'Найдите\nлучшую замену',
+    body: 'Маяк предложит более полезную альтернативу в той же категории и объяснит, чем она лучше.',
     visual: CustomPaint(size: const Size(260, 200), painter: Visual4Painter()),
     bg: const Color(0xFFEBF3E8),
     ink: const Color(0xFF153918),
@@ -90,14 +90,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       '${_idx + 1} / ${_slides.length}',
                       style: GoogleFonts.dmMono(
                         fontSize: 12,
-                        color: slide.ink.withOpacity(0.4),
+                        color: slide.ink.withValues(alpha: 0.4),
                         letterSpacing: 12 * 0.04,
                       ),
                     ),
                     TextButton(
                       onPressed: widget.onComplete,
                       style: TextButton.styleFrom(
-                        foregroundColor: slide.ink.withOpacity(0.55),
+                        foregroundColor: slide.ink.withValues(alpha: 0.55),
                         textStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w500, fontSize: 14),
                       ),
                       child: const Text('Пропустить'),
@@ -152,7 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               fontWeight: FontWeight.w900,
                               fontSize: 96,
                               height: 0.85,
-                              color: slide.ink.withOpacity(0.08),
+                              color: slide.ink.withValues(alpha: 0.08),
                               letterSpacing: 96 * -0.04,
                             ),
                           ),
@@ -177,7 +177,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   style: GoogleFonts.dmSans(
                                     fontSize: 15,
                                     height: 1.65,
-                                    color: slide.ink.withOpacity(0.88),
+                                    color: slide.ink.withValues(alpha: 0.88),
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
@@ -210,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 6,
                             width: isActive ? 24 : 6,
                             decoration: BoxDecoration(
-                              color: isActive ? slide.ink : slide.ink.withOpacity(0.25),
+                              color: isActive ? slide.ink : slide.ink.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -236,7 +236,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _idx < _slides.length - 1 ? "Далее" : "Начать",
+                              _idx < _slides.length - 1 ? 'Далее' : 'Начать',
                               style: GoogleFonts.dmSans(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
@@ -267,19 +267,19 @@ class Visual1Painter extends CustomPainter {
     final paint = Paint();
     
     // Product label
-    paint.color = Colors.white.withOpacity(0.7);
+    paint.color = Colors.white.withValues(alpha: 0.7);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(55, 20, 150, 160), const Radius.circular(16)), paint);
     
-    paint.color = const Color(0xFF153918).withOpacity(0.12);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.12);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(70, 36, 120, 14), const Radius.circular(7)), paint);
     
-    paint.color = const Color(0xFF153918).withOpacity(0.07);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.07);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(70, 58, 88, 9), const Radius.circular(4.5)), paint);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(70, 74, 104, 9), const Radius.circular(4.5)), paint);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(70, 90, 72, 9), const Radius.circular(4.5)), paint);
     
     // Score bubble
-    paint.color = const Color(0xFF153918).withOpacity(0.08);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.08);
     canvas.drawCircle(const Offset(130, 148), 30, paint);
     
     final tp = TextPainter(
@@ -294,7 +294,7 @@ class Visual1Painter extends CustomPainter {
       canvas.save();
       canvas.translate(70, 58.0 + i * 16);
       
-      paint.color = const Color(0xFF4A9152).withOpacity(0.18);
+      paint.color = const Color(0xFF4A9152).withValues(alpha: 0.18);
       canvas.drawCircle(Offset.zero, 5, paint);
       
       final path = Path()
@@ -324,16 +324,16 @@ class Visual2Painter extends CustomPainter {
     final paint = Paint();
     
     // Phone silhouette
-    paint.color = const Color(0xFF153918).withOpacity(0.08);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.08);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(95, 10, 70, 120), const Radius.circular(12)), paint);
     
-    paint.color = Colors.white.withOpacity(0.5);
+    paint.color = Colors.white.withValues(alpha: 0.5);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(100, 16, 60, 108), const Radius.circular(9)), paint);
     
     // Scan frame
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.5;
-    paint.color = const Color(0xFF153918).withOpacity(0.3);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.3);
     canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(113, 38, 34, 52), const Radius.circular(4)), paint);
     
     // Corner marks
@@ -350,19 +350,19 @@ class Visual2Painter extends CustomPainter {
     }
     
     // Scan line
-    paint.color = const Color(0xFF4A9152).withOpacity(0.7);
+    paint.color = const Color(0xFF4A9152).withValues(alpha: 0.7);
     paint.strokeWidth = 1.5;
     canvas.drawLine(const Offset(113, 64), const Offset(147, 64), paint);
     
     // Barcode bars
     paint.style = PaintingStyle.fill;
     for (int i = 0; i < 8; i++) {
-      paint.color = const Color(0xFF153918).withOpacity(0.08 + (i % 3) * 0.04);
+      paint.color = const Color(0xFF153918).withValues(alpha: 0.08 + (i % 3) * 0.04);
       canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(116.0 + i * 4, 46, 2.0 + (i % 3), 36), const Radius.circular(0.5)), paint);
     }
     
     // Success flash
-    paint.color = const Color(0xFF4A9152).withOpacity(0.12);
+    paint.color = const Color(0xFF4A9152).withValues(alpha: 0.12);
     canvas.drawCircle(const Offset(130, 158), 20, paint);
     
     final path = Path()
@@ -386,17 +386,17 @@ class Visual3Painter extends CustomPainter {
     
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1;
-    paint.color = const Color(0xFF153918).withOpacity(0.07);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.07);
     
     canvas.drawCircle(const Offset(130, 100), 72, paint);
     canvas.drawCircle(const Offset(130, 100), 50, paint);
     
     paint.style = PaintingStyle.fill;
-    paint.color = const Color(0xFF153918).withOpacity(0.06);
+    paint.color = const Color(0xFF153918).withValues(alpha: 0.06);
     canvas.drawCircle(const Offset(130, 100), 28, paint);
     
     final tpCenter = TextPainter(
-      text: TextSpan(text: 'ВОЗ', style: GoogleFonts.dmMono(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF153918).withOpacity(0.6))),
+      text: TextSpan(text: 'ВОЗ', style: GoogleFonts.dmMono(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF153918).withValues(alpha: 0.6))),
       textDirection: TextDirection.ltr,
     );
     tpCenter.layout();
@@ -417,14 +417,14 @@ class Visual3Painter extends CustomPainter {
       final y = 100 + r * sin(rad);
       
       paint.style = PaintingStyle.stroke;
-      paint.color = const Color(0xFF153918).withOpacity(0.1);
+      paint.color = const Color(0xFF153918).withValues(alpha: 0.1);
       canvas.drawLine(const Offset(130, 100), Offset(x, y), paint);
       
       paint.style = PaintingStyle.fill;
       canvas.drawCircle(Offset(x, y), 16, paint);
       
       final tp = TextPainter(
-        text: TextSpan(text: label, style: GoogleFonts.dmMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF153918).withOpacity(0.6))),
+        text: TextSpan(text: label, style: GoogleFonts.dmMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF153918).withValues(alpha: 0.6))),
         textDirection: TextDirection.ltr,
       );
       tp.layout();
@@ -454,21 +454,21 @@ class Visual4Painter extends CustomPainter {
       
       final color = bad ? const Color(0xFFC03B32) : const Color(0xFF1E6B28);
       
-      paint.color = color.withOpacity(0.07);
+      paint.color = color.withValues(alpha: 0.07);
       canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 30, 72, 96), const Radius.circular(12)), paint);
       
-      paint.color = Colors.white.withOpacity(0.5);
+      paint.color = Colors.white.withValues(alpha: 0.5);
       canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x + 8, 38, 56, 40), const Radius.circular(8)), paint);
       
       final tpScore = TextPainter(
-        text: TextSpan(text: score, style: GoogleFonts.fraunces(fontSize: 30, fontWeight: FontWeight.w900, color: color.withOpacity(0.85))),
+        text: TextSpan(text: score, style: GoogleFonts.fraunces(fontSize: 30, fontWeight: FontWeight.w900, color: color.withValues(alpha: 0.85))),
         textDirection: TextDirection.ltr,
       );
       tpScore.layout();
       tpScore.paint(canvas, Offset(x + 36 - tpScore.width / 2, 86));
       
       final tpLabel = TextPainter(
-        text: TextSpan(text: label, style: GoogleFonts.dmSans(fontSize: 10, color: const Color(0xFF153918).withOpacity(0.5))),
+        text: TextSpan(text: label, style: GoogleFonts.dmSans(fontSize: 10, color: const Color(0xFF153918).withValues(alpha: 0.5))),
         textDirection: TextDirection.ltr,
       );
       tpLabel.layout();
@@ -492,7 +492,7 @@ class Visual4Painter extends CustomPainter {
     
     // Star
     final tpStar = TextPainter(
-      text: TextSpan(text: '✦', style: TextStyle(fontSize: 14, color: const Color(0xFF1E6B28).withOpacity(0.7))),
+      text: TextSpan(text: '✦', style: TextStyle(fontSize: 14, color: const Color(0xFF1E6B28).withValues(alpha: 0.7))),
       textDirection: TextDirection.ltr,
     );
     tpStar.layout();

@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:app_links/app_links.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-
 import 'data/api_client.dart';
 import 'data/auth_repository.dart';
 import 'data/product_repository.dart';
@@ -155,7 +151,7 @@ class _CoconutAppState extends State<CoconutApp> {
       title: 'МАЯК',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, background: MayakTheme.bg),
+        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, surface: MayakTheme.bg),
         scaffoldBackgroundColor: MayakTheme.bg,
         fontFamily: 'DM Sans', // Set in pubspec / google_fonts ideally, or here
         useMaterial3: true,
@@ -209,6 +205,7 @@ class _CoconutAppState extends State<CoconutApp> {
               onClearHistory: () => _productRepository.clearHistory(),
               onDeleteProduct: _productRepository.deleteFromHistory,
               onLogout: () async {
+                await _productRepository.clearLocalHistory();
                 await _logout();
                 setState(() => _phase = AppPhase.auth);
               },
@@ -217,6 +214,7 @@ class _CoconutAppState extends State<CoconutApp> {
                 setState(() => _user = updated);
               },
               onDeleteAccount: () async {
+                await _productRepository.clearLocalHistory();
                 await _authRepository.deleteAccount();
                 setState(() => _phase = AppPhase.auth);
               },
@@ -327,7 +325,7 @@ class _HomeShellState extends State<HomeShell> {
           loading: widget.loading,
           scanLocked: _sheetOpen,
           error: widget.error,
-          onBack: () => setState(() => _route = AppRoute.home),
+          onBack: () => setState(() { _route = AppRoute.home; _peekProduct = null; _sheetOpen = false; }),
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
             if (product != null && mounted) _showProductSheet(product);
@@ -379,29 +377,41 @@ class _HomeShellState extends State<HomeShell> {
 
     final showNav = _route == AppRoute.home || _route == AppRoute.search || _route == AppRoute.journal || _route == AppRoute.profile;
 
-    return AdaptiveScreen(
-      child: Stack(
-        children: [
-          body,
-          if (_peekProduct != null)
-            DraggableScrollableSheet(
-              controller: _peekCtrl!,
-              initialChildSize: 0.45,
-              minChildSize: 0.0,
-              maxChildSize: 1.0,
-              snap: true,
-              snapSizes: const [0.45],
-              builder: (_, scrollController) => ProductSheet(
-                product: _peekProduct!,
-                scrollController: scrollController,
+    return PopScope(
+      canPop: _route == AppRoute.home && !_sheetOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_sheetOpen) {
+          _peekCtrl?.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+          setState(() { _sheetOpen = false; _peekProduct = null; });
+        } else if (_route != AppRoute.home) {
+          setState(() => _route = AppRoute.home);
+        }
+      },
+      child: AdaptiveScreen(
+        bottomNav: showNav ? BottomNav(
+          currentRoute: _route,
+          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
+        ) : null,
+        child: Stack(
+          children: [
+            body,
+            if (_peekProduct != null)
+              DraggableScrollableSheet(
+                controller: _peekCtrl!,
+                initialChildSize: 0.45,
+                minChildSize: 0.0,
+                maxChildSize: 1.0,
+                snap: true,
+                snapSizes: const [0.45],
+                builder: (_, scrollController) => ProductSheet(
+                  product: _peekProduct!,
+                  scrollController: scrollController,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-      bottomNav: showNav ? BottomNav(
-        currentRoute: _route,
-        onRouteChanged: (r) => setState(() => _route = r),
-      ) : null,
     );
   }
 }

@@ -87,10 +87,8 @@ class ProductRepository {
           ),
         );
       }
-      if (mapped.isNotEmpty) {
-        _history = mapped;
-        await _saveHistory();
-      }
+      _history = mapped;
+      await _saveHistory();
     } catch (_) {
       _emit();
     }
@@ -101,10 +99,15 @@ class ProductRepository {
     await _saveHistory();
   }
 
-  Future<void> clearHistory() async {
+  Future<void> clearLocalHistory() async {
     _history = const [];
     await _prefs?.remove(_historyKey);
+    await _prefs?.remove(_datesKey);
     _emit();
+  }
+
+  Future<void> clearHistory() async {
+    await clearLocalHistory();
     try {
       await _auth.withRefresh((token) => _api.clearHistory(token));
     } catch (_) {}

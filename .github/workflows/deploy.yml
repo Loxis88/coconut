@@ -5,9 +5,7 @@ on:
     branches: [ "main", "feature/**", "codex/**", "flutter", "new-reference" ]
     paths: [ "flutter/**" ]
     tags: [ "*" ]
-  pull_request:
-    branches: [ "main" ]
-    paths: [ "flutter/**" ]
+
   workflow_dispatch:
 
 permissions:

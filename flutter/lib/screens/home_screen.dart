@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           'ИНДЕКС ПИТАНИЯ · 7 ДНЕЙ',
                           style: GoogleFonts.dmMono(
                             fontSize: 10,
-                            color: Colors.white.withOpacity(0.35),
+                            color: Colors.white.withValues(alpha: 0.35),
                             letterSpacing: 10 * 0.1,
                           ),
                         ),
@@ -153,14 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.dmSans(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withValues(alpha: 0.8),
                                     ),
                                   ),
                                   Text(
                                     'из 100',
                                     style: GoogleFonts.dmSans(
                                       fontSize: 12,
-                                      color: Colors.white.withOpacity(0.35),
+                                      color: Colors.white.withValues(alpha: 0.35),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 6,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(3),
                           ),
                           alignment: Alignment.centerLeft,
@@ -204,18 +204,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 20),
 
                         // Macro bars (mocked for now as in React)
-                        Row(
+                        const Row(
                           children: [
                             Expanded(child: _MacroBar(label: 'Белки', pct: 78, good: true)),
-                            const SizedBox(width: 24),
+                            SizedBox(width: 24),
                             Expanded(child: _MacroBar(label: 'Клетчатка', pct: 44, good: true)),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Row(
+                        const Row(
                           children: [
                             Expanded(child: _MacroBar(label: 'Сахар', pct: 63, good: false)),
-                            const SizedBox(width: 24),
+                            SizedBox(width: 24),
                             Expanded(child: _MacroBar(label: 'Добавки', pct: 22, good: false)),
                           ],
                         ),
@@ -305,7 +305,7 @@ class _MacroBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white.withOpacity(0.45))),
+            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white.withValues(alpha: 0.45))),
             Text('$pct%', style: GoogleFonts.dmMono(fontSize: 11, color: color)),
           ],
         ),
@@ -313,7 +313,7 @@ class _MacroBar extends StatelessWidget {
         Container(
           height: 4,
           width: double.infinity,
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(2)),
           alignment: Alignment.centerLeft,
           child: Container(
             height: 4,
