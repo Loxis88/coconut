@@ -338,8 +338,9 @@ class _HomeShellState extends State<HomeShell> {
             setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               widget.onSearchBarcode(product.barcode!).then((realProduct) {
-                if (realProduct != null && mounted)
+                if (realProduct != null && mounted) {
                   widget.onShowProduct(realProduct);
+                }
               });
             }
           },
@@ -392,8 +393,9 @@ class _HomeShellState extends State<HomeShell> {
             setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               widget.onSearchBarcode(product.barcode!).then((realProduct) {
-                if (realProduct != null && mounted)
+                if (realProduct != null && mounted) {
                   widget.onShowProduct(realProduct);
+                }
               });
             }
           },

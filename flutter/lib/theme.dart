@@ -27,15 +27,18 @@ class Tier {
 }
 
 Tier scoreTier(int score) {
-  if (score >= 80)
+  if (score >= 80) {
     return const Tier('Отлично', MayakTheme.scoreExcellent, Color(0xffd7f5e6),
         Color(0xff04432a));
-  if (score >= 60)
+  }
+  if (score >= 60) {
     return const Tier(
         'Хорошо', MayakTheme.scoreGood, Color(0xfff0f6cf), Color(0xff3a4407));
-  if (score >= 40)
+  }
+  if (score >= 40) {
     return const Tier('Спорно', MayakTheme.scoreModerate, Color(0xffffe2cc),
         Color(0xff5a1f00));
+  }
   return const Tier(
       'Плохо', MayakTheme.scorePoor, Color(0xffffd9df), Color(0xff5c0716));
 }

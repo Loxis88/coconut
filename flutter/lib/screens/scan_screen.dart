@@ -118,11 +118,12 @@ class _ScanScreenState extends State<ScanScreen> {
       _localLock = true;
       _detectedTimer?.cancel();
       _detectedTimer = Timer(const Duration(milliseconds: 900), () {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _detected = false;
             _focusRect = null;
           });
+        }
       });
       _lastRectUpdate = now;
       setState(() {
@@ -135,11 +136,12 @@ class _ScanScreenState extends State<ScanScreen> {
             now.difference(_lastRectUpdate!).inMilliseconds >= 300)) {
       _detectedTimer?.cancel();
       _detectedTimer = Timer(const Duration(milliseconds: 900), () {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _detected = false;
             _focusRect = null;
           });
+        }
       });
       _lastRectUpdate = now;
       setState(() {
