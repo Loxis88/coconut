@@ -49,9 +49,12 @@ class _SplashScreenState extends State<SplashScreen> {
               height: _step >= 1 ? [200.0, 300.0, 420.0][i] : 120.0,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0x265BAF64)), // 0.15 opacity
+                border:
+                    Border.all(color: const Color(0x265BAF64)), // 0.15 opacity
               ),
-            ).animate(target: _step >= 1 ? 1 : 0).fadeIn(duration: 1400.ms, delay: (120 * i).ms),
+            )
+                .animate(target: _step >= 1 ? 1 : 0)
+                .fadeIn(duration: 1400.ms, delay: (120 * i).ms),
 
           // Core glow
           Container(
@@ -74,13 +77,19 @@ class _SplashScreenState extends State<SplashScreen> {
                 size: const Size(56, 72),
                 painter: LighthousePainter(_step >= 2),
               )
-              .animate(target: _step >= 1 ? 1 : 0)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.3, end: 0, duration: 800.ms, curve: Curves.easeOutCubic)
-              .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 800.ms, curve: Curves.easeOutCubic),
-
+                  .animate(target: _step >= 1 ? 1 : 0)
+                  .fadeIn(duration: 800.ms)
+                  .slideY(
+                      begin: 0.3,
+                      end: 0,
+                      duration: 800.ms,
+                      curve: Curves.easeOutCubic)
+                  .scale(
+                      begin: const Offset(0.9, 0.9),
+                      end: const Offset(1, 1),
+                      duration: 800.ms,
+                      curve: Curves.easeOutCubic),
               const SizedBox(height: 32),
-
               Text(
                 'МАЯК',
                 style: GoogleFonts.fraunces(
@@ -91,12 +100,10 @@ class _SplashScreenState extends State<SplashScreen> {
                   height: 1,
                 ),
               )
-              .animate(target: _step >= 2 ? 1 : 0)
-              .fadeIn(duration: 700.ms)
-              .slideY(begin: 0.2, end: 0, duration: 700.ms),
-
+                  .animate(target: _step >= 2 ? 1 : 0)
+                  .fadeIn(duration: 700.ms)
+                  .slideY(begin: 0.2, end: 0, duration: 700.ms),
               const SizedBox(height: 10),
-
               Text(
                 'НАВИГАТОР ПИТАНИЯ',
                 style: GoogleFonts.dmSans(
@@ -104,9 +111,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white.withValues(alpha: 0.35),
                   letterSpacing: 12 * 0.12,
                 ),
-              )
-              .animate(target: _step >= 3 ? 1 : 0)
-              .fadeIn(duration: 600.ms),
+              ).animate(target: _step >= 3 ? 1 : 0).fadeIn(duration: 600.ms),
             ],
           ),
 
@@ -151,25 +156,38 @@ class LighthousePainter extends CustomPainter {
     }
 
     // Tower
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(22, 28, 12, 42), const Radius.circular(1.5)), Paint()..color = Colors.white.withValues(alpha: 0.85));
-    canvas.drawRect(const Rect.fromLTWH(22, 42, 12, 7), Paint()..color = Colors.white.withValues(alpha: 0.25));
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(22, 28, 12, 42), const Radius.circular(1.5)),
+        Paint()..color = Colors.white.withValues(alpha: 0.85));
+    canvas.drawRect(const Rect.fromLTWH(22, 42, 12, 7),
+        Paint()..color = Colors.white.withValues(alpha: 0.25));
 
     // Lantern
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(18, 18, 20, 13), const Radius.circular(2.5)), Paint()..color = Colors.white);
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(18, 18, 20, 13), const Radius.circular(2.5)),
+        Paint()..color = Colors.white);
 
     // Light pulse (simulated static for painter, real pulse needs animation builder, but simple is ok here)
-    canvas.drawCircle(const Offset(28, 24), 4.5, Paint()..color = const Color(0xFFFFD566));
+    canvas.drawCircle(
+        const Offset(28, 24), 4.5, Paint()..color = const Color(0xFFFFD566));
 
     // Cap
     final capPath = Path()
       ..moveTo(20, 18)
       ..quadraticBezierTo(28, 11, 36, 18);
-    canvas.drawPath(capPath, Paint()..color = Colors.white.withValues(alpha: 0.85));
+    canvas.drawPath(
+        capPath, Paint()..color = Colors.white.withValues(alpha: 0.85));
 
     // Base
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(18, 68, 20, 4), const Radius.circular(1.0)), Paint()..color = Colors.white.withValues(alpha: 0.55));
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(18, 68, 20, 4), const Radius.circular(1.0)),
+        Paint()..color = Colors.white.withValues(alpha: 0.55));
   }
 
   @override
-  bool shouldRepaint(covariant LighthousePainter oldDelegate) => showBeam != oldDelegate.showBeam;
+  bool shouldRepaint(covariant LighthousePainter oldDelegate) =>
+      showBeam != oldDelegate.showBeam;
 }

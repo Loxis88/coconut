@@ -24,7 +24,9 @@ class ProductRepository {
 
   List<Product> _distinct(List<Product> items) {
     final seen = <int>{};
-    return items.where((p) => seen.add(p.id != 0 ? p.id : p.title.hashCode)).toList();
+    return items
+        .where((p) => seen.add(p.id != 0 ? p.id : p.title.hashCode))
+        .toList();
   }
 
   Future<void> init() async {
@@ -33,21 +35,28 @@ class ProductRepository {
     _emit();
   }
 
-  Future<List<Product>> loadCatalog({String? category, String score = 'all', int limit = 10, int offset = 0}) {
-    return _auth.withRefresh((token) => _api.getCatalog(token, category: category, score: score, limit: limit, offset: offset));
+  Future<List<Product>> loadCatalog(
+      {String? category,
+      String score = 'all',
+      int limit = 10,
+      int offset = 0}) {
+    return _auth.withRefresh((token) => _api.getCatalog(token,
+        category: category, score: score, limit: limit, offset: offset));
   }
 
   Future<Product> searchByBarcode(String barcode) async {
     if (barcode.trim().isEmpty) throw ApiException('Barcode is empty');
 
-    final product = await _auth.withRefresh((token) => _api.getProduct(token, barcode.trim()));
+    final product = await _auth
+        .withRefresh((token) => _api.getProduct(token, barcode.trim()));
     final next = _history.where((item) => item.id != product.id).toList();
     _history = [product, ...next];
     await _saveHistory();
     await _trackScanDate();
 
     try {
-      await _auth.withRefresh((token) => _api.saveHistory(token, barcode.trim(), product));
+      await _auth.withRefresh(
+          (token) => _api.saveHistory(token, barcode.trim(), product));
     } catch (_) {}
 
     return product;
@@ -55,16 +64,18 @@ class ProductRepository {
 
   Future<void> syncHistory() async {
     try {
-      final serverHistory = await _auth.withRefresh((token) => _api.getHistory(token));
+      final serverHistory =
+          await _auth.withRefresh((token) => _api.getHistory(token));
       final mapped = <Product>[];
       for (final item in serverHistory) {
-        final matches = _history.where((product) => product.title == item.title);
+        final matches =
+            _history.where((product) => product.title == item.title);
         final local = matches.isEmpty ? null : matches.first;
         if (local != null) {
           mapped.add(local);
           continue;
         }
-        
+
         mapped.add(
           Product(
             id: item.id.hashCode,
@@ -115,7 +126,8 @@ class ProductRepository {
 
   int dailyAverage() {
     if (_history.isEmpty) return 0;
-    return _history.map((item) => item.score).reduce((a, b) => a + b) ~/ _history.length;
+    return _history.map((item) => item.score).reduce((a, b) => a + b) ~/
+        _history.length;
   }
 
   int streak() {
@@ -153,7 +165,8 @@ class ProductRepository {
   }
 
   Future<void> _saveHistory() async {
-    await _prefs?.setString(_historyKey, jsonEncode(_history.map((item) => item.toJson()).toList()));
+    await _prefs?.setString(_historyKey,
+        jsonEncode(_history.map((item) => item.toJson()).toList()));
     _emit();
   }
 
@@ -167,5 +180,6 @@ class ProductRepository {
     await _prefs?.setString(_datesKey, jsonEncode(dates.toList()));
   }
 
-  void _emit() => _historyController.add(List.unmodifiable(_distinct(_history)));
+  void _emit() =>
+      _historyController.add(List.unmodifiable(_distinct(_history)));
 }

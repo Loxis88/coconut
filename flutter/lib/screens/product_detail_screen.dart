@@ -7,7 +7,6 @@ import '../domain/product.dart';
 import '../theme.dart';
 import '../widgets/product_widgets.dart';
 
-
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
     super.key,
@@ -18,13 +17,15 @@ class ProductDetailScreen extends StatefulWidget {
 
   final Product product;
   final VoidCallback onBack;
-  final VoidCallback onSwap; // Will be mapped to "Альтернативы" or used elsewhere if needed
+  final VoidCallback
+      onSwap; // Will be mapped to "Альтернативы" or used elsewhere if needed
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTickerProviderStateMixin {
+class _ProductDetailScreenState extends State<ProductDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   var _faved = false;
 
@@ -70,8 +71,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                   ),
                   _HeaderButton(
                     onTap: () => setState(() => _faved = !_faved),
-                    icon: _faved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    iconColor: _faved ? const Color(0xFFC03B32) : const Color(0xFF0C1A09),
+                    icon: _faved
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    iconColor: _faved
+                        ? const Color(0xFFC03B32)
+                        : const Color(0xFF0C1A09),
                   ),
                 ],
               ),
@@ -84,19 +89,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                   return [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: MayakTheme.card,
                             borderRadius: BorderRadius.circular(24),
-                            boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 2))],
-                            border: Border(left: BorderSide(color: cardAccent, width: 4)),
+                            boxShadow: const [
+                              BoxShadow(
+                                  color: Color(0x12000000),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 2))
+                            ],
+                            border: Border(
+                                left: BorderSide(color: cardAccent, width: 4)),
                           ),
                           child: Row(
                             children: [
                               Container(
-                                width: 80, height: 80,
+                                width: 80,
+                                height: 80,
                                 decoration: BoxDecoration(
                                   color: MayakTheme.muted,
                                   borderRadius: BorderRadius.circular(16),
@@ -104,7 +117,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                                 clipBehavior: Clip.antiAlias,
                                 child: widget.product.thumbnail != null
                                     ? NetImg(widget.product.thumbnail!)
-                                    : const Icon(Icons.fastfood, color: Colors.white),
+                                    : const Icon(Icons.fastfood,
+                                        color: Colors.white),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -112,15 +126,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${widget.product.manufacturer} · ${widget.product.categoryName}'.toUpperCase(),
-                                      style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.07),
-                                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                                      '${widget.product.manufacturer} · ${widget.product.categoryName}'
+                                          .toUpperCase(),
+                                      style: GoogleFonts.dmMono(
+                                          fontSize: 10,
+                                          color: const Color(0xFF5E6859),
+                                          letterSpacing: 10 * 0.07),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
                                       widget.product.title,
-                                      style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 17, color: const Color(0xFF0C1A09), height: 1.25, letterSpacing: 17 * -0.02),
-                                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.dmSans(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 17,
+                                          color: const Color(0xFF0C1A09),
+                                          height: 1.25,
+                                          letterSpacing: 17 * -0.02),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
@@ -138,13 +163,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                         TabBar(
                           controller: _tabController,
                           indicator: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Color(0xFF153918), width: 2.5)),
+                            border: Border(
+                                bottom: BorderSide(
+                                    color: Color(0xFF153918), width: 2.5)),
                           ),
                           indicatorSize: TabBarIndicatorSize.tab,
                           labelColor: const Color(0xFF0C1A09),
                           unselectedLabelColor: const Color(0xFF8A9486),
-                          labelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
-                          unselectedLabelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w400, fontSize: 14),
+                          labelStyle: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.w600, fontSize: 14),
+                          unselectedLabelStyle: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.w400, fontSize: 14),
                           dividerColor: const Color(0x140C1A09),
                           tabs: const [
                             Tab(text: 'Обзор'),
@@ -158,7 +187,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                 body: TabBarView(
                   controller: _tabController,
                   children: [
-                    _OverviewTab(product: widget.product, composition: composition),
+                    _OverviewTab(
+                        product: widget.product, composition: composition),
                     _AlternativesTab(product: widget.product),
                   ],
                 ),
@@ -200,29 +230,43 @@ class _OverviewTab extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    calories.replaceAll(RegExp(r'[^0-9]'), ''), // Keep only digits for large number
-                    style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 52, color: const Color(0xFF0C1A09), height: 1, letterSpacing: 52 * -0.03),
+                    calories.replaceAll(RegExp(r'[^0-9]'),
+                        ''), // Keep only digits for large number
+                    style: GoogleFonts.fraunces(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 52,
+                        color: const Color(0xFF0C1A09),
+                        height: 1,
+                        letterSpacing: 52 * -0.03),
                   ),
                   const SizedBox(width: 8),
-                  Text('ккал', style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF5E6859))),
+                  Text('ккал',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14, color: const Color(0xFF5E6859))),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _MacroBox(label: 'Белки', val: proteins, unit: 'г')),
+                  Expanded(
+                      child:
+                          _MacroBox(label: 'Белки', val: proteins, unit: 'г')),
                   const SizedBox(width: 8),
-                  Expanded(child: _MacroBox(label: 'Жиры', val: fats, unit: 'г')),
+                  Expanded(
+                      child: _MacroBox(label: 'Жиры', val: fats, unit: 'г')),
                   const SizedBox(width: 8),
-                  Expanded(child: _MacroBox(label: 'Углеводы', val: carbs, unit: 'г')),
+                  Expanded(
+                      child:
+                          _MacroBox(label: 'Углеводы', val: carbs, unit: 'г')),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Criteria details
               if (product.criteriaRatings.isNotEmpty)
                 ...product.criteriaRatings.map((c) {
-                  final warn = c.value < 3; // Mocking warning logic based on rating < 3
+                  final warn =
+                      c.value < 3; // Mocking warning logic based on rating < 3
                   final pct = (c.value / 5.0) * 100;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -234,29 +278,50 @@ class _OverviewTab extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(c.title, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859))),
+                                Text(c.title,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 12,
+                                        color: const Color(0xFF5E6859))),
                                 if (warn) ...[
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                    decoration: BoxDecoration(color: const Color(0x1AC03B32), borderRadius: BorderRadius.circular(4)),
-                                    child: Text('плохо', style: GoogleFonts.dmMono(fontSize: 9, color: const Color(0xFFC03B32))),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                        color: const Color(0x1AC03B32),
+                                        borderRadius: BorderRadius.circular(4)),
+                                    child: Text('плохо',
+                                        style: GoogleFonts.dmMono(
+                                            fontSize: 9,
+                                            color: const Color(0xFFC03B32))),
                                   ),
                                 ],
                               ],
                             ),
-                            Text('${c.value.toStringAsFixed(1)} / 5', style: GoogleFonts.dmMono(fontSize: 12, color: warn ? const Color(0xFFC03B32) : const Color(0xFF5E6859))),
+                            Text('${c.value.toStringAsFixed(1)} / 5',
+                                style: GoogleFonts.dmMono(
+                                    fontSize: 12,
+                                    color: warn
+                                        ? const Color(0xFFC03B32)
+                                        : const Color(0xFF5E6859))),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          height: 4, width: double.infinity,
-                          decoration: BoxDecoration(color: const Color(0x120C1A09), borderRadius: BorderRadius.circular(2)),
+                          height: 4,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                              color: const Color(0x120C1A09),
+                              borderRadius: BorderRadius.circular(2)),
                           alignment: Alignment.centerLeft,
                           child: FractionallySizedBox(
                             widthFactor: pct / 100,
                             child: Container(
-                              decoration: BoxDecoration(color: warn ? const Color(0xFFC03B32) : const Color(0xFF4A9152), borderRadius: BorderRadius.circular(2)),
+                              decoration: BoxDecoration(
+                                  color: warn
+                                      ? const Color(0xFFC03B32)
+                                      : const Color(0xFF4A9152),
+                                  borderRadius: BorderRadius.circular(2)),
                             ),
                           ),
                         ),
@@ -280,40 +345,52 @@ class _OverviewTab extends StatelessWidget {
                   const Expanded(child: _Label(text: 'Особенности')),
                   if (product.worth.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0x1AC03B32),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${product.worth.length}',
-                        style: GoogleFonts.dmMono(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFFC03B32)),
+                        style: GoogleFonts.dmMono(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFC03B32)),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               if (product.worth.isEmpty)
-                Text('Ничего особенного не обнаружено', style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF4A9152)))
+                Text('Ничего особенного не обнаружено',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13, color: const Color(0xFF4A9152)))
               else
                 ...product.worth.map((w) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 5, right: 8),
-                        child: Container(
-                          width: 6, height: 6,
-                          decoration: const BoxDecoration(color: Color(0xFFC03B32), shape: BoxShape.circle),
-                        ),
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5, right: 8),
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                  color: Color(0xFFC03B32),
+                                  shape: BoxShape.circle),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(w,
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    color: const Color(0xFF7A1A1A))),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: Text(w, style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF7A1A1A))),
-                      ),
-                    ],
-                  ),
-                )),
+                    )),
             ],
           ),
         ),
@@ -334,7 +411,8 @@ class _OverviewTab extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 composition,
-                style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF3A5040), height: 1.65),
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, color: const Color(0xFF3A5040), height: 1.65),
               ),
             ],
           ),
@@ -371,17 +449,26 @@ class _AlternativesTab extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 56, height: 56,
-                decoration: BoxDecoration(color: const Color(0x14153918), borderRadius: BorderRadius.circular(16)),
-                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF153918), size: 28),
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                    color: const Color(0x14153918),
+                    borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.check_circle_outline_rounded,
+                    color: Color(0xFF153918), size: 28),
               ),
               const SizedBox(height: 12),
-              Text('Это уже лучший выбор', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 15, color: const Color(0xFF0C1A09))),
+              Text('Это уже лучший выбор',
+                  style: GoogleFonts.dmSans(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: const Color(0xFF0C1A09))),
               const SizedBox(height: 4),
               Text(
                 'Маяк не нашёл более полезной альтернативы в этой категории',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF5E6859)),
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, color: const Color(0xFF5E6859)),
               ),
             ],
           ),
@@ -396,7 +483,8 @@ class _AlternativesTab extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: Text(
             'Более полезные варианты в категории «${product.categoryName}»',
-            style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF5E6859)),
+            style: GoogleFonts.dmSans(
+                fontSize: 13, color: const Color(0xFF5E6859)),
           ),
         ),
         ...product.recommendations.map((alt) {
@@ -407,13 +495,21 @@ class _AlternativesTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: MayakTheme.card,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))],
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x0D000000),
+                    blurRadius: 4,
+                    offset: Offset(0, 1))
+              ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 56, height: 56,
-                  decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(12)),
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                      color: MayakTheme.muted,
+                      borderRadius: BorderRadius.circular(12)),
                   clipBehavior: Clip.antiAlias,
                   child: alt.thumbnail != null
                       ? NetImg(alt.thumbnail!)
@@ -424,17 +520,35 @@ class _AlternativesTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(alt.title, style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF0C1A09)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(alt.manufacturer, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(alt.title,
+                          style: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: const Color(0xFF0C1A09)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      Text(alt.manufacturer,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12, color: const Color(0xFF5E6859)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Text('Сейчас: ${product.score}', style: GoogleFonts.dmMono(fontSize: 11, color: const Color(0xFF8A9486))),
+                          Text('Сейчас: ${product.score}',
+                              style: GoogleFonts.dmMono(
+                                  fontSize: 11,
+                                  color: const Color(0xFF8A9486))),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Icon(Icons.arrow_forward_rounded, size: 12, color: Color(0xFF1E6B28)),
+                            child: Icon(Icons.arrow_forward_rounded,
+                                size: 12, color: Color(0xFF1E6B28)),
                           ),
-                          Text('$altScore', style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 16, color: const Color(0xFF1E6B28))),
+                          Text('$altScore',
+                              style: GoogleFonts.fraunces(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                  color: const Color(0xFF1E6B28))),
                         ],
                       ),
                     ],
@@ -442,10 +556,17 @@ class _AlternativesTab extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(color: _getScoreBg(altScore), borderRadius: BorderRadius.circular(16)),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                      color: _getScoreBg(altScore),
+                      borderRadius: BorderRadius.circular(16)),
                   alignment: Alignment.center,
-                  child: Text('$altScore', style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 18, color: _getScoreColor(altScore))),
+                  child: Text('$altScore',
+                      style: GoogleFonts.fraunces(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: _getScoreColor(altScore))),
                 ),
               ],
             ),
@@ -455,7 +576,6 @@ class _AlternativesTab extends StatelessWidget {
     );
   }
 }
-
 
 /* ── Helpers ── */
 
@@ -470,7 +590,10 @@ class _Card extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? MayakTheme.card,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))
+        ],
       ),
       child: child,
     );
@@ -484,7 +607,10 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.08),
+      style: GoogleFonts.dmMono(
+          fontSize: 10,
+          color: const Color(0xFF5E6859),
+          letterSpacing: 10 * 0.08),
     );
   }
 }
@@ -498,13 +624,22 @@ class _MacroBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFFE8E3D6), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+          color: const Color(0xFFE8E3D6),
+          borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(val.replaceAll(RegExp(r'[^0-9.]'), ''), style: GoogleFonts.fraunces(fontWeight: FontWeight.w800, fontSize: 20, color: const Color(0xFF0C1A09), height: 1)),
+          Text(val.replaceAll(RegExp(r'[^0-9.]'), ''),
+              style: GoogleFonts.fraunces(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  color: const Color(0xFF0C1A09),
+                  height: 1)),
           const SizedBox(height: 3),
-          Text('$label, $unit', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859))),
+          Text('$label, $unit',
+              style: GoogleFonts.dmMono(
+                  fontSize: 10, color: const Color(0xFF5E6859))),
         ],
       ),
     );
@@ -515,14 +650,19 @@ class _HeaderButton extends StatelessWidget {
   final VoidCallback onTap;
   final IconData icon;
   final Color iconColor;
-  const _HeaderButton({required this.onTap, required this.icon, this.iconColor = const Color(0xFF0C1A09)});
+  const _HeaderButton(
+      {required this.onTap,
+      required this.icon,
+      this.iconColor = const Color(0xFF0C1A09)});
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 36, height: 36,
-        decoration: const BoxDecoration(color: Color(0x140C1A09), shape: BoxShape.circle),
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+            color: Color(0x140C1A09), shape: BoxShape.circle),
         alignment: Alignment.center,
         child: Icon(icon, color: iconColor, size: 16),
       ),
@@ -544,7 +684,8 @@ class _ScoreArc extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _getScoreColor(score);
     return SizedBox(
-      width: 68, height: 68,
+      width: 68,
+      height: 68,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -554,7 +695,11 @@ class _ScoreArc extends StatelessWidget {
           ).animate().fadeIn(duration: 400.ms),
           Text(
             '$score',
-            style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 20, color: const Color(0xFF0C1A09), height: 1),
+            style: GoogleFonts.fraunces(
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                color: const Color(0xFF0C1A09),
+                height: 1),
           ),
         ],
       ),
@@ -571,13 +716,13 @@ class _ArcPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const r = 28.0;
     final center = Offset(size.width / 2, size.height / 2);
-    
+
     final bgPaint = Paint()
       ..color = const Color(0x120C1A09)
       ..strokeWidth = 5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-      
+
     final fgPaint = Paint()
       ..color = color
       ..strokeWidth = 5
@@ -587,14 +732,17 @@ class _ArcPainter extends CustomPainter {
     const startAngle = 126 * (math.pi / 180);
     const sweepAngle = 0.7 * 2 * math.pi;
 
-    canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle, sweepAngle, false, bgPaint);
-    
+    canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle,
+        sweepAngle, false, bgPaint);
+
     final fillSweep = sweepAngle * (score / 100);
-    canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle, fillSweep, false, fgPaint);
+    canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle,
+        fillSweep, false, fgPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _ArcPainter oldDelegate) => score != oldDelegate.score;
+  bool shouldRepaint(covariant _ArcPainter oldDelegate) =>
+      score != oldDelegate.score;
 }
 
 class _AdditivesCard extends StatelessWidget {
@@ -615,7 +763,12 @@ class _AdditivesCard extends StatelessWidget {
     Color(0xFFFFD9DF), // 3
   ];
 
-  static const _riskLabel = ['Безопасно', 'Осторожно', 'Умеренный риск', 'Опасно'];
+  static const _riskLabel = [
+    'Безопасно',
+    'Осторожно',
+    'Умеренный риск',
+    'Опасно'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -674,14 +827,18 @@ class _AdditivesCard extends StatelessWidget {
                           children: [
                             if (a.eNumber != null) ...[
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: bg,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   a.eNumber!,
-                                  style: GoogleFonts.dmMono(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                                  style: GoogleFonts.dmMono(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: color),
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -689,7 +846,10 @@ class _AdditivesCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 a.displayName,
-                                style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0C1A09)),
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF0C1A09)),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -719,7 +879,8 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate(this.tabBar, {this.color = MayakTheme.bg});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: color,
       child: tabBar,
@@ -731,13 +892,15 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   double get minExtent => tabBar.preferredSize.height;
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }
 
 // ── Scan result bottom sheet (used from main.dart via DraggableScrollableSheet) ─
 
 class ProductSheet extends StatefulWidget {
-  const ProductSheet({super.key, required this.product, required this.scrollController});
+  const ProductSheet(
+      {super.key, required this.product, required this.scrollController});
 
   final Product product;
   final ScrollController scrollController;
@@ -746,7 +909,8 @@ class ProductSheet extends StatefulWidget {
   State<ProductSheet> createState() => _ProductSheetState();
 }
 
-class _ProductSheetState extends State<ProductSheet> with SingleTickerProviderStateMixin {
+class _ProductSheetState extends State<ProductSheet>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
   @override
@@ -776,108 +940,136 @@ class _ProductSheetState extends State<ProductSheet> with SingleTickerProviderSt
       decoration: const BoxDecoration(
         color: MayakTheme.card,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Color(0x40000000), blurRadius: 32, offset: Offset(0, -8))],
+        boxShadow: [
+          BoxShadow(
+              color: Color(0x40000000), blurRadius: 32, offset: Offset(0, -8))
+        ],
       ),
       child: CustomScrollView(
-          controller: widget.scrollController,
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Drag handle
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 20),
-                    child: Center(
-                      child: Container(
-                        width: 36, height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0x290C1A09),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Product header card
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        controller: widget.scrollController,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 20),
+                  child: Center(
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      width: 36,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: MayakTheme.card,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 2))],
-                        border: Border(left: BorderSide(color: accent, width: 4)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 80, height: 80,
-                            decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(16)),
-                            clipBehavior: Clip.antiAlias,
-                            child: p.thumbnail != null
-                                ? NetImg(p.thumbnail!)
-                                : const Icon(Icons.fastfood, color: Colors.white),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${p.manufacturer} · ${p.categoryName}'.toUpperCase(),
-                                  style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.07),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  p.title,
-                                  style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 17, color: const Color(0xFF0C1A09), height: 1.25, letterSpacing: 17 * -0.02),
-                                  maxLines: 2, overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _ScoreArc(score: score),
-                        ],
+                        color: const Color(0x290C1A09),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabBarDelegate(
-                TabBar(
-                  controller: _tabs,
-                  indicator: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFF153918), width: 2.5)),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: const Color(0xFF0C1A09),
-                  unselectedLabelColor: const Color(0xFF8A9486),
-                  labelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
-                  unselectedLabelStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w400, fontSize: 14),
-                  dividerColor: const Color(0x140C1A09),
-                  tabs: const [Tab(text: 'Обзор'), Tab(text: 'Альтернативы')],
                 ),
-                color: MayakTheme.card,
-              ),
+                // Product header card
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: MayakTheme.card,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Color(0x12000000),
+                            blurRadius: 12,
+                            offset: Offset(0, 2))
+                      ],
+                      border: Border(left: BorderSide(color: accent, width: 4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                              color: MayakTheme.muted,
+                              borderRadius: BorderRadius.circular(16)),
+                          clipBehavior: Clip.antiAlias,
+                          child: p.thumbnail != null
+                              ? NetImg(p.thumbnail!)
+                              : const Icon(Icons.fastfood, color: Colors.white),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${p.manufacturer} · ${p.categoryName}'
+                                    .toUpperCase(),
+                                style: GoogleFonts.dmMono(
+                                    fontSize: 10,
+                                    color: const Color(0xFF5E6859),
+                                    letterSpacing: 10 * 0.07),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                p.title,
+                                style: GoogleFonts.dmSans(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                    color: const Color(0xFF0C1A09),
+                                    height: 1.25,
+                                    letterSpacing: 17 * -0.02),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _ScoreArc(score: score),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            SliverFillRemaining(
-              hasScrollBody: true,
-              child: TabBarView(
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
                 controller: _tabs,
-                children: [
-                  _OverviewTab(product: p, composition: p.composition ?? 'Состав не указан'),
-                  _AlternativesTab(product: p),
-                ],
+                indicator: const BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Color(0xFF153918), width: 2.5)),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: const Color(0xFF0C1A09),
+                unselectedLabelColor: const Color(0xFF8A9486),
+                labelStyle: GoogleFonts.dmSans(
+                    fontWeight: FontWeight.w600, fontSize: 14),
+                unselectedLabelStyle: GoogleFonts.dmSans(
+                    fontWeight: FontWeight.w400, fontSize: 14),
+                dividerColor: const Color(0x140C1A09),
+                tabs: const [Tab(text: 'Обзор'), Tab(text: 'Альтернативы')],
               ),
+              color: MayakTheme.card,
             ),
-          ],
-        ),
-      );
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                _OverviewTab(
+                    product: p,
+                    composition: p.composition ?? 'Состав не указан'),
+                _AlternativesTab(product: p),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

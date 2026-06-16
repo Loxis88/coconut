@@ -110,8 +110,6 @@ class _CoconutAppState extends State<CoconutApp> {
     }
   }
 
-
-
   Future<Product?> _searchBarcode(String barcode) async {
     setState(() {
       _loading = true;
@@ -151,7 +149,8 @@ class _CoconutAppState extends State<CoconutApp> {
       title: 'МАЯК',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: MayakTheme.primary, surface: MayakTheme.bg),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: MayakTheme.primary, surface: MayakTheme.bg),
         scaffoldBackgroundColor: MayakTheme.bg,
         fontFamily: 'DM Sans', // Set in pubspec / google_fonts ideally, or here
         useMaterial3: true,
@@ -159,18 +158,27 @@ class _CoconutAppState extends State<CoconutApp> {
       home: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         child: switch (_phase) {
-          AppPhase.splash => SplashScreen(key: const ValueKey('splash'), onComplete: _onSplashComplete),
-          AppPhase.onboarding => OnboardingScreen(key: const ValueKey('onboarding'), onComplete: () => setState(() => _phase = AppPhase.auth)),
+          AppPhase.splash => SplashScreen(
+              key: const ValueKey('splash'), onComplete: _onSplashComplete),
+          AppPhase.onboarding => OnboardingScreen(
+              key: const ValueKey('onboarding'),
+              onComplete: () => setState(() => _phase = AppPhase.auth)),
           AppPhase.auth => AuthScreen(
               key: const ValueKey('auth'),
               loading: _loading,
               error: _error,
               onLogin: (email, password) async {
-                setState(() { _error = null; _loading = true; });
+                setState(() {
+                  _error = null;
+                  _loading = true;
+                });
                 try {
                   final user = await _authRepository.login(email, password);
                   await _productRepository.syncHistory();
-                  setState(() { _user = user; _phase = AppPhase.app; });
+                  setState(() {
+                    _user = user;
+                    _phase = AppPhase.app;
+                  });
                 } catch (e) {
                   setState(() => _error = e.toString());
                   rethrow;
@@ -179,7 +187,10 @@ class _CoconutAppState extends State<CoconutApp> {
                 }
               },
               onRegister: (email, password) async {
-                setState(() { _error = null; _loading = true; });
+                setState(() {
+                  _error = null;
+                  _loading = true;
+                });
                 try {
                   await _authRepository.register(email, password);
                 } catch (e) {
@@ -201,7 +212,8 @@ class _CoconutAppState extends State<CoconutApp> {
               currentProduct: _currentProduct,
               productRepository: _productRepository,
               onSearchBarcode: _searchBarcode,
-              onShowProduct: (product) => setState(() => _currentProduct = product),
+              onShowProduct: (product) =>
+                  setState(() => _currentProduct = product),
               onClearHistory: () => _productRepository.clearHistory(),
               onDeleteProduct: _productRepository.deleteFromHistory,
               onLogout: () async {
@@ -289,17 +301,27 @@ class _HomeShellState extends State<HomeShell> {
       if (!ctrl.isAttached || !_sheetOpen) return;
       if (ctrl.size > 0.85) {
         _peekCtrl = null;
-        setState(() { _peekProduct = null; _sheetOpen = false; _route = AppRoute.detail; });
+        setState(() {
+          _peekProduct = null;
+          _sheetOpen = false;
+          _route = AppRoute.detail;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
       } else if (ctrl.size < 0.01) {
         _peekCtrl = null;
-        setState(() { _peekProduct = null; _sheetOpen = false; });
+        setState(() {
+          _peekProduct = null;
+          _sheetOpen = false;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
       }
     });
 
     _peekCtrl = ctrl;
-    setState(() { _peekProduct = product; _sheetOpen = true; });
+    setState(() {
+      _peekProduct = product;
+      _sheetOpen = true;
+    });
   }
 
   @override
@@ -316,7 +338,8 @@ class _HomeShellState extends State<HomeShell> {
             setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               widget.onSearchBarcode(product.barcode!).then((realProduct) {
-                if (realProduct != null && mounted) widget.onShowProduct(realProduct);
+                if (realProduct != null && mounted)
+                  widget.onShowProduct(realProduct);
               });
             }
           },
@@ -325,7 +348,11 @@ class _HomeShellState extends State<HomeShell> {
           loading: widget.loading,
           scanLocked: _sheetOpen,
           error: widget.error,
-          onBack: () => setState(() { _route = AppRoute.home; _peekProduct = null; _sheetOpen = false; }),
+          onBack: () => setState(() {
+            _route = AppRoute.home;
+            _peekProduct = null;
+            _sheetOpen = false;
+          }),
           onFound: (barcode) async {
             final product = await widget.onSearchBarcode(barcode);
             if (product != null && mounted) _showProductSheet(product);
@@ -355,13 +382,18 @@ class _HomeShellState extends State<HomeShell> {
       AppRoute.search => SearchScreen(
           history: widget.history,
           onLoadCatalog: ({category, score = 'all', limit = 10, offset = 0}) =>
-              widget.productRepository.loadCatalog(category: category, score: score, limit: limit, offset: offset),
+              widget.productRepository.loadCatalog(
+                  category: category,
+                  score: score,
+                  limit: limit,
+                  offset: offset),
           onShowProduct: (product) {
             widget.onShowProduct(product);
             setState(() => _route = AppRoute.detail);
             if (product.barcode != null && product.criteriaRatings.isEmpty) {
               widget.onSearchBarcode(product.barcode!).then((realProduct) {
-                if (realProduct != null && mounted) widget.onShowProduct(realProduct);
+                if (realProduct != null && mounted)
+                  widget.onShowProduct(realProduct);
               });
             }
           },
@@ -375,24 +407,38 @@ class _HomeShellState extends State<HomeShell> {
         ),
     };
 
-    final showNav = _route == AppRoute.home || _route == AppRoute.search || _route == AppRoute.journal || _route == AppRoute.profile;
+    final showNav = _route == AppRoute.home ||
+        _route == AppRoute.search ||
+        _route == AppRoute.journal ||
+        _route == AppRoute.profile;
 
     return PopScope(
       canPop: _route == AppRoute.home && !_sheetOpen,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_sheetOpen) {
-          _peekCtrl?.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-          setState(() { _sheetOpen = false; _peekProduct = null; });
+          _peekCtrl?.animateTo(0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut);
+          setState(() {
+            _sheetOpen = false;
+            _peekProduct = null;
+          });
         } else if (_route != AppRoute.home) {
           setState(() => _route = AppRoute.home);
         }
       },
       child: AdaptiveScreen(
-        bottomNav: showNav ? BottomNav(
-          currentRoute: _route,
-          onRouteChanged: (r) => setState(() { _route = r; _peekProduct = null; _sheetOpen = false; }),
-        ) : null,
+        bottomNav: showNav
+            ? BottomNav(
+                currentRoute: _route,
+                onRouteChanged: (r) => setState(() {
+                  _route = r;
+                  _peekProduct = null;
+                  _sheetOpen = false;
+                }),
+              )
+            : null,
         child: Stack(
           children: [
             body,

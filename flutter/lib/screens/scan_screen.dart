@@ -29,7 +29,12 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   final _controller = MobileScannerController(
     torchEnabled: false,
-    formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE],
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE
+    ],
     detectionSpeed: DetectionSpeed.normal,
     useNewCameraSelector: false,
     returnImage: false,
@@ -101,7 +106,8 @@ class _ScanScreenState extends State<ScanScreen> {
         if (py > maxY) maxY = py;
       }
       const pad = 24.0;
-      newFocusRect = Rect.fromLTRB(minX - pad, minY - pad, maxX + pad, maxY + pad);
+      newFocusRect =
+          Rect.fromLTRB(minX - pad, minY - pad, maxX + pad, maxY + pad);
     }
 
     final now = DateTime.now();
@@ -112,19 +118,33 @@ class _ScanScreenState extends State<ScanScreen> {
       _localLock = true;
       _detectedTimer?.cancel();
       _detectedTimer = Timer(const Duration(milliseconds: 900), () {
-        if (mounted) setState(() { _detected = false; _focusRect = null; });
+        if (mounted)
+          setState(() {
+            _detected = false;
+            _focusRect = null;
+          });
       });
       _lastRectUpdate = now;
-      setState(() { _focusRect = newFocusRect; _detected = true; });
+      setState(() {
+        _focusRect = newFocusRect;
+        _detected = true;
+      });
       widget.onFound(rawValue);
     } else if (newFocusRect != null &&
-        (_lastRectUpdate == null || now.difference(_lastRectUpdate!).inMilliseconds >= 300)) {
+        (_lastRectUpdate == null ||
+            now.difference(_lastRectUpdate!).inMilliseconds >= 300)) {
       _detectedTimer?.cancel();
       _detectedTimer = Timer(const Duration(milliseconds: 900), () {
-        if (mounted) setState(() { _detected = false; _focusRect = null; });
+        if (mounted)
+          setState(() {
+            _detected = false;
+            _focusRect = null;
+          });
       });
       _lastRectUpdate = now;
-      setState(() { _focusRect = newFocusRect; });
+      setState(() {
+        _focusRect = newFocusRect;
+      });
     }
   }
 
@@ -185,7 +205,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 gradient: RadialGradient(
                   center: Alignment(0, -0.1),
                   radius: 0.7,
-                  colors: [Color(0x0FFFDC50), Colors.transparent], // rgba(255,220,80,0.06)
+                  colors: [
+                    Color(0x0FFFDC50),
+                    Colors.transparent
+                  ], // rgba(255,220,80,0.06)
                   stops: [0.0, 1.0],
                 ),
               ),
@@ -198,7 +221,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 gradient: RadialGradient(
                   center: Alignment(0, -0.1),
                   radius: 0.65,
-                  colors: [Color(0x1A5BAF64), Colors.transparent], // rgba(91,175,100,0.1)
+                  colors: [
+                    Color(0x1A5BAF64),
+                    Colors.transparent
+                  ], // rgba(91,175,100,0.1)
                   stops: [0.0, 1.0],
                 ),
               ),
@@ -233,31 +259,48 @@ class _ScanScreenState extends State<ScanScreen> {
                 // Scan line
                 if (isScanningState)
                   Positioned(
-                    left: 8, right: 8, top: 0,
+                    left: 8,
+                    right: 8,
+                    top: 0,
                     child: Container(
                       height: 1,
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.transparent, Color(0xFF5BAF64), Color(0xFF5BAF64), Colors.transparent],
+                          colors: [
+                            Colors.transparent,
+                            Color(0xFF5BAF64),
+                            Color(0xFF5BAF64),
+                            Colors.transparent
+                          ],
                           stops: [0.0, 0.3, 0.7, 1.0],
                         ),
-                        boxShadow: [BoxShadow(color: Color(0x995BAF64), blurRadius: 8)],
+                        boxShadow: [
+                          BoxShadow(color: Color(0x995BAF64), blurRadius: 8)
+                        ],
                       ),
                     ),
-                  ).animate(onPlay: (c) => c.repeat()).slideY(begin: 0, end: 164, duration: 1600.ms),
+                  )
+                      .animate(onPlay: (c) => c.repeat())
+                      .slideY(begin: 0, end: 164, duration: 1600.ms),
               ],
             ),
           ),
 
           // Header
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              padding: const EdgeInsets.only(top: 56, bottom: 16, left: 24, right: 24),
+              padding: const EdgeInsets.only(
+                  top: 56, bottom: 16, left: 24, right: 24),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Color(0xE6080F09), Colors.transparent], // rgba(8,15,9,0.9)
+                  colors: [
+                    Color(0xE6080F09),
+                    Colors.transparent
+                  ], // rgba(8,15,9,0.9)
                 ),
               ),
               child: Row(
@@ -266,18 +309,23 @@ class _ScanScreenState extends State<ScanScreen> {
                   GestureDetector(
                     onTap: widget.onBack,
                     child: Container(
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 15),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 15),
                     ),
                   ),
                   Text(
                     'Сканер',
-                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
+                    style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: Colors.white.withValues(alpha: 0.9)),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -286,14 +334,24 @@ class _ScanScreenState extends State<ScanScreen> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: _flash ? const Color(0x2EFCdc50) : Colors.white.withValues(alpha: 0.08),
-                        border: Border.all(color: _flash ? const Color(0x59FFDC50) : Colors.transparent),
+                        color: _flash
+                            ? const Color(0x2EFCdc50)
+                            : Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(
+                            color: _flash
+                                ? const Color(0x59FFDC50)
+                                : Colors.transparent),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: Icon(Icons.flash_on_rounded, color: _flash ? const Color(0xFFFFE04A) : Colors.white.withValues(alpha: 0.7), size: 16),
+                      child: Icon(Icons.flash_on_rounded,
+                          color: _flash
+                              ? const Color(0xFFFFE04A)
+                              : Colors.white.withValues(alpha: 0.7),
+                          size: 16),
                     ),
                   ),
                 ],
@@ -303,12 +361,15 @@ class _ScanScreenState extends State<ScanScreen> {
 
           // Bottom Panel Wrapper
           Positioned(
-            left: 0, right: 0, bottom: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             height: 148,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [Colors.transparent, Color(0xFF080F09)],
                   stops: [0.0, 0.4],
                 ),
@@ -326,7 +387,8 @@ class _ScanScreenState extends State<ScanScreen> {
                     // Tabs
                     Container(
                       decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Color(0x140C1A09))),
+                        border: Border(
+                            bottom: BorderSide(color: Color(0x140C1A09))),
                       ),
                       child: Row(
                         children: [
@@ -349,7 +411,7 @@ class _ScanScreenState extends State<ScanScreen> {
                         ],
                       ),
                     ),
-                    
+
                     // Tab Body
                     SizedBox(
                       height: 76,
@@ -358,68 +420,124 @@ class _ScanScreenState extends State<ScanScreen> {
                           if (!_manual)
                             Positioned.fill(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isScanningState ? 'Ищем штрихкод…' : 'Автоскан активен',
-                                          style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 16, color: const Color(0xFF0C1A09)),
+                                          isScanningState
+                                              ? 'Ищем штрихкод…'
+                                              : 'Автоскан активен',
+                                          style: GoogleFonts.dmSans(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                              color: const Color(0xFF0C1A09)),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          isScanningState ? 'Держите упаковку ровно' : 'Наведи камеру на штрих-код.',
-                                          style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859)),
+                                          isScanningState
+                                              ? 'Держите упаковку ровно'
+                                              : 'Наведи камеру на штрих-код.',
+                                          style: GoogleFonts.dmSans(
+                                              fontSize: 12,
+                                              color: const Color(0xFF5E6859)),
                                         ),
                                       ],
                                     ),
                                     Container(
-                                      width: 52, height: 52,
+                                      width: 52,
+                                      height: 52,
                                       decoration: BoxDecoration(
-                                        gradient: isScanningState ? null : const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF4A9152), Color(0xFF1E6B28)]),
-                                        color: isScanningState ? const Color(0x26153918) : null,
+                                        gradient: isScanningState
+                                            ? null
+                                            : const LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [
+                                                    Color(0xFF4A9152),
+                                                    Color(0xFF1E6B28)
+                                                  ]),
+                                        color: isScanningState
+                                            ? const Color(0x26153918)
+                                            : null,
                                         shape: BoxShape.circle,
-                                        boxShadow: isScanningState ? null : const [BoxShadow(color: Color(0x661E6B28), blurRadius: 20, offset: Offset(0, 6))],
+                                        boxShadow: isScanningState
+                                            ? null
+                                            : const [
+                                                BoxShadow(
+                                                    color: Color(0x661E6B28),
+                                                    blurRadius: 20,
+                                                    offset: Offset(0, 6))
+                                              ],
                                       ),
                                       alignment: Alignment.center,
-                                      child: isScanningState 
-                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: MayakTheme.primary, strokeWidth: 2))
-                                        : const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+                                      child: isScanningState
+                                          ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                  color: MayakTheme.primary,
+                                                  strokeWidth: 2))
+                                          : const Icon(
+                                              Icons.qr_code_scanner_rounded,
+                                              color: Colors.white),
                                     ),
                                   ],
                                 ),
-                              ).animate().fade(duration: 150.ms).slideX(begin: -0.1, end: 0),
+                              )
+                                  .animate()
+                                  .fade(duration: 150.ms)
+                                  .slideX(begin: -0.1, end: 0),
                             )
                           else
                             Positioned.fill(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: Container(
                                         height: 44,
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12),
                                         decoration: BoxDecoration(
                                           color: const Color(0x0F0C1A09),
-                                          border: Border.all(color: const Color(0x1A0C1A09), width: 1.5),
-                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                              color: const Color(0x1A0C1A09),
+                                              width: 1.5),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         child: Row(
                                           children: [
-                                            const Icon(Icons.barcode_reader, size: 16, color: Color(0x590C1A09)),
+                                            const Icon(Icons.barcode_reader,
+                                                size: 16,
+                                                color: Color(0x590C1A09)),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: TextField(
-                                                keyboardType: TextInputType.number,
-                                                onChanged: (v) => setState(() => _barcode = v),
-                                                onSubmitted: (_) => _submitManual(),
-                                                style: GoogleFonts.dmMono(fontSize: 14, color: const Color(0xFF0C1A09), letterSpacing: 14 * 0.04),
-                                                decoration: const InputDecoration(
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                onChanged: (v) => setState(
+                                                    () => _barcode = v),
+                                                onSubmitted: (_) =>
+                                                    _submitManual(),
+                                                style: GoogleFonts.dmMono(
+                                                    fontSize: 14,
+                                                    color:
+                                                        const Color(0xFF0C1A09),
+                                                    letterSpacing: 14 * 0.04),
+                                                decoration:
+                                                    const InputDecoration(
                                                   border: InputBorder.none,
                                                   hintText: '4600000000000',
                                                   isDense: true,
@@ -428,8 +546,11 @@ class _ScanScreenState extends State<ScanScreen> {
                                             ),
                                             if (_barcode.isNotEmpty)
                                               GestureDetector(
-                                                onTap: () => setState(() => _barcode = ''),
-                                                child: const Icon(Icons.cancel, size: 16, color: Color(0xFF5E6859)),
+                                                onTap: () => setState(
+                                                    () => _barcode = ''),
+                                                child: const Icon(Icons.cancel,
+                                                    size: 16,
+                                                    color: Color(0xFF5E6859)),
                                               ),
                                           ],
                                         ),
@@ -439,24 +560,34 @@ class _ScanScreenState extends State<ScanScreen> {
                                     GestureDetector(
                                       onTap: _submitManual,
                                       child: Container(
-                                        width: 52, height: 44,
+                                        width: 52,
+                                        height: 44,
                                         decoration: BoxDecoration(
-                                          color: _barcode.trim().length >= 4 ? const Color(0xFF153918) : const Color(0x1F153918),
-                                          borderRadius: BorderRadius.circular(16),
+                                          color: _barcode.trim().length >= 4
+                                              ? const Color(0xFF153918)
+                                              : const Color(0x1F153918),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         alignment: Alignment.center,
                                         child: Text(
                                           'OK',
                                           style: GoogleFonts.dmSans(
-                                            fontWeight: FontWeight.w700, fontSize: 14,
-                                            color: _barcode.trim().length >= 4 ? Colors.white : const Color(0x4D153918),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14,
+                                            color: _barcode.trim().length >= 4
+                                                ? Colors.white
+                                                : const Color(0x4D153918),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ).animate().fade(duration: 150.ms).slideX(begin: 0.1, end: 0),
+                              )
+                                  .animate()
+                                  .fade(duration: 150.ms)
+                                  .slideX(begin: 0.1, end: 0),
                             ),
                         ],
                       ),
@@ -478,7 +609,11 @@ class _TabButton extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _TabButton({required this.label, required this.icon, required this.active, required this.onTap});
+  const _TabButton(
+      {required this.label,
+      required this.icon,
+      required this.active,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -493,14 +628,20 @@ class _TabButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 16, color: active ? const Color(0xFF0C1A09) : const Color(0xFF8A9486)),
+                Icon(icon,
+                    size: 16,
+                    color: active
+                        ? const Color(0xFF0C1A09)
+                        : const Color(0xFF8A9486)),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: GoogleFonts.dmSans(
                     fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                     fontSize: 13,
-                    color: active ? const Color(0xFF0C1A09) : const Color(0xFF8A9486),
+                    color: active
+                        ? const Color(0xFF0C1A09)
+                        : const Color(0xFF8A9486),
                   ),
                 ),
               ],
@@ -508,7 +649,9 @@ class _TabButton extends StatelessWidget {
           ),
           if (active)
             Positioned(
-              bottom: 0, left: 20, right: 20,
+              bottom: 0,
+              left: 20,
+              right: 20,
               child: Container(
                 height: 2,
                 decoration: BoxDecoration(
@@ -524,7 +667,8 @@ class _TabButton extends StatelessWidget {
 }
 
 class _CameraPreview extends StatelessWidget {
-  const _CameraPreview({super.key, required this.controller, required this.onCapture});
+  const _CameraPreview(
+      {super.key, required this.controller, required this.onCapture});
 
   final MobileScannerController controller;
   final void Function(BarcodeCapture capture) onCapture;
@@ -541,7 +685,9 @@ class _ScannerFramePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final color = isResult ? const Color(0xFF5BAF64) : Colors.white.withValues(alpha: 0.65);
+    final color = isResult
+        ? const Color(0xFF5BAF64)
+        : Colors.white.withValues(alpha: 0.65);
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -552,15 +698,41 @@ class _ScannerFramePainter extends CustomPainter {
     const r = 6.0;
 
     // Top-Left
-    canvas.drawPath(Path()..moveTo(0, length)..lineTo(0, r)..quadraticBezierTo(0, 0, r, 0)..lineTo(length, 0), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(0, length)
+          ..lineTo(0, r)
+          ..quadraticBezierTo(0, 0, r, 0)
+          ..lineTo(length, 0),
+        paint);
     // Top-Right
-    canvas.drawPath(Path()..moveTo(size.width - length, 0)..lineTo(size.width - r, 0)..quadraticBezierTo(size.width, 0, size.width, r)..lineTo(size.width, length), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(size.width - length, 0)
+          ..lineTo(size.width - r, 0)
+          ..quadraticBezierTo(size.width, 0, size.width, r)
+          ..lineTo(size.width, length),
+        paint);
     // Bottom-Left
-    canvas.drawPath(Path()..moveTo(0, size.height - length)..lineTo(0, size.height - r)..quadraticBezierTo(0, size.height, r, size.height)..lineTo(length, size.height), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(0, size.height - length)
+          ..lineTo(0, size.height - r)
+          ..quadraticBezierTo(0, size.height, r, size.height)
+          ..lineTo(length, size.height),
+        paint);
     // Bottom-Right
-    canvas.drawPath(Path()..moveTo(size.width - length, size.height)..lineTo(size.width - r, size.height)..quadraticBezierTo(size.width, size.height, size.width, size.height - r)..lineTo(size.width, size.height - length), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(size.width - length, size.height)
+          ..lineTo(size.width - r, size.height)
+          ..quadraticBezierTo(
+              size.width, size.height, size.width, size.height - r)
+          ..lineTo(size.width, size.height - length),
+        paint);
   }
 
   @override
-  bool shouldRepaint(covariant _ScannerFramePainter oldDelegate) => isResult != oldDelegate.isResult;
+  bool shouldRepaint(covariant _ScannerFramePainter oldDelegate) =>
+      isResult != oldDelegate.isResult;
 }

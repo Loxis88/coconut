@@ -23,7 +23,8 @@ class NormalizedIngredient {
 
   String get displayName => nameRu ?? name;
 
-  factory NormalizedIngredient.fromJson(Map<String, dynamic> json) => NormalizedIngredient(
+  factory NormalizedIngredient.fromJson(Map<String, dynamic> json) =>
+      NormalizedIngredient(
         ingredientId: (json['ingredient_id'] as num?)?.toInt() ?? 0,
         originalName: json['original_name'] as String? ?? '',
         name: json['name'] as String? ?? '',
@@ -106,14 +107,16 @@ class Product {
         price: json['price'] as String? ?? '',
         thumbnail: json['thumbnail'] as String?,
         criteriaRatings: (json['criteriaRatings'] as List? ?? [])
-            .map((item) => CriteriaRating.fromJson(item as Map<String, dynamic>))
+            .map(
+                (item) => CriteriaRating.fromJson(item as Map<String, dynamic>))
             .toList(),
         worth: (json['worth'] as List? ?? []).cast<String>(),
         info: (json['info'] as List? ?? [])
             .map((item) => ProductInfo.fromJson(item as Map<String, dynamic>))
             .toList(),
         recommendations: (json['recommendations'] as List? ?? [])
-            .map((item) => Recommendation.fromJson(item as Map<String, dynamic>))
+            .map(
+                (item) => Recommendation.fromJson(item as Map<String, dynamic>))
             .toList(),
         nutrients: json['nutrients'] == null
             ? null
@@ -122,7 +125,8 @@ class Product {
         hasQualityMark: json['hasQualityMark'] as bool? ?? false,
         hasBadQualityMark: json['hasBadQualityMark'] as bool? ?? false,
         normalizedIngredients: (json['normalizedIngredients'] as List? ?? [])
-            .map((item) => NormalizedIngredient.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                NormalizedIngredient.fromJson(item as Map<String, dynamic>))
             .toList(),
       );
 
@@ -136,15 +140,18 @@ class Product {
         'manufacturer': manufacturer,
         'price': price,
         'thumbnail': thumbnail,
-        'criteriaRatings': criteriaRatings.map((item) => item.toJson()).toList(),
+        'criteriaRatings':
+            criteriaRatings.map((item) => item.toJson()).toList(),
         'worth': worth,
         'info': info.map((item) => item.toJson()).toList(),
-        'recommendations': recommendations.map((item) => item.toJson()).toList(),
+        'recommendations':
+            recommendations.map((item) => item.toJson()).toList(),
         'nutrients': nutrients?.toJson(),
         'composition': composition,
         'hasQualityMark': hasQualityMark,
         'hasBadQualityMark': hasBadQualityMark,
-        'normalizedIngredients': normalizedIngredients.map((i) => i.toJson()).toList(),
+        'normalizedIngredients':
+            normalizedIngredients.map((i) => i.toJson()).toList(),
       };
 }
 
@@ -186,8 +193,8 @@ class CriteriaRating {
   final String title;
   final double value;
 
-  factory CriteriaRating.fromJson(Map<String, dynamic> json) =>
-      CriteriaRating(json['title'] as String? ?? '', (json['value'] as num?)?.toDouble() ?? 0);
+  factory CriteriaRating.fromJson(Map<String, dynamic> json) => CriteriaRating(
+      json['title'] as String? ?? '', (json['value'] as num?)?.toDouble() ?? 0);
 
   Map<String, dynamic> toJson() => {'title': title, 'value': value};
 }
