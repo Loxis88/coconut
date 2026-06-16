@@ -95,6 +95,6 @@ jobs:
         with:
           scan-type: 'fs'
           scanners: 'vuln'
-          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
-          exit-code: 0
+          severity: 'HIGH,CRITICAL'
+          exit-code: 1
           format: 'table'
