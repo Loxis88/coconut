@@ -212,8 +212,62 @@ class _OverviewTab extends StatelessWidget {
     final nutrients = product.nutrients;
     final calories = nutrients?.calories ?? '0';
     final proteins = nutrients?.proteins ?? '0';
-    final fats = nutrients?.fats ?? '0';
-    final carbs = nutrients?.carbohydrates ?? '0';
+    final sugar = nutrients?.sugar ?? '0';
+    final salt = nutrients?.salt ?? '0';
+    final satFat = nutrients?.saturatedFat ?? '0';
+    final fiber = nutrients?.fiber ?? '0';
+
+    double parse(String? v) => double.tryParse(v?.replaceAll(RegExp(r'[^0-9.]'), '') ?? '') ?? 0.0;
+    double calD = parse(calories);
+    double sugD = parse(sugar);
+    double satD = parse(satFat);
+    double salD = parse(salt);
+    double proD = parse(proteins);
+    double fibD = parse(fiber);
+
+    // Points calculation for color mapping
+    int pCal = calD > 500 ? 10 : calD > 450 ? 9 : calD > 400 ? 8 : calD > 350 ? 7 : calD > 300 ? 6 : calD > 250 ? 5 : calD > 200 ? 4 : calD > 150 ? 3 : calD > 100 ? 2 : calD > 50 ? 1 : 0;
+    int pSug = sugD > 24 ? 10 : sugD > 22 ? 9 : sugD > 20 ? 8 : sugD > 18 ? 7 : sugD > 16 ? 6 : sugD > 14 ? 5 : sugD > 12 ? 4 : sugD > 10 ? 3 : sugD > 6.8 ? 2 : sugD > 3.4 ? 1 : 0;
+    int pSat = satD > 10 ? 10 : satD > 9 ? 9 : satD > 8 ? 8 : satD > 7 ? 7 : satD > 6 ? 6 : satD > 5 ? 5 : satD > 4 ? 4 : satD > 3 ? 3 : satD > 2 ? 2 : satD > 1 ? 1 : 0;
+    int pSal = salD > 2.0 ? 10 : salD > 1.8 ? 9 : salD > 1.6 ? 8 : salD > 1.4 ? 7 : salD > 1.2 ? 6 : salD > 1.0 ? 5 : salD > 0.8 ? 4 : salD > 0.6 ? 3 : salD > 0.4 ? 2 : salD > 0.2 ? 1 : 0;
+    int pPro = proD > 12 ? 5 : proD > 9.6 ? 4 : proD > 7.2 ? 3 : proD > 4.8 ? 2 : proD > 2.4 ? 1 : 0;
+    int pFib = fibD > 7.4 ? 5 : fibD > 6.3 ? 4 : fibD > 5.2 ? 3 : fibD > 4.1 ? 2 : fibD > 3 ? 1 : 0;
+
+    Color getNegativeColor(int pts) {
+      if (pts <= 2) return const Color(0xFF4A9152); // Green
+      if (pts <= 4) return const Color(0xFF8BCA84); // Light Green
+      if (pts <= 6) return const Color(0xFFE5C043); // Yellow
+      if (pts <= 8) return const Color(0xFFE58843); // Orange
+      return const Color(0xFFC03B32); // Red
+    }
+
+    Color getPositiveColor(int pts) {
+      if (pts >= 5) return const Color(0xFF4A9152); // Green
+      if (pts >= 4) return const Color(0xFF8BCA84); // Light Green
+      if (pts >= 3) return const Color(0xFFE5C043); // Yellow
+      if (pts >= 2) return const Color(0xFFE58843); // Orange
+      return const Color(0xFFC03B32); // Red
+    }
+
+    Widget buildNutrientRow(String label, String value, String unit, Color color) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF3A5040))),
+            ),
+            Text('$value $unit', style: GoogleFonts.dmMono(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0C1A09))),
+          ],
+        ),
+      );
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
@@ -223,43 +277,14 @@ class _OverviewTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _Label(text: 'Калорийность · 100г'),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    calories.replaceAll(RegExp(r'[^0-9]'),
-                        ''), // Keep only digits for large number
-                    style: GoogleFonts.fraunces(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 52,
-                        color: const Color(0xFF0C1A09),
-                        height: 1,
-                        letterSpacing: 52 * -0.03),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('ккал',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14, color: const Color(0xFF5E6859))),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                      child:
-                          _MacroBox(label: 'Белки', val: proteins, unit: 'г')),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child: _MacroBox(label: 'Жиры', val: fats, unit: 'г')),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child:
-                          _MacroBox(label: 'Углеводы', val: carbs, unit: 'г')),
-                ],
-              ),
+              const _Label(text: 'Пищевая ценность · 100г'),
+              const SizedBox(height: 12),
+              buildNutrientRow('Калорийность', calD.toStringAsFixed(0), 'ккал', getNegativeColor(pCal)),
+              buildNutrientRow('Сахар', sugD.toStringAsFixed(1), 'г', getNegativeColor(pSug)),
+              buildNutrientRow('Насыщенные жиры', satD.toStringAsFixed(1), 'г', getNegativeColor(pSat)),
+              buildNutrientRow('Соль', salD.toStringAsFixed(2), 'г', getNegativeColor(pSal)),
+              buildNutrientRow('Белки', proD.toStringAsFixed(1), 'г', getPositiveColor(pPro)),
+              buildNutrientRow('Клетчатка', fibD.toStringAsFixed(1), 'г', getPositiveColor(pFib)),
               const SizedBox(height: 16),
 
               // Criteria details
@@ -615,36 +640,7 @@ class _Label extends StatelessWidget {
   }
 }
 
-class _MacroBox extends StatelessWidget {
-  final String label;
-  final String val;
-  final String unit;
-  const _MacroBox({required this.label, required this.val, required this.unit});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: const Color(0xFFE8E3D6),
-          borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(val.replaceAll(RegExp(r'[^0-9.]'), ''),
-              style: GoogleFonts.fraunces(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                  color: const Color(0xFF0C1A09),
-                  height: 1)),
-          const SizedBox(height: 3),
-          Text('$label, $unit',
-              style: GoogleFonts.dmMono(
-                  fontSize: 10, color: const Color(0xFF5E6859))),
-        ],
-      ),
-    );
-  }
-}
+
 
 class _HeaderButton extends StatelessWidget {
   final VoidCallback onTap;
