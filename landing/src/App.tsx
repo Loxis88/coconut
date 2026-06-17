@@ -10,8 +10,9 @@ import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import Cookies from './pages/Cookies'
 import Licenses from './pages/Licenses'
+import PersonalData from './pages/PersonalData'
 
-type Page = 'home' | 'terms' | 'privacy' | 'cookies' | 'licenses'
+type Page = 'home' | 'terms' | 'privacy' | 'cookies' | 'licenses' | 'personal-data'
 
 function getPage(): Page {
   const p = new URLSearchParams(window.location.search).get('page')
@@ -19,6 +20,7 @@ function getPage(): Page {
   if (p === 'privacy') return 'privacy'
   if (p === 'cookies') return 'cookies'
   if (p === 'licenses') return 'licenses'
+  if (p === 'personal-data') return 'personal-data'
   return 'home'
 }
 
@@ -39,6 +41,7 @@ export default function App() {
   if (page === 'privacy')  return <Privacy />
   if (page === 'cookies')  return <Cookies />
   if (page === 'licenses') return <Licenses />
+  if (page === 'personal-data') return <PersonalData />
 
   return (
     <div className="min-h-screen bg-bg text-fg font-body">

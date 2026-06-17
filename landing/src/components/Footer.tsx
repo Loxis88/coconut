@@ -24,6 +24,7 @@ const nav = [
     links: [
       { label: 'Пользовательское соглашение', href: '?page=terms' },
       { label: 'Политика конфиденциальности', href: '?page=privacy' },
+      { label: 'Обработка персональных данных', href: '?page=personal-data' },
       { label: 'Политика cookies', href: '?page=cookies' },
       { label: 'Лицензии на данные', href: '?page=licenses' },
     ],
