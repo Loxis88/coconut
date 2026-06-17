@@ -217,7 +217,8 @@ class _OverviewTab extends StatelessWidget {
     final satFat = nutrients?.saturatedFat ?? '0';
     final fiber = nutrients?.fiber ?? '0';
 
-    double parse(String? v) => double.tryParse(v?.replaceAll(RegExp(r'[^0-9.]'), '') ?? '') ?? 0.0;
+    double parse(String? v) =>
+        double.tryParse(v?.replaceAll(RegExp(r'[^0-9.]'), '') ?? '') ?? 0.0;
     double calD = parse(calories);
     double sugD = parse(sugar);
     double satD = parse(satFat);
@@ -226,12 +227,112 @@ class _OverviewTab extends StatelessWidget {
     double fibD = parse(fiber);
 
     // Points calculation for color mapping
-    int pCal = calD > 500 ? 10 : calD > 450 ? 9 : calD > 400 ? 8 : calD > 350 ? 7 : calD > 300 ? 6 : calD > 250 ? 5 : calD > 200 ? 4 : calD > 150 ? 3 : calD > 100 ? 2 : calD > 50 ? 1 : 0;
-    int pSug = sugD > 24 ? 10 : sugD > 22 ? 9 : sugD > 20 ? 8 : sugD > 18 ? 7 : sugD > 16 ? 6 : sugD > 14 ? 5 : sugD > 12 ? 4 : sugD > 10 ? 3 : sugD > 6.8 ? 2 : sugD > 3.4 ? 1 : 0;
-    int pSat = satD > 10 ? 10 : satD > 9 ? 9 : satD > 8 ? 8 : satD > 7 ? 7 : satD > 6 ? 6 : satD > 5 ? 5 : satD > 4 ? 4 : satD > 3 ? 3 : satD > 2 ? 2 : satD > 1 ? 1 : 0;
-    int pSal = salD > 2.0 ? 10 : salD > 1.8 ? 9 : salD > 1.6 ? 8 : salD > 1.4 ? 7 : salD > 1.2 ? 6 : salD > 1.0 ? 5 : salD > 0.8 ? 4 : salD > 0.6 ? 3 : salD > 0.4 ? 2 : salD > 0.2 ? 1 : 0;
-    int pPro = proD > 12 ? 5 : proD > 9.6 ? 4 : proD > 7.2 ? 3 : proD > 4.8 ? 2 : proD > 2.4 ? 1 : 0;
-    int pFib = fibD > 7.4 ? 5 : fibD > 6.3 ? 4 : fibD > 5.2 ? 3 : fibD > 4.1 ? 2 : fibD > 3 ? 1 : 0;
+    int pCal = calD > 500
+        ? 10
+        : calD > 450
+            ? 9
+            : calD > 400
+                ? 8
+                : calD > 350
+                    ? 7
+                    : calD > 300
+                        ? 6
+                        : calD > 250
+                            ? 5
+                            : calD > 200
+                                ? 4
+                                : calD > 150
+                                    ? 3
+                                    : calD > 100
+                                        ? 2
+                                        : calD > 50
+                                            ? 1
+                                            : 0;
+    int pSug = sugD > 24
+        ? 10
+        : sugD > 22
+            ? 9
+            : sugD > 20
+                ? 8
+                : sugD > 18
+                    ? 7
+                    : sugD > 16
+                        ? 6
+                        : sugD > 14
+                            ? 5
+                            : sugD > 12
+                                ? 4
+                                : sugD > 10
+                                    ? 3
+                                    : sugD > 6.8
+                                        ? 2
+                                        : sugD > 3.4
+                                            ? 1
+                                            : 0;
+    int pSat = satD > 10
+        ? 10
+        : satD > 9
+            ? 9
+            : satD > 8
+                ? 8
+                : satD > 7
+                    ? 7
+                    : satD > 6
+                        ? 6
+                        : satD > 5
+                            ? 5
+                            : satD > 4
+                                ? 4
+                                : satD > 3
+                                    ? 3
+                                    : satD > 2
+                                        ? 2
+                                        : satD > 1
+                                            ? 1
+                                            : 0;
+    int pSal = salD > 2.0
+        ? 10
+        : salD > 1.8
+            ? 9
+            : salD > 1.6
+                ? 8
+                : salD > 1.4
+                    ? 7
+                    : salD > 1.2
+                        ? 6
+                        : salD > 1.0
+                            ? 5
+                            : salD > 0.8
+                                ? 4
+                                : salD > 0.6
+                                    ? 3
+                                    : salD > 0.4
+                                        ? 2
+                                        : salD > 0.2
+                                            ? 1
+                                            : 0;
+    int pPro = proD > 12
+        ? 5
+        : proD > 9.6
+            ? 4
+            : proD > 7.2
+                ? 3
+                : proD > 4.8
+                    ? 2
+                    : proD > 2.4
+                        ? 1
+                        : 0;
+    int pFib = fibD > 7.4
+        ? 5
+        : fibD > 6.3
+            ? 4
+            : fibD > 5.2
+                ? 3
+                : fibD > 4.1
+                    ? 2
+                    : fibD > 3
+                        ? 1
+                        : 0;
 
     Color getNegativeColor(int pts) {
       if (pts <= 2) return const Color(0xFF4A9152); // Green
@@ -249,7 +350,8 @@ class _OverviewTab extends StatelessWidget {
       return const Color(0xFFC03B32); // Red
     }
 
-    Widget buildNutrientRow(String label, String value, String unit, Color color) {
+    Widget buildNutrientRow(
+        String label, String value, String unit, Color color) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
@@ -261,9 +363,15 @@ class _OverviewTab extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF3A5040))),
+              child: Text(label,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 14, color: const Color(0xFF3A5040))),
             ),
-            Text('$value $unit', style: GoogleFonts.dmMono(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0C1A09))),
+            Text('$value $unit',
+                style: GoogleFonts.dmMono(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF0C1A09))),
           ],
         ),
       );
@@ -279,12 +387,18 @@ class _OverviewTab extends StatelessWidget {
             children: [
               const _Label(text: 'Пищевая ценность · 100г'),
               const SizedBox(height: 12),
-              buildNutrientRow('Калорийность', calD.toStringAsFixed(0), 'ккал', getNegativeColor(pCal)),
-              buildNutrientRow('Сахар', sugD.toStringAsFixed(1), 'г', getNegativeColor(pSug)),
-              buildNutrientRow('Насыщенные жиры', satD.toStringAsFixed(1), 'г', getNegativeColor(pSat)),
-              buildNutrientRow('Соль', salD.toStringAsFixed(2), 'г', getNegativeColor(pSal)),
-              buildNutrientRow('Белки', proD.toStringAsFixed(1), 'г', getPositiveColor(pPro)),
-              buildNutrientRow('Клетчатка', fibD.toStringAsFixed(1), 'г', getPositiveColor(pFib)),
+              buildNutrientRow('Калорийность', calD.toStringAsFixed(0), 'ккал',
+                  getNegativeColor(pCal)),
+              buildNutrientRow('Сахар', sugD.toStringAsFixed(1), 'г',
+                  getNegativeColor(pSug)),
+              buildNutrientRow('Насыщенные жиры', satD.toStringAsFixed(1), 'г',
+                  getNegativeColor(pSat)),
+              buildNutrientRow(
+                  'Соль', salD.toStringAsFixed(2), 'г', getNegativeColor(pSal)),
+              buildNutrientRow('Белки', proD.toStringAsFixed(1), 'г',
+                  getPositiveColor(pPro)),
+              buildNutrientRow('Клетчатка', fibD.toStringAsFixed(1), 'г',
+                  getPositiveColor(pFib)),
               const SizedBox(height: 16),
 
               // Criteria details
@@ -639,8 +753,6 @@ class _Label extends StatelessWidget {
     );
   }
 }
-
-
 
 class _HeaderButton extends StatelessWidget {
   final VoidCallback onTap;
