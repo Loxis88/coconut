@@ -107,115 +107,127 @@ class Product {
 
     // Calories points
     int pCal = 0;
-    if (cal > 500)
+    if (cal > 500) {
       pCal = 10;
-    else if (cal > 450)
+    } else if (cal > 450) {
       pCal = 9;
-    else if (cal > 400)
+    } else if (cal > 400) {
       pCal = 8;
-    else if (cal > 350)
+    } else if (cal > 350) {
       pCal = 7;
-    else if (cal > 300)
+    } else if (cal > 300) {
       pCal = 6;
-    else if (cal > 250)
+    } else if (cal > 250) {
       pCal = 5;
-    else if (cal > 200)
+    } else if (cal > 200) {
       pCal = 4;
-    else if (cal > 150)
+    } else if (cal > 150) {
       pCal = 3;
-    else if (cal > 100)
+    } else if (cal > 100) {
       pCal = 2;
-    else if (cal > 50) pCal = 1;
+    } else if (cal > 50) {
+      pCal = 1;
+    }
 
     // Sugar points
     int pSug = 0;
-    if (sugar > 24)
+    if (sugar > 24) {
       pSug = 10;
-    else if (sugar > 22)
+    } else if (sugar > 22) {
       pSug = 9;
-    else if (sugar > 20)
+    } else if (sugar > 20) {
       pSug = 8;
-    else if (sugar > 18)
+    } else if (sugar > 18) {
       pSug = 7;
-    else if (sugar > 16)
+    } else if (sugar > 16) {
       pSug = 6;
-    else if (sugar > 14)
+    } else if (sugar > 14) {
       pSug = 5;
-    else if (sugar > 12)
+    } else if (sugar > 12) {
       pSug = 4;
-    else if (sugar > 10)
+    } else if (sugar > 10) {
       pSug = 3;
-    else if (sugar > 6.8)
+    } else if (sugar > 6.8) {
       pSug = 2;
-    else if (sugar > 3.4) pSug = 1;
+    } else if (sugar > 3.4) {
+      pSug = 1;
+    }
 
     // Saturated fat points
     int pSat = 0;
-    if (satFat > 10)
+    if (satFat > 10) {
       pSat = 10;
-    else if (satFat > 9)
+    } else if (satFat > 9) {
       pSat = 9;
-    else if (satFat > 8)
+    } else if (satFat > 8) {
       pSat = 8;
-    else if (satFat > 7)
+    } else if (satFat > 7) {
       pSat = 7;
-    else if (satFat > 6)
+    } else if (satFat > 6) {
       pSat = 6;
-    else if (satFat > 5)
+    } else if (satFat > 5) {
       pSat = 5;
-    else if (satFat > 4)
+    } else if (satFat > 4) {
       pSat = 4;
-    else if (satFat > 3)
+    } else if (satFat > 3) {
       pSat = 3;
-    else if (satFat > 2)
+    } else if (satFat > 2) {
       pSat = 2;
-    else if (satFat > 1) pSat = 1;
+    } else if (satFat > 1) {
+      pSat = 1;
+    }
 
     // Salt points
     int pSal = 0;
-    if (salt > 2.0)
+    if (salt > 2.0) {
       pSal = 10;
-    else if (salt > 1.8)
+    } else if (salt > 1.8) {
       pSal = 9;
-    else if (salt > 1.6)
+    } else if (salt > 1.6) {
       pSal = 8;
-    else if (salt > 1.4)
+    } else if (salt > 1.4) {
       pSal = 7;
-    else if (salt > 1.2)
+    } else if (salt > 1.2) {
       pSal = 6;
-    else if (salt > 1.0)
+    } else if (salt > 1.0) {
       pSal = 5;
-    else if (salt > 0.8)
+    } else if (salt > 0.8) {
       pSal = 4;
-    else if (salt > 0.6)
+    } else if (salt > 0.6) {
       pSal = 3;
-    else if (salt > 0.4)
+    } else if (salt > 0.4) {
       pSal = 2;
-    else if (salt > 0.2) pSal = 1;
+    } else if (salt > 0.2) {
+      pSal = 1;
+    }
 
     // Protein points
     int pPro = 0;
-    if (protein > 12)
+    if (protein > 12) {
       pPro = 5;
-    else if (protein > 9.6)
+    } else if (protein > 9.6) {
       pPro = 4;
-    else if (protein > 7.2)
+    } else if (protein > 7.2) {
       pPro = 3;
-    else if (protein > 4.8)
+    } else if (protein > 4.8) {
       pPro = 2;
-    else if (protein > 2.4) pPro = 1;
+    } else if (protein > 2.4) {
+      pPro = 1;
+    }
 
     // Fiber points
     int pFib = 0;
-    if (fiber > 7.4)
+    if (fiber > 7.4) {
       pFib = 5;
-    else if (fiber > 6.3)
+    } else if (fiber > 6.3) {
       pFib = 4;
-    else if (fiber > 5.2)
+    } else if (fiber > 5.2) {
       pFib = 3;
-    else if (fiber > 4.1)
+    } else if (fiber > 4.1) {
       pFib = 2;
-    else if (fiber > 3) pFib = 1;
+    } else if (fiber > 3) {
+      pFib = 1;
+    }
 
     // FVL Category heuristic
     String cat = categoryName.toLowerCase();
@@ -252,79 +264,84 @@ class Product {
     }
 
     int pFvl = 0;
-    if (fvlPercent > 80)
+    if (fvlPercent > 80) {
       pFvl = 5;
-    else if (fvlPercent > 60)
+    } else if (fvlPercent > 60) {
       pFvl = 2;
-    else if (fvlPercent > 40) pFvl = 1;
+    } else if (fvlPercent > 40) {
+      pFvl = 1;
+    }
 
     int negativePoints = pCal + pSug + pSat + pSal;
     int positivePoints = pPro + pFib + pFvl;
     int nutriPoints = negativePoints - positivePoints;
 
     int nutritionScore = 0;
-    if (nutriPoints <= -2)
+    if (nutriPoints <= -2) {
       nutritionScore = 100;
-    else if (nutriPoints == -1)
+    } else if (nutriPoints == -1) {
       nutritionScore = 90;
-    else if (nutriPoints == 0)
+    } else if (nutriPoints == 0) {
       nutritionScore = 80;
-    else if (nutriPoints == 1)
+    } else if (nutriPoints == 1) {
       nutritionScore = 75;
-    else if (nutriPoints == 2)
+    } else if (nutriPoints == 2) {
       nutritionScore = 70;
-    else if (nutriPoints == 3)
+    } else if (nutriPoints == 3) {
       nutritionScore = 65;
-    else if (nutriPoints == 4)
+    } else if (nutriPoints == 4) {
       nutritionScore = 60;
-    else if (nutriPoints == 5)
+    } else if (nutriPoints == 5) {
       nutritionScore = 55;
-    else if (nutriPoints == 6)
+    } else if (nutriPoints == 6) {
       nutritionScore = 50;
-    else if (nutriPoints == 7)
+    } else if (nutriPoints == 7) {
       nutritionScore = 45;
-    else if (nutriPoints == 8)
+    } else if (nutriPoints == 8) {
       nutritionScore = 40;
-    else if (nutriPoints == 9)
+    } else if (nutriPoints == 9) {
       nutritionScore = 35;
-    else if (nutriPoints == 10)
+    } else if (nutriPoints == 10) {
       nutritionScore = 30;
-    else if (nutriPoints == 11)
+    } else if (nutriPoints == 11) {
       nutritionScore = 15;
-    else if (nutriPoints == 12)
+    } else if (nutriPoints == 12) {
       nutritionScore = 13;
-    else if (nutriPoints == 13)
+    } else if (nutriPoints == 13) {
       nutritionScore = 11;
-    else if (nutriPoints == 14)
+    } else if (nutriPoints == 14) {
       nutritionScore = 9;
-    else if (nutriPoints == 15)
+    } else if (nutriPoints == 15) {
       nutritionScore = 7;
-    else if (nutriPoints == 16)
+    } else if (nutriPoints == 16) {
       nutritionScore = 5;
-    else if (nutriPoints == 17)
+    } else if (nutriPoints == 17) {
       nutritionScore = 3;
-    else if (nutriPoints == 18)
+    } else if (nutriPoints == 18) {
       nutritionScore = 1;
-    else
+    } else {
       nutritionScore = 0;
+    }
 
     int additivesPenalty = 0;
     bool hasHighRisk = false;
     for (var add in additives) {
-      if (add.riskLevel == 0)
+      if (add.riskLevel == 0) {
         additivesPenalty += 1;
-      else if (add.riskLevel == 1)
+      } else if (add.riskLevel == 1) {
         additivesPenalty += 3;
-      else if (add.riskLevel == 2)
+      } else if (add.riskLevel == 2) {
         additivesPenalty += 7;
-      else if (add.riskLevel >= 3) {
+      } else if (add.riskLevel >= 3) {
         additivesPenalty += 15;
         hasHighRisk = true;
       }
     }
 
     int additivesScore = 100 - additivesPenalty;
-    if (additivesScore < 0) additivesScore = 0;
+    if (additivesScore < 0) {
+      additivesScore = 0;
+    }
 
     int finalScore = (nutritionScore * 0.7 + additivesScore * 0.3).round();
     if (hasHighRisk && finalScore > 49) {
