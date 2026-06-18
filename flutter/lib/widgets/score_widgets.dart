@@ -11,14 +11,24 @@ class ScoreChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final tier = scoreTier(score);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: big ? 14 : 10, vertical: big ? 8 : 4),
-      decoration: BoxDecoration(color: tier.color, borderRadius: BorderRadius.circular(999)),
+      padding: EdgeInsets.symmetric(
+          horizontal: big ? 14 : 10, vertical: big ? 8 : 4),
+      decoration: BoxDecoration(
+          color: tier.color, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text('$score', style: TextStyle(color: Colors.white, fontSize: big ? 18 : 13, fontWeight: FontWeight.w900)),
-          Text('/100', style: TextStyle(color: Colors.white70, fontSize: big ? 12 : 10, fontWeight: FontWeight.w700)),
+          Text('$score',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: big ? 18 : 13,
+                  fontWeight: FontWeight.w900)),
+          Text('/100',
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: big ? 12 : 10,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -26,7 +36,11 @@ class ScoreChip extends StatelessWidget {
 }
 
 class ScoreRing extends StatelessWidget {
-  const ScoreRing({super.key, required this.score, required this.size, this.showLabel = true});
+  const ScoreRing(
+      {super.key,
+      required this.score,
+      required this.size,
+      this.showLabel = true});
   final int score;
   final double size;
   final bool showLabel;
@@ -41,16 +55,29 @@ class ScoreRing extends StatelessWidget {
       builder: (context, value, _) {
         final animatedTier = scoreTier(value.round());
         return SizedBox(
-          width: size, height: size,
+          width: size,
+          height: size,
           child: Stack(
             alignment: Alignment.center,
             children: [
-              CustomPaint(size: Size.square(size), painter: RingPainter(score: value.round(), color: animatedTier.color)),
+              CustomPaint(
+                  size: Size.square(size),
+                  painter: RingPainter(
+                      score: value.round(), color: animatedTier.color)),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('${value.round()}', style: TextStyle(fontSize: size * .42, fontWeight: FontWeight.w900, height: .9)),
-                  if (showLabel) Text(tier.label.toUpperCase(), style: TextStyle(color: tier.color, fontSize: size * .1, fontWeight: FontWeight.w800)),
+                  Text('${value.round()}',
+                      style: TextStyle(
+                          fontSize: size * .42,
+                          fontWeight: FontWeight.w900,
+                          height: .9)),
+                  if (showLabel)
+                    Text(tier.label.toUpperCase(),
+                        style: TextStyle(
+                            color: tier.color,
+                            fontSize: size * .1,
+                            fontWeight: FontWeight.w800)),
                 ],
               ),
             ],
@@ -69,7 +96,8 @@ class RingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const thickness = 12.0;
-    final rect = Rect.fromLTWH(thickness / 2, thickness / 2, size.width - thickness, size.height - thickness);
+    final rect = Rect.fromLTWH(thickness / 2, thickness / 2,
+        size.width - thickness, size.height - thickness);
     final bg = Paint()
       ..color = MayakTheme.muted
       ..style = PaintingStyle.stroke
@@ -85,7 +113,8 @@ class RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(RingPainter oldDelegate) => oldDelegate.score != score || oldDelegate.color != color;
+  bool shouldRepaint(RingPainter oldDelegate) =>
+      oldDelegate.score != score || oldDelegate.color != color;
 }
 
 class WeekBars extends StatelessWidget {
@@ -116,12 +145,21 @@ class WeekBars extends StatelessWidget {
                         builder: (context, factor, _) => FractionallySizedBox(
                           heightFactor: factor,
                           widthFactor: 1,
-                          child: Container(decoration: BoxDecoration(color: scoreTier((factor * 100).round()).color, borderRadius: BorderRadius.circular(8))),
+                          child: Container(
+                              decoration: BoxDecoration(
+                                  color:
+                                      scoreTier((factor * 100).round()).color,
+                                  borderRadius: BorderRadius.circular(8))),
                         ),
                       ),
                     ),
                   ),
-                  Text(labels[index], style: TextStyle(color: index == values.length - 1 ? MayakTheme.fg : MayakTheme.mutedFg, fontWeight: FontWeight.w800)),
+                  Text(labels[index],
+                      style: TextStyle(
+                          color: index == values.length - 1
+                              ? MayakTheme.fg
+                              : MayakTheme.mutedFg,
+                          fontWeight: FontWeight.w800)),
                 ],
               ),
             ),

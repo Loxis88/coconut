@@ -52,7 +52,8 @@ class AuthRepository {
     return withRefresh((t) async {
       await _api.updateNickname(t, nickname);
       final current = await cachedUser();
-      final updated = (current ?? const AuthUser(id: '', email: '')).copyWith(nickname: nickname);
+      final updated = (current ?? const AuthUser(id: '', email: ''))
+          .copyWith(nickname: nickname);
       await _saveUser(updated);
       return updated;
     });
@@ -79,7 +80,8 @@ class AuthRepository {
       final refreshed = await _tryRefresh();
       if (!refreshed) {
         await logout();
-        throw ApiException('Session expired, please log in again', statusCode: 401);
+        throw ApiException('Session expired, please log in again',
+            statusCode: 401);
       }
       final newToken = await accessToken();
       return await call(newToken!);
@@ -99,7 +101,8 @@ class AuthRepository {
     }
   }
 
-  Future<void> _saveAuth(String accessToken, String refreshToken, AuthUser user) async {
+  Future<void> _saveAuth(
+      String accessToken, String refreshToken, AuthUser user) async {
     await _storage.write(key: 'access_token', value: accessToken);
     await _storage.write(key: 'refresh_token', value: refreshToken);
     await _saveUser(user);

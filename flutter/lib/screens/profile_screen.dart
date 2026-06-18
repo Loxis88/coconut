@@ -1,12 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/auth_user.dart';
 import '../theme.dart';
 
-const _dietOptions = ['Без ограничений', 'Вегетарианство', 'Веганство', 'Без глютена', 'Без лактозы', 'Кето'];
-const _allergensList = ['Глютен', 'Молоко', 'Яйца', 'Арахис', 'Орехи', 'Соя', 'Морепродукты'];
+const _dietOptions = [
+  'Без ограничений',
+  'Вегетарианство',
+  'Веганство',
+  'Без глютена',
+  'Без лактозы',
+  'Кето'
+];
+const _allergensList = [
+  'Глютен',
+  'Молоко',
+  'Яйца',
+  'Арахис',
+  'Орехи',
+  'Соя',
+  'Морепродукты'
+];
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -37,8 +52,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _diet = 'Без ограничений';
   final Set<String> _allergens = {};
-  bool _notifs = true;
-  bool _weekly = true;
 
   Future<void> _editNickname(BuildContext context) async {
     final name = await showDialog<String>(
@@ -52,11 +65,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Выйти?', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        title: Text('Выйти?',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
         content: const Text('Вы выйдете из аккаунта.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Выйти')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Отмена')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Выйти')),
         ],
       ),
     );
@@ -67,13 +85,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Удалить аккаунт?', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
-        content: const Text('Это действие необратимо. Все данные будут удалены.'),
+        title: Text('Удалить аккаунт?',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        content:
+            const Text('Это действие необратимо. Все данные будут удалены.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Отмена')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFFC03B32)),
+            style:
+                TextButton.styleFrom(foregroundColor: const Color(0xFFC03B32)),
             child: const Text('Удалить'),
           ),
         ],
@@ -92,7 +115,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  String get _displayName => widget.user.nickname?.isNotEmpty == true ? widget.user.nickname! : 'Александра К.';
+  String get _displayName => widget.user.nickname?.isNotEmpty == true
+      ? widget.user.nickname!
+      : 'Александра К.';
   String get _initials {
     final name = _displayName.trim();
     if (name.isEmpty) return 'A';
@@ -107,7 +132,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.only(bottom: 100), // Space for bottom nav
+              padding:
+                  const EdgeInsets.only(bottom: 100), // Space for bottom nav
               children: [
                 // Hero
                 Container(
@@ -123,7 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
-                              colors: [const Color(0xFF5BAF64).withOpacity(0.15), Colors.transparent],
+                              colors: [
+                                const Color(0xFF5BAF64).withValues(alpha: 0.15),
+                                Colors.transparent
+                              ],
                             ),
                           ),
                         ),
@@ -141,29 +170,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     width: 56,
                                     height: 56,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1),
+                                      border: Border.all(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.12)),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       _initials,
-                                      style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.white),
+                                      style: GoogleFonts.fraunces(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 22,
+                                          color: Colors.white),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _displayName,
-                                          style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white, letterSpacing: -0.02),
+                                          style: GoogleFonts.dmSans(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 18,
+                                              color: Colors.white,
+                                              letterSpacing: -0.02),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           'С нами с мая 2025',
-                                          style: GoogleFonts.dmMono(fontSize: 11, color: Colors.white.withOpacity(0.35)),
+                                          style: GoogleFonts.dmMono(
+                                              fontSize: 11,
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.35)),
                                         ),
                                       ],
                                     ),
@@ -171,10 +214,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   GestureDetector(
                                     onTap: () => _editNickname(context),
                                     child: Container(
-                                      width: 36, height: 36,
-                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
                                       alignment: Alignment.center,
-                                      child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                                      child: const Icon(Icons.edit_rounded,
+                                          color: Colors.white, size: 18),
                                     ),
                                   ),
                                 ],
@@ -182,11 +231,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 24),
                               Row(
                                 children: [
-                                  Expanded(child: _HeroStatBox(n: '${widget.scanCount}', label: 'Продуктов')),
+                                  Expanded(
+                                      child: _HeroStatBox(
+                                          n: '${widget.scanCount}',
+                                          label: 'Продуктов')),
                                   const SizedBox(width: 8),
-                                  Expanded(child: _HeroStatBox(n: '${widget.average}', label: 'Индекс', highlight: true)),
+                                  Expanded(
+                                      child: _HeroStatBox(
+                                          n: '${widget.average}',
+                                          label: 'Индекс',
+                                          highlight: true)),
                                   const SizedBox(width: 8),
-                                  Expanded(child: _HeroStatBox(n: '${widget.streak}', label: 'Дней подряд')),
+                                  Expanded(
+                                      child: _HeroStatBox(
+                                          n: '${widget.streak}',
+                                          label: 'Дней подряд')),
                                 ],
                               ),
                             ],
@@ -215,17 +274,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onTap: () => setState(() => _diet = d),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: active ? const Color(0xFF153918) : const Color(0x0F0C1A09),
+                                  color: active
+                                      ? const Color(0xFF153918)
+                                      : const Color(0x0F0C1A09),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   d,
                                   style: GoogleFonts.dmSans(
                                     fontSize: 13,
-                                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                                    color: active ? Colors.white : const Color(0xFF5E6859),
+                                    fontWeight: active
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: active
+                                        ? Colors.white
+                                        : const Color(0xFF5E6859),
                                   ),
                                 ),
                               ),
@@ -243,7 +309,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               'Маяк предупредит, если продукт содержит выбранные аллергены',
-                              style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859), height: 1.5),
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 12,
+                                  color: const Color(0xFF5E6859),
+                                  height: 1.5),
                             ),
                             const SizedBox(height: 10),
                             Wrap(
@@ -255,18 +324,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   onTap: () => _toggleAllergen(a),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 150),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: active ? const Color(0x1AC03B32) : const Color(0x0F0C1A09),
-                                      border: Border.all(color: active ? const Color(0x33C03B32) : Colors.transparent),
+                                      color: active
+                                          ? const Color(0x1AC03B32)
+                                          : const Color(0x0F0C1A09),
+                                      border: Border.all(
+                                          color: active
+                                              ? const Color(0x33C03B32)
+                                              : Colors.transparent),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       a,
                                       style: GoogleFonts.dmSans(
                                         fontSize: 13,
-                                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                                        color: active ? const Color(0xFFC03B32) : const Color(0xFF5E6859),
+                                        fontWeight: active
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: active
+                                            ? const Color(0xFFC03B32)
+                                            : const Color(0xFF5E6859),
                                       ),
                                     ),
                                   ),
@@ -295,14 +374,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'О приложении',
                         child: Column(
                           children: [
-                            _AboutRow(label: 'Источники данных', icon: '🔬', onTap: () {}),
-                            _AboutRow(label: 'Политика конфиденциальности', icon: '🔒', onTap: () {}),
-                            _AboutRow(label: 'Условия использования', icon: '📄', onTap: () {}),
-                            _AboutRow(label: 'Обратная связь', icon: '💬', onTap: () {}, last: true),
+                            _AboutRow(
+                                label: 'Источники данных',
+                                icon: '🔬',
+                                onTap: () {}),
+                            _AboutRow(
+                                label: 'Политика конфиденциальности',
+                                icon: '🔒',
+                                onTap: () {}),
+                            _AboutRow(
+                                label: 'Условия использования',
+                                icon: '📄',
+                                onTap: () {}),
+                            _AboutRow(
+                                label: 'Обратная связь',
+                                icon: '💬',
+                                onTap: () {},
+                                last: true),
                             const SizedBox(height: 12),
                             Text(
                               'МАЯК v2.0.0 · 2026',
-                              style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486)),
+                              style: GoogleFonts.dmMono(
+                                  fontSize: 10, color: const Color(0xFF8A9486)),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -347,18 +440,30 @@ class _HeroStatBox extends StatelessWidget {
   final String label;
   final bool highlight;
 
-  const _HeroStatBox({required this.n, required this.label, this.highlight = false});
+  const _HeroStatBox(
+      {required this.n, required this.label, this.highlight = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.07), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(n, style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 24, color: highlight ? const Color(0xFF5BAF64) : Colors.white, height: 1)),
+          Text(n,
+              style: GoogleFonts.fraunces(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                  color: highlight ? const Color(0xFF5BAF64) : Colors.white,
+                  height: 1)),
           const SizedBox(height: 2),
-          Text(label, style: GoogleFonts.dmMono(fontSize: 9, color: Colors.white.withOpacity(0.3), letterSpacing: 9 * 0.04)),
+          Text(label,
+              style: GoogleFonts.dmMono(
+                  fontSize: 9,
+                  color: Colors.white.withValues(alpha: 0.3),
+                  letterSpacing: 9 * 0.04)),
         ],
       ),
     );
@@ -378,7 +483,10 @@ class _Section extends StatelessWidget {
       children: [
         Text(
           title.toUpperCase(),
-          style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF5E6859), letterSpacing: 10 * 0.08),
+          style: GoogleFonts.dmMono(
+              fontSize: 10,
+              color: const Color(0xFF5E6859),
+              letterSpacing: 10 * 0.08),
         ),
         const SizedBox(height: 10),
         Container(
@@ -386,64 +494,14 @@ class _Section extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFF4F0E6),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 3, offset: Offset(0, 1))],
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x0A000000), blurRadius: 3, offset: Offset(0, 1))
+            ],
           ),
           child: child,
         ),
       ],
-    );
-  }
-}
-
-class _ToggleRow extends StatelessWidget {
-  final String label;
-  final String sub;
-  final bool on;
-  final ValueChanged<bool> onChange;
-  final bool last;
-
-  const _ToggleRow({required this.label, required this.sub, required this.on, required this.onChange, this.last = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF0C1A09))),
-                Text(sub, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859))),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => onChange(!on),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 44, height: 26,
-              decoration: BoxDecoration(
-                color: on ? const Color(0xFF153918) : const Color(0xFFB8C0B4),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeInOut,
-                    left: on ? 22 : 4,
-                    top: 4,
-                    child: Container(width: 18, height: 18, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -455,23 +513,38 @@ class _AboutRow extends StatelessWidget {
   final bool last;
   final bool destructive;
 
-  const _AboutRow({required this.label, required this.icon, required this.onTap, this.last = false, this.destructive = false});
+  const _AboutRow(
+      {required this.label,
+      required this.icon,
+      required this.onTap,
+      this.last = false,
+      this.destructive = false});
 
   @override
   Widget build(BuildContext context) {
-    final textColor = destructive ? const Color(0xFFC03B32) : const Color(0xFF0C1A09);
+    final textColor =
+        destructive ? const Color(0xFFC03B32) : const Color(0xFF0C1A09);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
+        decoration: BoxDecoration(
+            border: last
+                ? null
+                : const Border(bottom: BorderSide(color: Color(0x120C1A09)))),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
             Text(icon, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: GoogleFonts.dmSans(fontSize: 14, color: textColor))),
-            Icon(Icons.chevron_right_rounded, color: destructive ? const Color(0xFFC03B32) : const Color(0xFF8A9486), size: 20),
+            Expanded(
+                child: Text(label,
+                    style: GoogleFonts.dmSans(fontSize: 14, color: textColor))),
+            Icon(Icons.chevron_right_rounded,
+                color: destructive
+                    ? const Color(0xFFC03B32)
+                    : const Color(0xFF8A9486),
+                size: 20),
           ],
         ),
       ),
@@ -507,14 +580,17 @@ class _NicknameDialogState extends State<_NicknameDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: Text('Имя профиля', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        title: Text('Имя профиля',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
         content: TextField(
           controller: _ctrl,
           focusNode: _focus,
           decoration: const InputDecoration(hintText: 'Введите имя'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена')),
           TextButton(
             onPressed: () => Navigator.pop(context, _ctrl.text.trim()),
             child: const Text('Сохранить'),

@@ -66,8 +66,6 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 	return user, nil
 }
 
-
-
 func (r *PostgresUserRepository) UpdateNickname(ctx context.Context, userID, nickname string) error {
 	query := `UPDATE users SET nickname = $1, updated_at = $2 WHERE id = $3`
 	_, err := r.db.Exec(ctx, query, nickname, time.Now(), userID)

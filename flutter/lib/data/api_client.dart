@@ -29,7 +29,8 @@ class ApiClient {
   }
 
   Future<AuthResponse> login(String email, String password) async {
-    final response = await _post('/auth/login', body: {'email': email, 'password': password});
+    final response = await _post('/auth/login',
+        body: {'email': email, 'password': password});
     return AuthResponse.fromJson(response);
   }
 
@@ -38,7 +39,8 @@ class ApiClient {
   }
 
   Future<RefreshResponse> refresh(String refreshToken) async {
-    final response = await _post('/auth/refresh', body: {'refresh_token': refreshToken});
+    final response =
+        await _post('/auth/refresh', body: {'refresh_token': refreshToken});
     return RefreshResponse.fromJson(response as Map<String, dynamic>);
   }
 
@@ -48,24 +50,37 @@ class ApiClient {
   }
 
   Future<void> updateNickname(String token, String nickname) async {
-    await _patch('/api/me/nickname', headers: _authHeaders(token), body: {'nickname': nickname});
+    await _patch('/api/me/nickname',
+        headers: _authHeaders(token), body: {'nickname': nickname});
   }
 
   Future<void> deleteAccount(String token) async {
     await _delete('/api/me', headers: _authHeaders(token));
   }
 
-  Future<List<Product>> getCatalog(String token, {int limit = 30, int offset = 0, String? category, String score = 'all'}) async {
-    final params = <String, String>{'limit': '$limit', 'offset': '$offset', 'score': score};
+  Future<List<Product>> getCatalog(String token,
+      {int limit = 30,
+      int offset = 0,
+      String? category,
+      String score = 'all'}) async {
+    final params = <String, String>{
+      'limit': '$limit',
+      'offset': '$offset',
+      'score': score
+    };
     if (category != null && category.isNotEmpty) params['category'] = category;
-    final uri = Uri.parse('$coconutBackendBaseUrl/api/products/catalog').replace(queryParameters: params);
+    final uri = Uri.parse('$coconutBackendBaseUrl/api/products/catalog')
+        .replace(queryParameters: params);
     final response = await _client.get(uri, headers: _authHeaders(token));
     final list = _decode(response) as List;
-    return list.map((item) => _mapBackendProduct(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => _mapBackendProduct(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Product> getProduct(String token, String barcode) async {
-    final response = await _get('/api/products/$barcode', headers: _authHeaders(token));
+    final response =
+        await _get('/api/products/$barcode', headers: _authHeaders(token));
     return _mapBackendProduct(response);
   }
 
@@ -76,7 +91,8 @@ class ApiClient {
         .toList();
   }
 
-  Future<void> saveHistory(String token, String barcode, Product product) async {
+  Future<void> saveHistory(
+      String token, String barcode, Product product) async {
     await _post(
       '/api/history/',
       headers: _authHeaders(token),
@@ -118,14 +134,18 @@ class ApiClient {
     required Map<String, dynamic> body,
   }) async {
     final uri = Uri.parse('$coconutBackendBaseUrl$path');
-    final response = await _client.patch(uri, headers: headers, body: jsonEncode(body));
+    final response =
+        await _client.patch(uri, headers: headers, body: jsonEncode(body));
     return _decode(response);
   }
 
-  Future<dynamic> _delete(String path, {required Map<String, String> headers}) async {
+  Future<dynamic> _delete(String path,
+      {required Map<String, String> headers}) async {
     final uri = Uri.parse('$coconutBackendBaseUrl$path');
     final response = await _client.delete(uri, headers: headers);
-    if (response.body.isEmpty && response.statusCode >= 200 && response.statusCode < 300) {
+    if (response.body.isEmpty &&
+        response.statusCode >= 200 &&
+        response.statusCode < 300) {
       return null;
     }
     return _decode(response);
@@ -133,7 +153,8 @@ class ApiClient {
 
   dynamic _decode(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException('HTTP ${response.statusCode}: ${response.body}', statusCode: response.statusCode);
+      throw ApiException('HTTP ${response.statusCode}: ${response.body}',
+          statusCode: response.statusCode);
     }
     if (response.body.isEmpty) return null;
     return jsonDecode(utf8.decode(response.bodyBytes));
@@ -147,7 +168,8 @@ class ApiClient {
         .toList();
     final category = dto['category'] as Map<String, dynamic>?;
     final ingredients = (dto['normalized_ingredients'] as List? ?? [])
-        .map((item) => NormalizedIngredient.fromJson(item as Map<String, dynamic>))
+        .map((item) =>
+            NormalizedIngredient.fromJson(item as Map<String, dynamic>))
         .toList();
 
     return Product(
@@ -172,6 +194,9 @@ class ApiClient {
               carbohydrates: nutrition['carbs_g']?.toString(),
               calories: nutrition['calories_kcal']?.toString(),
               fiber: nutrition['fiber_g']?.toString(),
+              sugar: nutrition['sugar_g']?.toString(),
+              salt: nutrition['salt_g']?.toString(),
+              saturatedFat: nutrition['saturated_fat_g']?.toString(),
             ),
       composition: dto['ingredients'] as String?,
       hasQualityMark: false,
@@ -193,11 +218,13 @@ class ApiException implements Exception {
 }
 
 class RefreshResponse {
-  const RefreshResponse({required this.accessToken, required this.refreshToken});
+  const RefreshResponse(
+      {required this.accessToken, required this.refreshToken});
   final String accessToken;
   final String refreshToken;
 
-  factory RefreshResponse.fromJson(Map<String, dynamic> json) => RefreshResponse(
+  factory RefreshResponse.fromJson(Map<String, dynamic> json) =>
+      RefreshResponse(
         accessToken: json['access_token'] as String? ?? '',
         refreshToken: json['refresh_token'] as String? ?? '',
       );

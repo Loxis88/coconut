@@ -35,7 +35,9 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         setState(() => _isLogin = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Регистрация успешна! Подтвердите почту и войдите.')),
+          const SnackBar(
+              content:
+                  Text('Регистрация успешна! Подтвердите почту и войдите.')),
         );
       }
     }
@@ -71,13 +73,17 @@ class _AuthScreenState extends State<AuthScreen> {
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
-                          colors: [Color(0x1F5BAF64), Colors.transparent], // 0.12 opacity approx
+                          colors: [
+                            Color(0x1F5BAF64),
+                            Colors.transparent
+                          ], // 0.12 opacity approx
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 28, right: 28, top: 24, bottom: 40),
+                    padding: const EdgeInsets.only(
+                        left: 28, right: 28, top: 24, bottom: 40),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -117,7 +123,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           'Ваши данные хранятся на устройстве\nи не передаются третьим лицам',
                           style: GoogleFonts.dmSans(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.35),
+                            color: Colors.white.withValues(alpha: 0.35),
                             height: 1.6,
                           ),
                         ),
@@ -128,7 +134,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
           ),
-          
+
           // Form Area
           Expanded(
             child: SingleChildScrollView(
@@ -165,11 +171,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
                         widget.error!,
-                        style: GoogleFonts.dmSans(color: MayakTheme.scorePoor, fontSize: 13),
+                        style: GoogleFonts.dmSans(
+                            color: MayakTheme.scorePoor, fontSize: 13),
                       ),
                     ),
                   widget.loading
-                      ? const Center(child: CircularProgressIndicator(color: MayakTheme.primary))
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                              color: MayakTheme.primary))
                       : GestureDetector(
                           onTap: _submit,
                           child: Container(
@@ -195,7 +204,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: GestureDetector(
                       onTap: () => setState(() => _isLogin = !_isLogin),
                       child: Text(
-                        _isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти',
+                        _isLogin
+                            ? 'Нет аккаунта? Зарегистрироваться'
+                            : 'Уже есть аккаунт? Войти',
                         style: GoogleFonts.dmSans(
                           fontSize: 13,
                           color: MayakTheme.primary,
@@ -205,7 +216,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ],
-              ).animate().fade().slideX(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+              ).animate().fade().slideX(
+                  begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
             ),
           ),
         ],
@@ -253,18 +265,22 @@ class _Field extends StatelessWidget {
             hintStyle: GoogleFonts.dmSans(color: MayakTheme.muted),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0x1A0C1A09), width: 1.5), // 0.1 opacity
+              borderSide: const BorderSide(
+                  color: Color(0x1A0C1A09), width: 1.5), // 0.1 opacity
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0x1A0C1A09), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0x1A0C1A09), width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: MayakTheme.primary, width: 1.5),
+              borderSide:
+                  const BorderSide(color: MayakTheme.primary, width: 1.5),
             ),
           ),
         ),
@@ -277,27 +293,36 @@ class MiniLighthousePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
-    
-    paint.color = Colors.white.withOpacity(0.85);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(10, 14, 8, 20), const Radius.circular(1)), paint);
-    
-    paint.color = Colors.white.withOpacity(0.25);
+
+    paint.color = Colors.white.withValues(alpha: 0.85);
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(10, 14, 8, 20), const Radius.circular(1)),
+        paint);
+
+    paint.color = Colors.white.withValues(alpha: 0.25);
     canvas.drawRect(const Rect.fromLTWH(10, 21, 8, 4), paint);
-    
+
     paint.color = Colors.white;
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(6, 8, 16, 8), const Radius.circular(2)), paint);
-    
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(6, 8, 16, 8), const Radius.circular(2)),
+        paint);
+
     paint.color = const Color(0xFFFFD566);
     canvas.drawCircle(const Offset(14, 12), 3, paint);
-    
-    paint.color = Colors.white.withOpacity(0.85);
+
+    paint.color = Colors.white.withValues(alpha: 0.85);
     final path = Path()
       ..moveTo(8, 8)
       ..quadraticBezierTo(14, 3, 20, 8);
     canvas.drawPath(path, paint);
-    
-    paint.color = Colors.white.withOpacity(0.5);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(8, 33, 12, 3), const Radius.circular(1)), paint);
+
+    paint.color = Colors.white.withValues(alpha: 0.5);
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(8, 33, 12, 3), const Radius.circular(1)),
+        paint);
   }
 
   @override

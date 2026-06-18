@@ -22,7 +22,6 @@ const _scoreFilters = [
   {'key': 'bad', 'label': 'Плохие', 'color': Color(0xFFC03B32)},
 ];
 
-
 class SearchScreen extends StatefulWidget {
   const SearchScreen({
     super.key,
@@ -33,7 +32,8 @@ class SearchScreen extends StatefulWidget {
 
   final List<Product> history;
   final void Function(Product product) onShowProduct;
-  final Future<List<Product>> Function({String? category, String score, int limit, int offset}) onLoadCatalog;
+  final Future<List<Product>> Function(
+      {String? category, String score, int limit, int offset}) onLoadCatalog;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -59,7 +59,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() => setState(() => _focused = _focusNode.hasFocus));
+    _focusNode
+        .addListener(() => setState(() => _focused = _focusNode.hasFocus));
     _scrollCtrl.addListener(_onScroll);
     _loadCatalog();
   }
@@ -73,7 +74,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 200) {
       _loadMore();
     }
   }
@@ -86,7 +88,8 @@ class _SearchScreenState extends State<SearchScreen> {
       _catalog = const [];
     });
     try {
-      final items = await widget.onLoadCatalog(category: category, score: 'all', limit: _pageSize, offset: 0);
+      final items = await widget.onLoadCatalog(
+          category: category, score: 'all', limit: _pageSize, offset: 0);
       if (mounted) {
         setState(() {
           _catalog = items;
@@ -141,7 +144,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }).toList();
   }
 
-
   void _clear() {
     _textCtrl.clear();
     _focusNode.unfocus();
@@ -158,18 +160,6 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     });
     if (hadCategory) _loadCatalog();
-  }
-
-  Color _getScoreColor(int score) {
-    if (score >= 70) return MayakTheme.scoreExcellent;
-    if (score >= 40) return MayakTheme.scoreModerate;
-    return MayakTheme.scorePoor;
-  }
-
-  String _getScoreLabel(int score) {
-    if (score >= 70) return 'Хорошо';
-    if (score >= 40) return 'Спорно';
-    return 'Плохо';
   }
 
   @override
@@ -196,25 +186,41 @@ class _SearchScreenState extends State<SearchScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: _focused ? const Color(0xFFF4F0E6) : const Color(0x120C1A09),
+                  color: _focused
+                      ? const Color(0xFFF4F0E6)
+                      : const Color(0x120C1A09),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _focused ? const Color(0x38153918) : Colors.transparent, width: 1.5),
-                  boxShadow: _focused ? const [BoxShadow(color: Color(0x14153918), blurRadius: 16, offset: Offset(0, 4))] : [],
+                  border: Border.all(
+                      color: _focused
+                          ? const Color(0x38153918)
+                          : Colors.transparent,
+                      width: 1.5),
+                  boxShadow: _focused
+                      ? const [
+                          BoxShadow(
+                              color: Color(0x14153918),
+                              blurRadius: 16,
+                              offset: Offset(0, 4))
+                        ]
+                      : [],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: Color(0x800C1A09), size: 20),
+                    const Icon(Icons.search,
+                        color: Color(0x800C1A09), size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: _textCtrl,
                         focusNode: _focusNode,
                         onChanged: (v) => setState(() => _query = v),
-                        style: GoogleFonts.dmSans(fontSize: 15, color: const Color(0xFF0C1A09)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 15, color: const Color(0xFF0C1A09)),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: 'Продукт, бренд или категория…',
-                          hintStyle: GoogleFonts.dmSans(color: const Color(0x800C1A09)),
+                          hintStyle: GoogleFonts.dmSans(
+                              color: const Color(0x800C1A09)),
                         ),
                       ),
                     ),
@@ -223,8 +229,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         onTap: _clear,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Color(0x1A121A09), shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 14, color: Color(0xFF5E6859)),
+                          decoration: const BoxDecoration(
+                              color: Color(0x1A121A09), shape: BoxShape.circle),
+                          child: const Icon(Icons.close,
+                              size: 14, color: Color(0xFF5E6859)),
                         ),
                       ).animate().scale(duration: 150.ms),
                   ],
@@ -234,9 +242,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Content
             Expanded(
-              child: isSearching
-                  ? _buildResults(results)
-                  : _buildEmptyState(),
+              child: isSearching ? _buildResults(results) : _buildEmptyState(),
             ),
           ],
         ),
@@ -252,7 +258,10 @@ class _SearchScreenState extends State<SearchScreen> {
         // Categories
         Text(
           'КАТЕГОРИИ',
-          style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486), letterSpacing: 10 * 0.08),
+          style: GoogleFonts.dmMono(
+              fontSize: 10,
+              color: const Color(0xFF8A9486),
+              letterSpacing: 10 * 0.08),
         ),
         const SizedBox(height: 10),
         GridView.builder(
@@ -284,17 +293,26 @@ class _SearchScreenState extends State<SearchScreen> {
                 decoration: BoxDecoration(
                   color: MayakTheme.card,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))],
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x0D000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1))
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(cat['icon'] as String, style: const TextStyle(fontSize: 22, height: 1)),
+                    Text(cat['icon'] as String,
+                        style: const TextStyle(fontSize: 22, height: 1)),
                     const SizedBox(height: 6),
                     Text(
                       cat['label'] as String,
-                      style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13, color: const Color(0xFF0C1A09)),
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: const Color(0xFF0C1A09)),
                     ),
                   ],
                 ),
@@ -307,12 +325,16 @@ class _SearchScreenState extends State<SearchScreen> {
         // Catalog
         Text(
           'ТОП ОЦЕНОК',
-          style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486), letterSpacing: 10 * 0.08),
+          style: GoogleFonts.dmMono(
+              fontSize: 10,
+              color: const Color(0xFF8A9486),
+              letterSpacing: 10 * 0.08),
         ),
         const SizedBox(height: 10),
         ..._catalog.map((p) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _ResultItem(product: p, onTap: () => widget.onShowProduct(p)),
+              child:
+                  _ResultItem(product: p, onTap: () => widget.onShowProduct(p)),
             )),
         if (_loadingMore)
           const Padding(
@@ -323,7 +345,9 @@ class _SearchScreenState extends State<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text('Все продукты загружены', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
+              child: Text('Все продукты загружены',
+                  style: GoogleFonts.dmMono(
+                      fontSize: 10, color: const Color(0xFF8A9486))),
             ),
           ),
       ],
@@ -353,14 +377,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   _loadCatalog();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: const Color(0xFF153918), borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF153918),
+                      borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '${_categories.firstWhere((c) => c['key'] == _categoryFilter)['icon']} ${_categories.firstWhere((c) => c['key'] == _categoryFilter)['label']}',
-                        style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
                       ),
                       const SizedBox(width: 4),
                       const Icon(Icons.close, size: 12, color: Colors.white),
@@ -375,10 +405,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 onTap: () => setState(() => _scoreFilter = f['key'] as String),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: active ? color.withOpacity(0.1) : const Color(0x0F0C1A09),
-                    border: Border.all(color: active ? color.withOpacity(0.25) : Colors.transparent),
+                    color: active
+                        ? color.withValues(alpha: 0.1)
+                        : const Color(0x0F0C1A09),
+                    border: Border.all(
+                        color: active
+                            ? color.withValues(alpha: 0.25)
+                            : Colors.transparent),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -398,8 +434,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
         // Count
         Text(
-          results.isNotEmpty ? '${results.length} результатов' : 'Ничего не найдено',
-          style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486), letterSpacing: 10 * 0.04),
+          results.isNotEmpty
+              ? '${results.length} результатов'
+              : 'Ничего не найдено',
+          style: GoogleFonts.dmMono(
+              fontSize: 10,
+              color: const Color(0xFF8A9486),
+              letterSpacing: 10 * 0.04),
         ),
         const SizedBox(height: 10),
 
@@ -409,23 +450,38 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(
               children: [
                 Container(
-                  width: 56, height: 56,
-                  decoration: BoxDecoration(color: const Color(0x0F0C1A09), borderRadius: BorderRadius.circular(16)),
-                  child: const Icon(Icons.search_off_rounded, color: Color(0xFF8A9486), size: 28),
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                      color: const Color(0x0F0C1A09),
+                      borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.search_off_rounded,
+                      color: Color(0xFF8A9486), size: 28),
                 ),
                 const SizedBox(height: 12),
-                Text('Ничего не найдено', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 15, color: const Color(0xFF0C1A09))),
+                Text('Ничего не найдено',
+                    style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: const Color(0xFF0C1A09))),
                 const SizedBox(height: 4),
                 Text(
                   'Попробуйте другой запрос или сбросьте фильтры',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.dmSans(fontSize: 13, color: const Color(0xFF5E6859)),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: const Color(0xFF5E6859)),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: _clear,
-                  style: TextButton.styleFrom(backgroundColor: const Color(0x1A153918), foregroundColor: const Color(0xFF153918), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: Text('Сбросить', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13)),
+                  style: TextButton.styleFrom(
+                      backgroundColor: const Color(0x1A153918),
+                      foregroundColor: const Color(0xFF153918),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  child: Text('Сбросить',
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w600, fontSize: 13)),
                 ),
               ],
             ),
@@ -433,7 +489,8 @@ class _SearchScreenState extends State<SearchScreen> {
         else
           ...results.map((p) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _ResultItem(product: p, onTap: () => widget.onShowProduct(p)),
+                child: _ResultItem(
+                    product: p, onTap: () => widget.onShowProduct(p)),
               )),
         if (_loadingMore)
           const Padding(
@@ -444,7 +501,9 @@ class _SearchScreenState extends State<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text('Все продукты загружены', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
+              child: Text('Все продукты загружены',
+                  style: GoogleFonts.dmMono(
+                      fontSize: 10, color: const Color(0xFF8A9486))),
             ),
           ),
       ],
@@ -480,14 +539,20 @@ class _ResultItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: MayakTheme.card,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))],
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))
+          ],
           border: Border(left: BorderSide(color: color, width: 3)),
         ),
         child: Row(
           children: [
             Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(color: MayakTheme.muted, borderRadius: BorderRadius.circular(12)),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                  color: MayakTheme.muted,
+                  borderRadius: BorderRadius.circular(12)),
               clipBehavior: Clip.antiAlias,
               child: product.thumbnail != null
                   ? NetImg(product.thumbnail!)
@@ -498,14 +563,37 @@ class _ResultItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.title, style: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF0C1A09)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(product.manufacturer, style: GoogleFonts.dmSans(fontSize: 12, color: const Color(0xFF5E6859)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(product.title,
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: const Color(0xFF0C1A09)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  Text(product.manufacturer,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12, color: const Color(0xFF5E6859)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text('${product.nutrients?.calories ?? 0} ккал', style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486))),
-                      Container(margin: const EdgeInsets.symmetric(horizontal: 6), width: 2, height: 2, decoration: const BoxDecoration(color: Color(0xFFC4BFB4), shape: BoxShape.circle)),
-                      Flexible(child: Text(product.categoryName, style: GoogleFonts.dmMono(fontSize: 10, color: const Color(0xFF8A9486)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Text('${product.nutrients?.calories ?? 0} ккал',
+                          style: GoogleFonts.dmMono(
+                              fontSize: 10, color: const Color(0xFF8A9486))),
+                      Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          width: 2,
+                          height: 2,
+                          decoration: const BoxDecoration(
+                              color: Color(0xFFC4BFB4),
+                              shape: BoxShape.circle)),
+                      Flexible(
+                          child: Text(product.categoryName,
+                              style: GoogleFonts.dmMono(
+                                  fontSize: 10, color: const Color(0xFF8A9486)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                 ],
@@ -515,9 +603,15 @@ class _ResultItem extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('${product.score}', style: GoogleFonts.fraunces(fontWeight: FontWeight.w900, fontSize: 20, color: color, height: 1)),
+                Text('${product.score}',
+                    style: GoogleFonts.fraunces(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                        color: color,
+                        height: 1)),
                 const SizedBox(height: 1),
-                Text(_getScoreLabel(product.score), style: GoogleFonts.dmMono(fontSize: 8, color: color)),
+                Text(_getScoreLabel(product.score),
+                    style: GoogleFonts.dmMono(fontSize: 8, color: color)),
               ],
             ),
           ],
@@ -526,4 +620,3 @@ class _ResultItem extends StatelessWidget {
     );
   }
 }
-

@@ -22,7 +22,7 @@ func NewHistoryHandler(historyRepo ports.HistoryRepository) *HistoryHandler {
 func (h *HistoryHandler) SetupRoutes(router fiber.Router) {
 	// All history routes are protected by AuthMiddleware in main.go
 	historyGroup := router.Group("/history")
-	
+
 	historyGroup.Get("/", h.GetHistory)
 	historyGroup.Post("/", h.SaveHistory)
 	historyGroup.Delete("/", h.ClearHistory)

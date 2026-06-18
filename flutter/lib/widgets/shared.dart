@@ -3,7 +3,8 @@ import '../theme.dart';
 import 'pill_button.dart';
 
 class RoundIcon extends StatelessWidget {
-  const RoundIcon({super.key, required this.icon, required this.onTap, this.dark = false});
+  const RoundIcon(
+      {super.key, required this.icon, required this.onTap, this.dark = false});
   final IconData icon;
   final VoidCallback onTap;
   final bool dark;
@@ -12,7 +13,8 @@ class RoundIcon extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
         onPressed: onTap,
         icon: Icon(icon, color: dark ? Colors.white : MayakTheme.fg),
-        style: IconButton.styleFrom(backgroundColor: dark ? Colors.white24 : MayakTheme.muted),
+        style: IconButton.styleFrom(
+            backgroundColor: dark ? Colors.white24 : MayakTheme.muted),
       );
 }
 
@@ -24,7 +26,8 @@ class CircleIcon extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 70,
         height: 70,
-        decoration: const BoxDecoration(shape: BoxShape.circle, color: MayakTheme.primary),
+        decoration: const BoxDecoration(
+            shape: BoxShape.circle, color: MayakTheme.primary),
         child: Icon(icon, color: Colors.white, size: 30),
       );
 }
@@ -38,8 +41,13 @@ class SmallCounter extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-        child: Row(children: [Icon(icon, color: value > 0 ? Colors.red : MayakTheme.mutedFg, size: 16), Text('$value')]),
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(999)),
+        child: Row(children: [
+          Icon(icon,
+              color: value > 0 ? Colors.red : MayakTheme.mutedFg, size: 16),
+          Text('$value')
+        ]),
       );
 }
 
@@ -50,7 +58,8 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 18, bottom: 10),
-        child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+        child: Text(text,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
       );
 }
 
@@ -61,9 +70,16 @@ class Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: size, height: size,
-        decoration: const BoxDecoration(color: MayakTheme.primary, shape: BoxShape.circle),
-        child: Center(child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * .38, fontWeight: FontWeight.w800))),
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+            color: MayakTheme.primary, shape: BoxShape.circle),
+        child: Center(
+            child: Text(initials,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: size * .38,
+                    fontWeight: FontWeight.w800))),
       );
 }
 

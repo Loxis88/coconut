@@ -93,7 +93,7 @@ export default function Footer() {
           <p className="text-xs text-muted-fg">
             © {YEAR} МАЯК. Заботимся о здоровье.
           </p>
-          <div className="text-[11px] text-muted-fg leading-relaxed md:text-right space-y-0.5">
+          {/* <div className="text-[11px] text-muted-fg leading-relaxed md:text-right space-y-0.5">
             <p>
               ИП Головлев Иван Александрович · ИНН&nbsp;770201291441 · ОГРНИП&nbsp;325774600759217
             </p>
@@ -105,7 +105,7 @@ export default function Footer() {
             <p>
               ООО «Банк Точка» · р/с&nbsp;40802810220000808347 · БИК&nbsp;044525104
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
 

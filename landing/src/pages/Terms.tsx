@@ -137,7 +137,7 @@ export default function Terms() {
           порядке по месту нахождения Маяка.
         </p>
 
-        <h2>9. Реквизиты</h2>
+        {/* <h2>9. Реквизиты</h2>
         <table className="req-table">
           <tbody>
             <tr><td>Наименование</td><td>Индивидуальный предприниматель Головлев Иван Александрович</td></tr>
@@ -151,7 +151,7 @@ export default function Terms() {
             <tr><td>Email</td><td>admin@foodmayak.ru</td></tr>
             <tr><td>Сайт</td><td>https://foodmayak.ru</td></tr>
           </tbody>
-        </table>
+        </table> */}
       </div>
     </LegalLayout>
   )

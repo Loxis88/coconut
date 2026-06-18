@@ -180,7 +180,7 @@ func (c *openAIClient) ExtractIngredients(ctx context.Context, sourceID, composi
 
 	var parsed struct {
 		Products []struct {
-			SourceID    string                   `json:"source_id"`
+			SourceID    string                    `json:"source_id"`
 			Ingredients []domain.ParsedIngredient `json:"ingredients"`
 		} `json:"products"`
 	}

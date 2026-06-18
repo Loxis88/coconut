@@ -9,7 +9,8 @@ class BottomNav extends StatelessWidget {
   final AppRoute currentRoute;
   final ValueChanged<AppRoute> onRouteChanged;
 
-  const BottomNav({super.key, required this.currentRoute, required this.onRouteChanged});
+  const BottomNav(
+      {super.key, required this.currentRoute, required this.onRouteChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +19,13 @@ class BottomNav extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xE8E8E3D6), // E8E3D6 at 0.94 opacity approx = 240 alpha -> 0xF0
-            border: Border(top: BorderSide(color: MayakTheme.fg.withOpacity(0.07))),
+            color: const Color(
+                0xE8E8E3D6), // E8E3D6 at 0.94 opacity approx = 240 alpha -> 0xF0
+            border: Border(
+                top: BorderSide(color: MayakTheme.fg.withValues(alpha: 0.07))),
           ),
-          padding: const EdgeInsets.only(bottom: 20, top: 8, left: 12, right: 12),
+          padding:
+              const EdgeInsets.only(bottom: 20, top: 8, left: 12, right: 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -43,17 +47,25 @@ class BottomNav extends StatelessWidget {
                 child: Container(
                   width: 52,
                   height: 52,
-                  margin: const EdgeInsets.only(bottom: 2, top: 4), // Lifted up a bit
+                  margin: const EdgeInsets.only(
+                      bottom: 2, top: 4), // Lifted up a bit
                   decoration: BoxDecoration(
                     color: MayakTheme.primary,
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
-                      BoxShadow(color: MayakTheme.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 6)),
+                      BoxShadow(
+                          color: MayakTheme.primary.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6)),
                     ],
                   ),
                   alignment: Alignment.center,
-                  child: CustomPaint(size: const Size(22, 22), painter: _ScannerIconPainter()),
-                ).animate().scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 200.ms),
+                  child: CustomPaint(
+                      size: const Size(22, 22), painter: _ScannerIconPainter()),
+                ).animate().scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
+                    duration: 200.ms),
               ),
               _NavItem(
                 icon: _HistoryIcon(active: currentRoute == AppRoute.journal),
@@ -81,7 +93,11 @@ class _NavItem extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _NavItem({required this.icon, required this.label, required this.active, required this.onTap});
+  const _NavItem(
+      {required this.icon,
+      required this.label,
+      required this.active,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +122,12 @@ class _NavItem extends StatelessWidget {
                       child: Container(
                         width: 6,
                         height: 6,
-                        decoration: const BoxDecoration(color: MayakTheme.primary, shape: BoxShape.circle),
-                      ).animate().scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 200.ms),
+                        decoration: const BoxDecoration(
+                            color: MayakTheme.primary, shape: BoxShape.circle),
+                      ).animate().scale(
+                          begin: const Offset(0, 0),
+                          end: const Offset(1, 1),
+                          duration: 200.ms),
                     ),
                 ],
               ),
@@ -136,9 +156,11 @@ class _HomeIcon extends StatelessWidget {
   const _HomeIcon({required this.active});
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(22, 22), painter: _HomeIconPainter(active));
+    return CustomPaint(
+        size: const Size(22, 22), painter: _HomeIconPainter(active));
   }
 }
+
 class _HomeIconPainter extends CustomPainter {
   final bool active;
   _HomeIconPainter(this.active);
@@ -149,7 +171,7 @@ class _HomeIconPainter extends CustomPainter {
       ..color = active ? MayakTheme.primary : const Color(0xFF8A9486)
       ..strokeWidth = 1.6
       ..strokeJoin = StrokeJoin.round;
-      
+
     final path = Path()
       ..moveTo(2, 9.5)
       ..lineTo(11, 3)
@@ -163,15 +185,17 @@ class _HomeIconPainter extends CustomPainter {
       ..lineTo(3, 21)
       ..arcToPoint(const Offset(2, 20), radius: const Radius.circular(1))
       ..close();
-      
+
     canvas.drawPath(path, paint);
     if (active) {
       paint.style = PaintingStyle.stroke;
       canvas.drawPath(path, paint);
     }
   }
+
   @override
-  bool shouldRepaint(covariant _HomeIconPainter oldDelegate) => active != oldDelegate.active;
+  bool shouldRepaint(covariant _HomeIconPainter oldDelegate) =>
+      active != oldDelegate.active;
 }
 
 class _SearchIcon extends StatelessWidget {
@@ -179,9 +203,11 @@ class _SearchIcon extends StatelessWidget {
   const _SearchIcon({required this.active});
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(22, 22), painter: _SearchIconPainter(active));
+    return CustomPaint(
+        size: const Size(22, 22), painter: _SearchIconPainter(active));
   }
 }
+
 class _SearchIconPainter extends CustomPainter {
   final bool active;
   _SearchIconPainter(this.active);
@@ -192,12 +218,14 @@ class _SearchIconPainter extends CustomPainter {
       ..color = active ? MayakTheme.primary : const Color(0xFF8A9486)
       ..strokeWidth = 1.7
       ..strokeCap = StrokeCap.round;
-      
+
     canvas.drawCircle(const Offset(9.5, 9.5), 6, paint);
     canvas.drawLine(const Offset(14, 14), const Offset(19, 19), paint);
   }
+
   @override
-  bool shouldRepaint(covariant _SearchIconPainter oldDelegate) => active != oldDelegate.active;
+  bool shouldRepaint(covariant _SearchIconPainter oldDelegate) =>
+      active != oldDelegate.active;
 }
 
 class _HistoryIcon extends StatelessWidget {
@@ -205,9 +233,11 @@ class _HistoryIcon extends StatelessWidget {
   const _HistoryIcon({required this.active});
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(22, 22), painter: _HistoryIconPainter(active));
+    return CustomPaint(
+        size: const Size(22, 22), painter: _HistoryIconPainter(active));
   }
 }
+
 class _HistoryIconPainter extends CustomPainter {
   final bool active;
   _HistoryIconPainter(this.active);
@@ -219,12 +249,19 @@ class _HistoryIconPainter extends CustomPainter {
       ..strokeWidth = 1.7
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-      
+
     canvas.drawCircle(const Offset(11, 11), 8, paint);
-    canvas.drawPath(Path()..moveTo(11, 7)..lineTo(11, 11)..lineTo(13.5, 13.5), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(11, 7)
+          ..lineTo(11, 11)
+          ..lineTo(13.5, 13.5),
+        paint);
   }
+
   @override
-  bool shouldRepaint(covariant _HistoryIconPainter oldDelegate) => active != oldDelegate.active;
+  bool shouldRepaint(covariant _HistoryIconPainter oldDelegate) =>
+      active != oldDelegate.active;
 }
 
 class _ProfileIcon extends StatelessWidget {
@@ -232,9 +269,11 @@ class _ProfileIcon extends StatelessWidget {
   const _ProfileIcon({required this.active});
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(22, 22), painter: _ProfileIconPainter(active));
+    return CustomPaint(
+        size: const Size(22, 22), painter: _ProfileIconPainter(active));
   }
 }
+
 class _ProfileIconPainter extends CustomPainter {
   final bool active;
   _ProfileIconPainter(this.active);
@@ -245,38 +284,43 @@ class _ProfileIconPainter extends CustomPainter {
       ..color = active ? MayakTheme.primary : const Color(0xFF8A9486)
       ..strokeWidth = 1.7
       ..strokeCap = StrokeCap.round;
-      
+
     canvas.drawCircle(const Offset(11, 8.5), 3.5, paint);
-    final path = Path()
-      ..moveTo(3.5, 20)
-      ..quadraticBezierTo(3.5, 16.1, 7.5, 13) // approx arc
-      ..arcToPoint(const Offset(14.5, 13), radius: const Radius.circular(7))
-      ..quadraticBezierTo(18.5, 16.1, 18.5, 20); // Not exact bezier to the react version but close
-      
+
     // React path is: "M3.5 20c0-3.9 3.4-7 7.5-7s7.5 3.1 7.5 7"
     final exactPath = Path()
       ..moveTo(3.5, 20)
       ..cubicTo(3.5, 16.1, 6.9, 13, 11, 13)
       ..cubicTo(15.1, 13, 18.5, 16.1, 18.5, 20);
-      
+
     canvas.drawPath(exactPath, paint);
   }
+
   @override
-  bool shouldRepaint(covariant _ProfileIconPainter oldDelegate) => active != oldDelegate.active;
+  bool shouldRepaint(covariant _ProfileIconPainter oldDelegate) =>
+      active != oldDelegate.active;
 }
 
 class _ScannerIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.white;
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(2, 10, 18, 2), const Radius.circular(1)), paint);
-    
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(2, 10, 18, 2), const Radius.circular(1)),
+        paint);
+
     final xPos = [3.0, 6.5, 10.0, 13.5, 17.0];
     for (var x in xPos) {
-      paint.color = Colors.white.withOpacity(x == 6.5 || x == 13.5 ? 1.0 : 0.45);
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 5, 2, 12), const Radius.circular(0.8)), paint);
+      paint.color =
+          Colors.white.withValues(alpha: x == 6.5 || x == 13.5 ? 1.0 : 0.45);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(x, 5, 2, 12), const Radius.circular(0.8)),
+          paint);
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

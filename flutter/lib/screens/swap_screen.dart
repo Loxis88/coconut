@@ -20,7 +20,10 @@ class SwapScreen extends StatelessWidget {
             children: [
               RoundIcon(icon: Icons.arrow_back, onTap: onBack),
               const SizedBox(width: 8),
-              const Expanded(child: Text('Лучшая замена', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+              const Expanded(
+                  child: Text('Лучшая замена',
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w900))),
               RoundIcon(icon: Icons.close, onTap: onClose),
             ],
           ),
@@ -44,7 +47,10 @@ class SwapScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
-              PillButton(label: 'Выбрать этот продукт', kind: PillKind.brand, onTap: onClose),
+              PillButton(
+                  label: 'Выбрать этот продукт',
+                  kind: PillKind.brand,
+                  onTap: onClose),
             ],
           ),
         ),

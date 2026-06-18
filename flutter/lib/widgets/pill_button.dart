@@ -4,7 +4,12 @@ import '../theme.dart';
 enum PillKind { ink, brand, ghost }
 
 class PillButton extends StatelessWidget {
-  const PillButton({super.key, required this.label, this.icon, this.kind = PillKind.ink, required this.onTap});
+  const PillButton(
+      {super.key,
+      required this.label,
+      this.icon,
+      this.kind = PillKind.ink,
+      required this.onTap});
   final String label;
   final IconData? icon;
   final PillKind kind;
@@ -20,7 +25,9 @@ class PillButton extends StatelessWidget {
     final content = switch (kind) {
       PillKind.brand => Colors.white,
       PillKind.ink => Colors.white,
-      PillKind.ghost => label.contains('Удалить') || label.contains('Выйти') ? Colors.red : MayakTheme.fg,
+      PillKind.ghost => label.contains('Удалить') || label.contains('Выйти')
+          ? Colors.red
+          : MayakTheme.fg,
     };
     return InkWell(
       borderRadius: BorderRadius.circular(999),
@@ -35,8 +42,13 @@ class PillButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: TextStyle(color: content, fontSize: 17, fontWeight: FontWeight.w900)),
-            if (icon != null) ...[const SizedBox(width: 8), Icon(icon, color: content, size: 20)],
+            Text(label,
+                style: TextStyle(
+                    color: content, fontSize: 17, fontWeight: FontWeight.w900)),
+            if (icon != null) ...[
+              const SizedBox(width: 8),
+              Icon(icon, color: content, size: 20)
+            ],
           ],
         ),
       ),
