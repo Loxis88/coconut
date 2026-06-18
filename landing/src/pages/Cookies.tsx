@@ -6,7 +6,7 @@ export default function Cookies() {
       <div className="prose-legal">
         <div className="notice">
           Настоящая Политика описывает, какие cookies и аналогичные технологии
-          использует приложение «Маяк» и сайт mayak.app, а также как вы можете
+          использует приложение «Маяк» и сайт foodmayak.ru, а также как вы можете
           управлять ими.
         </div>
 
@@ -81,7 +81,7 @@ export default function Cookies() {
 
         <h2>6. Контакты</h2>
         <p>
-          По вопросам использования cookies: <a href="mailto:hi@mayak.app">hi@mayak.app</a>
+          По вопросам использования cookies: <a href="mailto:admin@foodmayak.ru">admin@foodmayak.ru</a>
         </p>
       </div>
     </LegalLayout>

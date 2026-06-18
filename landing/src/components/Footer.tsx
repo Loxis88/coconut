@@ -7,24 +7,26 @@ const nav = [
       { label: 'О Маяке', href: '#trust' },
       { label: 'Как работает оценка', href: '#how' },
       { label: 'Независимость', href: '#trust' },
-      { label: 'Маяк Премиум', href: '#download' },
+      { label: 'Маяк Премиум', href: '#pricing' },
     ],
   },
   {
     title: 'Поддержка',
     links: [
       { label: 'База знаний', href: '#' },
-      { label: 'Сообщить об ошибке', href: 'mailto:hi@mayak.app' },
-      { label: 'Добавить продукт', href: 'mailto:hi@mayak.app' },
-      { label: 'Контакты', href: 'mailto:hi@mayak.app' },
+      { label: 'Сообщить об ошибке', href: 'mailto:admin@foodmayak.ru' },
+      { label: 'Добавить продукт', href: 'mailto:admin@foodmayak.ru' },
+      { label: 'Контакты', href: 'mailto:admin@foodmayak.ru' },
     ],
   },
   {
     title: 'Правовая информация',
     links: [
+      { label: 'Публичная оферта', href: '?page=offer' },
       { label: 'Пользовательское соглашение', href: '?page=terms' },
       { label: 'Политика конфиденциальности', href: '?page=privacy' },
       { label: 'Обработка персональных данных', href: '?page=personal-data' },
+      { label: 'Согласие на обработку ПДн', href: '?page=consent' },
       { label: 'Политика cookies', href: '?page=cookies' },
       { label: 'Лицензии на данные', href: '?page=licenses' },
     ],
@@ -93,7 +95,12 @@ export default function Footer() {
           </p>
           <div className="text-[11px] text-muted-fg leading-relaxed md:text-right space-y-0.5">
             <p>
-              ИП Головлев Иван Александрович · ИНН&nbsp;770201291441
+              ИП Головлев Иван Александрович · ИНН&nbsp;770201291441 · ОГРНИП&nbsp;325774600759217
+            </p>
+            <p>
+              <a href="tel:+79854345627" className="hover:text-fg transition-colors">+7&nbsp;985&nbsp;434-56-27</a>
+              {' · '}
+              <a href="mailto:admin@foodmayak.ru" className="hover:text-fg transition-colors">admin@foodmayak.ru</a>
             </p>
             <p>
               ООО «Банк Точка» · р/с&nbsp;40802810220000808347 · БИК&nbsp;044525104

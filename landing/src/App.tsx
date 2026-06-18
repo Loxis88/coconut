@@ -4,6 +4,7 @@ import Hero from './components/Hero'
 import Trust from './components/Trust'
 import Features from './components/Features'
 import HowItWorks from './components/HowItWorks'
+import Pricing from './components/Pricing'
 import Download from './components/Download'
 import Footer from './components/Footer'
 import Terms from './pages/Terms'
@@ -11,8 +12,10 @@ import Privacy from './pages/Privacy'
 import Cookies from './pages/Cookies'
 import Licenses from './pages/Licenses'
 import PersonalData from './pages/PersonalData'
+import Offer from './pages/Offer'
+import Consent from './pages/Consent'
 
-type Page = 'home' | 'terms' | 'privacy' | 'cookies' | 'licenses' | 'personal-data'
+type Page = 'home' | 'terms' | 'privacy' | 'cookies' | 'licenses' | 'personal-data' | 'offer' | 'consent'
 
 function getPage(): Page {
   const p = new URLSearchParams(window.location.search).get('page')
@@ -21,6 +24,8 @@ function getPage(): Page {
   if (p === 'cookies') return 'cookies'
   if (p === 'licenses') return 'licenses'
   if (p === 'personal-data') return 'personal-data'
+  if (p === 'offer') return 'offer'
+  if (p === 'consent') return 'consent'
   return 'home'
 }
 
@@ -42,6 +47,8 @@ export default function App() {
   if (page === 'cookies')  return <Cookies />
   if (page === 'licenses') return <Licenses />
   if (page === 'personal-data') return <PersonalData />
+  if (page === 'offer')    return <Offer />
+  if (page === 'consent')  return <Consent />
 
   return (
     <div className="min-h-screen bg-bg text-fg font-body">
@@ -51,6 +58,7 @@ export default function App() {
         <Trust />
         <Features />
         <HowItWorks />
+        <Pricing />
         <Download />
       </main>
       <Footer />

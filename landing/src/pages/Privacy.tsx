@@ -13,7 +13,7 @@ export default function Privacy() {
         <h2>1. Кто обрабатывает данные</h2>
         <p>
           Оператором персональных данных является ИП Головлев Иван Александрович, ИНН 770201291441.
-          По вопросам обработки данных обращайтесь: <strong>hi@mayak.app</strong>.
+          По вопросам обработки данных обращайтесь: <strong>admin@foodmayak.ru</strong>.
         </p>
 
         <h2>2. Какие данные мы собираем</h2>
@@ -83,7 +83,7 @@ export default function Privacy() {
           <li><strong>получить</strong> копию своих персональных данных;</li>
           <li><strong>исправить</strong> неточные данные;</li>
           <li><strong>удалить</strong> аккаунт и все связанные данные (через настройки приложения или по запросу);</li>
-          <li><strong>отозвать согласие</strong> на обработку данных — направив письмо на <a href="mailto:hi@mayak.app">hi@mayak.app</a>;</li>
+          <li><strong>отозвать согласие</strong> на обработку данных — направив письмо на <a href="mailto:admin@foodmayak.ru">admin@foodmayak.ru</a>;</li>
           <li><strong>подать жалобу</strong> в Роскомнадзор, если считаете, что ваши права нарушены.</li>
         </ul>
         <p>
@@ -94,7 +94,7 @@ export default function Privacy() {
         <p>
           Приложение не предназначено для детей до 13 лет. Мы не собираем осознанно
           данные лиц, не достигших этого возраста. Если вы узнали, что ребёнок
-          предоставил нам данные — сообщите на hi@mayak.app.
+          предоставил нам данные — сообщите на admin@foodmayak.ru.
         </p>
 
         <h2>8. Изменения политики</h2>
@@ -106,7 +106,7 @@ export default function Privacy() {
         <h2>9. Контакты</h2>
         <p>
           По любым вопросам, связанным с персональными данными:&nbsp;
-          <a href="mailto:hi@mayak.app">hi@mayak.app</a>
+          <a href="mailto:admin@foodmayak.ru">admin@foodmayak.ru</a>
           <br />
           ИП Головлев Иван Александрович · ИНН 770201291441
         </p>
