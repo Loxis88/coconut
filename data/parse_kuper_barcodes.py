@@ -3,14 +3,9 @@ import os
 import time
 import random
 import logging
-import subprocess
-import tempfile
-import atexit
 from collections import deque
-from urllib.parse import urlparse, parse_qs
 
 import psycopg2
-import yaml
 from psycopg2.extras import Json
 from curl_cffi import requests as curl_requests
 
@@ -29,33 +24,6 @@ EFFICIENCY_THRESHOLD = 0.5
 INTER_STORE_SLEEP = 5.0
 SWEEP_MIN_SLEEP = 300.0
 SOCKS5_PORT = 1080
-
-
-def _start_hysteria(hysteria2_url: str) -> subprocess.Popen | None:
-    p = urlparse(hysteria2_url)
-    qs = parse_qs(p.query)
-    config = {
-        "server": f"{p.hostname}:{p.port}",
-        "auth": p.username or p.password,
-        "tls": {
-            "sni": qs.get("sni", [""])[0],
-            "insecure": qs.get("insecure", ["0"])[0] == "1",
-        },
-        "socks5": {"listen": f"127.0.0.1:{SOCKS5_PORT}"},
-    }
-    tmp = tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False)
-    yaml.dump(config, tmp)
-    tmp.close()
-
-    proc = subprocess.Popen(
-        ["hysteria", "client", "-c", tmp.name],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    atexit.register(proc.terminate)
-    time.sleep(2)
-    log.info("Hysteria2 запущен, SOCKS5 на порту %d", SOCKS5_PORT)
-    return proc
 
 
 class SessionExpiredError(Exception):
@@ -82,13 +50,14 @@ class KuperParser:
         self.cookies = self._cookies_to_dict(raw_cookies)
         self.csrf_token = self.config["csrf_token"]
 
-        hysteria2_url = os.environ.get("HYSTERIA2_URL", "").strip()
-        if hysteria2_url:
-            _start_hysteria(hysteria2_url)
+        # Use the standalone hysteria SOCKS5 (run separately, e.g. hysteria-client.service)
+        # when USE_PROXY=1. This script no longer launches its own hysteria.
+        if os.environ.get("USE_PROXY", "").strip().lower() in ("1", "true", "yes"):
             self.proxies = {
                 "https": f"socks5://127.0.0.1:{SOCKS5_PORT}",
                 "http": f"socks5://127.0.0.1:{SOCKS5_PORT}",
             }
+            log.info("Using SOCKS5 proxy 127.0.0.1:%d (USE_PROXY)", SOCKS5_PORT)
         else:
             self.proxies = {}
 
