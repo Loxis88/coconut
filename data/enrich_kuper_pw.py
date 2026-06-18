@@ -17,7 +17,11 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MULTICARDS_URL = "https://web.kuper.ru/api/v3/multicards"
+
+# Single switch for the Kuper host. The CDP-launched Chrome is detected as mobile and
+# the site redirects to the mobile host, so flip this between the two as needed.
+KUPER_BASE = "https://kuper.ru"        # mobile: "https://web.kuper.ru"
+MULTICARDS_URL = f"{KUPER_BASE}/api/v3/multicards"
 
 
 def enrich():
@@ -38,6 +42,15 @@ def enrich():
                 created_at TIMESTAMP DEFAULT now()
             )
         """)
+        # Permanently-missing products (HTTP 404) so re-runs don't keep re-requesting them.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS staging.raw_kuper_failed (
+                id BIGINT PRIMARY KEY REFERENCES staging.raw_kuper(id),
+                status INT NOT NULL,
+                attempts INT NOT NULL DEFAULT 1,
+                last_attempt TIMESTAMP DEFAULT now()
+            )
+        """)
 
     # Get distinct store_ids and map to retailer slugs
     with conn.cursor() as cur:
@@ -56,32 +69,44 @@ def enrich():
             FROM staging.raw_kuper r
             WHERE r.data->>'permalink' IS NOT NULL
               AND r.id NOT IN (SELECT id FROM staging.raw_kuper_enriched)
+              AND r.id NOT IN (SELECT id FROM staging.raw_kuper_failed)
         """)
         rows = cur.fetchall()
 
     log.info("To enrich: %d products", len(rows))
+
+    # Map store_id -> retailer_slug from dds.kuper_store (avoids per-store API calls).
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT store_id::text, retailer_slug FROM dds.kuper_store WHERE store_id = ANY(%s)",
+            ([int(s) for s in store_ids if s and s.isdigit()],),
+        )
+        slug_map = {sid: slug for sid, slug in cur.fetchall()}
+    missing_slugs = [s for s in store_ids if s not in slug_map]
+    log.info("Slugs from dds.kuper_store: %d; missing (API fallback): %d",
+             len(slug_map), len(missing_slugs))
 
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
         context = browser.contexts[0]
         page = context.new_page()
 
-        # Map store_id -> retailer_slug via API
-        page.goto("https://web.kuper.ru", wait_until="domcontentloaded", timeout=30000)
-        slug_map = {}
-        for sid in store_ids:
-            store_info = page.evaluate("""
-                async (storeId) => {
-                    const resp = await fetch(`https://web.kuper.ru/api/stores/${storeId}`, { credentials: "include" });
-                    return await resp.json();
-                }
-            """, sid)
-            slug_map[sid] = store_info["store"]["retailer_slug"]
-            log.info("Store %s -> slug: %s", sid, slug_map[sid])
+        # Resolve any slugs missing from dds.kuper_store via API (fallback only).
+        if missing_slugs:
+            page.goto(KUPER_BASE, wait_until="domcontentloaded", timeout=30000)
+            for sid in missing_slugs:
+                store_info = page.evaluate("""
+                    async (url) => {
+                        const resp = await fetch(url, { credentials: "include" });
+                        return await resp.json();
+                    }
+                """, f"{KUPER_BASE}/api/stores/{sid}")
+                slug_map[sid] = store_info["store"]["retailer_slug"]
+                log.info("Store %s -> slug: %s (API)", sid, slug_map[sid])
 
         # Default to first slug for catalog navigation
         default_slug = list(slug_map.values())[0] if slug_map else "metro"
-        catalog_url = f"https://web.kuper.ru/{default_slug}?referrer=landing_retailer_list"
+        catalog_url = f"{KUPER_BASE}/{default_slug}?referrer=landing_retailer_list"
 
         page.goto(catalog_url, wait_until="domcontentloaded", timeout=30000)
         log.info("Connected to Chrome. Page loaded. Starting enrichment...")
@@ -94,7 +119,7 @@ def enrich():
             batch_count += 1
             sid = row_store_id or str(store_id)
             slug = slug_map.get(sid, default_slug)
-            cur_catalog_url = f"https://web.kuper.ru/{slug}?referrer=landing_retailer_list"
+            cur_catalog_url = f"{KUPER_BASE}/{slug}?referrer=landing_retailer_list"
 
             # Reset session every ~20-25 requests
             if batch_count >= batch_size:
@@ -182,7 +207,17 @@ def enrich():
                 time.sleep(60)
                 continue
             elif status == 404:
-                log.warning("[%d/%d] %s -> 404 not found", i, len(rows), permalink)
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO staging.raw_kuper_failed (id, status) VALUES (%s, 404)
+                        ON CONFLICT (id) DO UPDATE
+                          SET attempts = staging.raw_kuper_failed.attempts + 1,
+                              last_attempt = now()
+                        """,
+                        (row_id,),
+                    )
+                log.warning("[%d/%d] %s -> 404 not found (marked, won't retry)", i, len(rows), permalink)
             else:
                 log.warning("[%d/%d] %s -> HTTP %d", i, len(rows), permalink, status)
 
