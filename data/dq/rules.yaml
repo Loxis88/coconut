@@ -1,0 +1,108 @@
+# Data-quality rules for the product catalog.
+# Per-category nutrition ranges are NOT here — they are LLM-generated and
+# stored in dq.category_nutrition_range (see build_category_ranges.py).
+#
+# severity:      what a breach is reported as — `fail` (hard invariant that
+#                must always hold) or `warn` (coverage / soft target).
+# min_pass_rate: status is `pass` when pass_rate >= min_pass_rate, else severity.
+
+# ── Completeness: mandatory / recommended fields are non-null & non-empty ──
+# Mandatory fields are a business judgement: the DDL has almost no NOT NULL
+# constraints, so they are declared explicitly here.
+completeness:
+  # Hard invariants — every row must have these.
+  - { table: product_catalog.product,         column: source_id,   severity: fail, min_pass_rate: 1.0 }
+  - { table: product_catalog.product,         column: source,      severity: fail, min_pass_rate: 1.0 }
+  - { table: product_catalog.product,         column: name,        severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.category,        column: name,        severity: fail, min_pass_rate: 1.0 }
+  - { table: product_catalog.product_barcode, column: product_id,  severity: fail, min_pass_rate: 1.0 }
+  - { table: product_catalog.product_barcode, column: barcode,     severity: fail, min_pass_rate: 1.0 }
+  - { table: product_catalog.nutrition_facts, column: product_id,  severity: fail, min_pass_rate: 1.0 }
+  # Coverage targets — should be high, surfaced as warn when short.
+  - { table: product_catalog.product,         column: category_id, severity: warn, min_pass_rate: 0.95 }
+  - { table: product_catalog.product,         column: brand,       severity: warn, min_pass_rate: 0.80 }
+  - { table: product_catalog.product,         column: image_link,  severity: warn, min_pass_rate: 0.90 }
+  - { table: product_catalog.nutrition_facts, column: calories_kcal, severity: warn, min_pass_rate: 0.95 }
+  - { table: product_catalog.nutrition_facts, column: protein_g,   severity: warn, min_pass_rate: 0.95 }
+  - { table: product_catalog.nutrition_facts, column: fat_g,       severity: warn, min_pass_rate: 0.95 }
+  - { table: product_catalog.nutrition_facts, column: carbs_g,     severity: warn, min_pass_rate: 0.95 }
+
+# ── Validity: numeric values fall within physically possible per-100g bounds.
+# Nulls are ignored here (handled by completeness). These catch corrupt data
+# like protein_g = 170,856,028.
+validity:
+  - { table: product_catalog.nutrition_facts, column: serving_size_g,  min: 0,   max: 2000,  severity: fail, min_pass_rate: 0.99 }
+  - { table: product_catalog.nutrition_facts, column: calories_kcal,   min: 0,   max: 900,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: protein_g,       min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: fat_g,           min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: saturated_fat_g, min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: carbs_g,         min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: fiber_g,         min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: sugar_g,         min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: salt_g,          min: 0,   max: 100,   severity: fail, min_pass_rate: 0.999 }
+  - { table: product_catalog.nutrition_facts, column: sodium_mg,       min: 0,   max: 40000, severity: fail, min_pass_rate: 0.999 }
+  # NOTE: rating scale differs by source — kuper uses 0–100, rosqual uses 0–5.
+  # Bound is the superset 0–100; the scale inconsistency is a separate concern.
+  - { table: product_catalog.product,         column: total_rating,   min: 0,   max: 100,   severity: warn, min_pass_rate: 0.99 }
+
+# ── Consistency: cross-column invariants. `violation` is a SQL predicate that
+# is TRUE for a BAD row. Optional `denom` restricts the rows considered.
+consistency:
+  - name: macro_sum_le_105
+    table: product_catalog.nutrition_facts
+    violation: "coalesce(protein_g,0)+coalesce(fat_g,0)+coalesce(carbs_g,0) > 105"
+    severity: fail
+    min_pass_rate: 0.99
+  - name: sugar_le_carbs
+    table: product_catalog.nutrition_facts
+    violation: "sugar_g > carbs_g + 1"
+    denom: "sugar_g IS NOT NULL AND carbs_g IS NOT NULL"
+    severity: warn
+    min_pass_rate: 0.98
+  - name: sat_fat_le_fat
+    table: product_catalog.nutrition_facts
+    violation: "saturated_fat_g > fat_g + 1"
+    denom: "saturated_fat_g IS NOT NULL AND fat_g IS NOT NULL"
+    severity: warn
+    min_pass_rate: 0.98
+  - name: salt_sodium_consistency
+    table: product_catalog.nutrition_facts
+    # salt(g) ≈ sodium(mg) * 2.5 / 1000
+    violation: "abs(salt_g - sodium_mg * 2.5 / 1000) > 1"
+    denom: "salt_g IS NOT NULL AND sodium_mg IS NOT NULL"
+    severity: warn
+    min_pass_rate: 0.95
+  - name: calories_atwater_consistency
+    table: product_catalog.nutrition_facts
+    # measured kcal within 30% of 4*protein + 9*fat + 4*carbs
+    violation: "abs(calories_kcal - (4*protein_g + 9*fat_g + 4*carbs_g)) > 0.30 * calories_kcal"
+    denom: "calories_kcal > 50 AND protein_g IS NOT NULL AND fat_g IS NOT NULL AND carbs_g IS NOT NULL"
+    severity: warn
+    min_pass_rate: 0.90
+
+# ── Uniqueness: key columns should not repeat. failed = rows - distinct keys.
+uniqueness:
+  - name: product_source_identity
+    table: product_catalog.product
+    key: [source, source_id]
+    severity: fail
+    min_pass_rate: 0.999
+  - name: barcode_identity
+    table: product_catalog.product_barcode
+    key: [barcode]
+    severity: warn
+    min_pass_rate: 0.99
+
+# ── Category nutrition: which nutrients to bound-check against the LLM dict.
+category_nutrition:
+  nutrients: [calories_kcal, protein_g, fat_g, saturated_fat_g, carbs_g, fiber_g, sugar_g, salt_g, sodium_mg]
+  severity: warn
+  min_pass_rate: 0.95
+
+# ── Per-source profiling: every product- and nutrition-level check above is
+# re-run once per product source (kuper / openfood / rosqual / ...), stored with
+# scope = <source> so quality can be compared across data sources and the
+# dashboard's $source selector can filter to one source. Reuses the rule lists
+# above (no duplication); checks on other tables stay global (scope='all').
+by_source:
+  enabled: true

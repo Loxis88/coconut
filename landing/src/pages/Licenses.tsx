@@ -129,7 +129,7 @@ export default function Licenses() {
         <h2>Сообщить об ошибке в данных</h2>
         <p>
           Если вы обнаружили неверный состав, некорректную оценку или устаревшую информацию
-          о продукте — сообщите нам: <a href="mailto:hi@mayak.app">hi@mayak.app</a>.
+          о продукте — сообщите нам: <a href="mailto:admin@foodmayak.ru">admin@foodmayak.ru</a>.
           Мы проверим и исправим данные в течение 7 рабочих дней.
         </p>
       </div>

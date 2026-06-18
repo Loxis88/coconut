@@ -15,6 +15,7 @@ export default function Navbar() {
     { href: '#features', label: 'Возможности' },
     { href: '#how', label: 'Как работает' },
     { href: '#trust', label: 'Независимость' },
+    { href: '#pricing', label: 'Тарифы' },
   ]
 
   return (

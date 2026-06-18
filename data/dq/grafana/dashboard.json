@@ -1,0 +1,578 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "links": [],
+  "schemaVersion": 22,
+  "style": "dark",
+  "tags": [
+    "data-quality",
+    "catalog"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "type": "query",
+        "label": "Source",
+        "datasource": "PostgreSQL",
+        "definition": "SELECT scope FROM dq.check_result GROUP BY scope ORDER BY (scope<>'all'), scope",
+        "query": "SELECT scope FROM dq.check_result GROUP BY scope ORDER BY (scope<>'all'), scope",
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false,
+        "sort": 0,
+        "current": {
+          "text": "all",
+          "value": "all"
+        },
+        "options": [],
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Catalog Data Quality",
+  "uid": "catalog-dq",
+  "version": 3,
+  "panels": [
+    {
+      "id": 1,
+      "type": "singlestat",
+      "title": "Checks passing",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 0
+      },
+      "format": "percent",
+      "valueName": "current",
+      "decimals": 0,
+      "colorValue": true,
+      "colorBackground": false,
+      "colors": [
+        "rgba(245,54,54,0.9)",
+        "rgba(237,129,40,0.9)",
+        "rgba(50,172,45,0.9)"
+      ],
+      "thresholds": "70,90",
+      "gauge": {
+        "show": false,
+        "minValue": 0,
+        "maxValue": 100,
+        "thresholdMarkers": true,
+        "thresholdLabels": false
+      },
+      "sparkline": {
+        "show": false,
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "fillColor": "rgba(31, 118, 189, 0.18)"
+      },
+      "valueMaps": [
+        {
+          "value": "null",
+          "op": "=",
+          "text": "N/A"
+        }
+      ],
+      "mappingType": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT round(100.0*count(*) FILTER (WHERE status='pass')/NULLIF(count(*),0),0) AS value FROM dq.v_latest_results WHERE scope='$source'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "singlestat",
+      "title": "Failing checks",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 0
+      },
+      "format": "none",
+      "valueName": "current",
+      "decimals": 0,
+      "colorValue": false,
+      "colorBackground": true,
+      "colors": [
+        "rgba(50,172,45,0.9)",
+        "rgba(237,129,40,0.9)",
+        "rgba(245,54,54,0.9)"
+      ],
+      "thresholds": "1,5",
+      "gauge": {
+        "show": false
+      },
+      "sparkline": {
+        "show": false
+      },
+      "valueMaps": [
+        {
+          "value": "null",
+          "op": "=",
+          "text": "0"
+        }
+      ],
+      "mappingType": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT count(*) AS value FROM dq.v_latest_results WHERE scope='$source' AND status='fail'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "singlestat",
+      "title": "Warnings",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 0
+      },
+      "format": "none",
+      "valueName": "current",
+      "decimals": 0,
+      "colorValue": false,
+      "colorBackground": true,
+      "colors": [
+        "rgba(50,172,45,0.9)",
+        "rgba(237,129,40,0.9)",
+        "rgba(237,129,40,0.9)"
+      ],
+      "thresholds": "1,10",
+      "gauge": {
+        "show": false
+      },
+      "sparkline": {
+        "show": false
+      },
+      "valueMaps": [
+        {
+          "value": "null",
+          "op": "=",
+          "text": "0"
+        }
+      ],
+      "mappingType": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT count(*) AS value FROM dq.v_latest_results WHERE scope='$source' AND status='warn'"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "singlestat",
+      "title": "Impossible nutrition rows",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 15,
+        "y": 0
+      },
+      "format": "none",
+      "valueName": "current",
+      "decimals": 0,
+      "colorValue": false,
+      "colorBackground": true,
+      "colors": [
+        "rgba(50,172,45,0.9)",
+        "rgba(237,129,40,0.9)",
+        "rgba(245,54,54,0.9)"
+      ],
+      "thresholds": "1,500",
+      "gauge": {
+        "show": false
+      },
+      "sparkline": {
+        "show": false
+      },
+      "valueMaps": [
+        {
+          "value": "null",
+          "op": "=",
+          "text": "0"
+        }
+      ],
+      "mappingType": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(sum(rows_failed),0) AS value FROM dq.v_latest_results WHERE scope='$source' AND dimension='validity' AND table_name='product_catalog.nutrition_facts'"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "singlestat",
+      "title": "Minutes since last run",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "format": "none",
+      "valueName": "current",
+      "decimals": 0,
+      "postfix": " min",
+      "colorValue": false,
+      "colorBackground": false,
+      "colors": [
+        "rgba(50,172,45,0.9)",
+        "rgba(237,129,40,0.9)",
+        "rgba(245,54,54,0.9)"
+      ],
+      "thresholds": "1440,10080",
+      "gauge": {
+        "show": false
+      },
+      "sparkline": {
+        "show": false
+      },
+      "valueMaps": [
+        {
+          "value": "null",
+          "op": "=",
+          "text": "never"
+        }
+      ],
+      "mappingType": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT round(EXTRACT(EPOCH FROM (now()-max(finished_at)))/60.0) AS value FROM dq.check_run WHERE finished_at IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Pass rate by dimension",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 4
+      },
+      "transform": "table",
+      "fontSize": "100%",
+      "showHeader": true,
+      "scroll": true,
+      "pageSize": null,
+      "sort": {
+        "col": 1,
+        "desc": false
+      },
+      "columns": [],
+      "options": {},
+      "styles": [
+        {
+          "pattern": "pass_rate",
+          "type": "number",
+          "unit": "percent",
+          "decimals": 1,
+          "colorMode": "cell",
+          "thresholds": [
+            "75",
+            "95"
+          ],
+          "colors": [
+            "rgba(245,54,54,0.9)",
+            "rgba(237,129,40,0.9)",
+            "rgba(50,172,45,0.9)"
+          ],
+          "align": "right"
+        },
+        {
+          "pattern": "/.*/",
+          "type": "string",
+          "align": "auto"
+        }
+      ],
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT dimension, round(avg(pass_rate)*100,1) AS pass_rate FROM dq.v_latest_results WHERE scope='$source' AND pass_rate IS NOT NULL GROUP BY dimension ORDER BY 2 ASC"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Field completeness (coverage of mandatory & recommended fields)",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 4
+      },
+      "transform": "table",
+      "fontSize": "100%",
+      "showHeader": true,
+      "scroll": true,
+      "pageSize": null,
+      "sort": {
+        "col": 1,
+        "desc": false
+      },
+      "columns": [],
+      "options": {},
+      "styles": [
+        {
+          "pattern": "coverage",
+          "type": "number",
+          "unit": "percent",
+          "decimals": 1,
+          "colorMode": "cell",
+          "thresholds": [
+            "80",
+            "95"
+          ],
+          "colors": [
+            "rgba(245,54,54,0.9)",
+            "rgba(237,129,40,0.9)",
+            "rgba(50,172,45,0.9)"
+          ],
+          "align": "right"
+        },
+        {
+          "pattern": "/.*/",
+          "type": "string",
+          "align": "auto"
+        }
+      ],
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT replace(table_name,'product_catalog.','') || '.' || column_name AS field, round(pass_rate*100,1) AS coverage FROM dq.v_latest_results WHERE scope='$source' AND dimension='completeness' ORDER BY pass_rate ASC"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Bad rows: impossible values & broken invariants",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "transform": "table",
+      "fontSize": "100%",
+      "showHeader": true,
+      "scroll": true,
+      "pageSize": null,
+      "sort": {
+        "col": 1,
+        "desc": true
+      },
+      "columns": [],
+      "options": {},
+      "styles": [
+        {
+          "pattern": "rows_failed",
+          "type": "number",
+          "unit": "short",
+          "decimals": 0,
+          "colorMode": "value",
+          "thresholds": [
+            "1",
+            "1000"
+          ],
+          "colors": [
+            "rgba(50,172,45,0.9)",
+            "rgba(237,129,40,0.9)",
+            "rgba(245,54,54,0.9)"
+          ],
+          "align": "right"
+        },
+        {
+          "pattern": "/.*/",
+          "type": "string",
+          "align": "auto"
+        }
+      ],
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT regexp_replace(check_name, '^(validity|consistency)\\.', '') AS check, rows_failed FROM dq.v_latest_results WHERE scope='$source' AND dimension IN ('validity','consistency') AND rows_failed > 0 ORDER BY rows_failed DESC LIMIT 15"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Worst category-nutrition offenders",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "transform": "table",
+      "fontSize": "100%",
+      "showHeader": true,
+      "scroll": true,
+      "pageSize": null,
+      "sort": {
+        "col": 2,
+        "desc": true
+      },
+      "columns": [],
+      "options": {},
+      "styles": [
+        {
+          "pattern": "violations",
+          "type": "number",
+          "unit": "short",
+          "decimals": 0,
+          "colorMode": "value",
+          "thresholds": [
+            "1",
+            "5000"
+          ],
+          "colors": [
+            "rgba(50,172,45,0.9)",
+            "rgba(237,129,40,0.9)",
+            "rgba(245,54,54,0.9)"
+          ],
+          "align": "right"
+        },
+        {
+          "pattern": "min",
+          "type": "number",
+          "decimals": 1,
+          "align": "right"
+        },
+        {
+          "pattern": "max",
+          "type": "number",
+          "decimals": 1,
+          "align": "right"
+        },
+        {
+          "pattern": "/.*/",
+          "type": "string",
+          "align": "auto"
+        }
+      ],
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT column_name AS nutrient, o->>'category' AS category, (o->>'violations')::int AS violations, (o->>'min')::numeric AS min, (o->>'max')::numeric AS max FROM dq.v_latest_results, jsonb_array_elements(COALESCE(details->'top_offenders','[]'::jsonb)) AS o WHERE scope='$source' AND dimension='category_nutrition' ORDER BY violations DESC LIMIT 25"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "All checks — latest run",
+      "datasource": "PostgreSQL",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "transform": "table",
+      "fontSize": "100%",
+      "showHeader": true,
+      "scroll": true,
+      "pageSize": null,
+      "sort": {
+        "col": 3,
+        "desc": false
+      },
+      "columns": [],
+      "options": {},
+      "styles": [
+        {
+          "pattern": "pass_rate",
+          "type": "number",
+          "unit": "percent",
+          "decimals": 1,
+          "colorMode": "cell",
+          "thresholds": [
+            "75",
+            "95"
+          ],
+          "colors": [
+            "rgba(245,54,54,0.9)",
+            "rgba(237,129,40,0.9)",
+            "rgba(50,172,45,0.9)"
+          ],
+          "align": "right"
+        },
+        {
+          "pattern": "rows_failed",
+          "type": "number",
+          "unit": "short",
+          "decimals": 0,
+          "align": "right"
+        },
+        {
+          "pattern": "rows_total",
+          "type": "number",
+          "unit": "short",
+          "decimals": 0,
+          "align": "right"
+        },
+        {
+          "pattern": "/.*/",
+          "type": "string",
+          "align": "auto"
+        }
+      ],
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT dimension, check_name, status, round(pass_rate*100,1) AS pass_rate, rows_failed, rows_total FROM dq.v_latest_results WHERE scope='$source' ORDER BY (status='fail') DESC, (status='warn') DESC, pass_rate ASC"
+        }
+      ]
+    }
+  ]
+}
