@@ -66,9 +66,13 @@ func main() {
 	// Честный Знак fallback (requires CHESTNY_ZNAK_API_KEY and OPENAI_API_KEY)
 	cznKey := os.Getenv("CHESTNY_ZNAK_API_KEY")
 	openaiKey := os.Getenv("OPENAI_API_KEY")
+	cznMappingFile := os.Getenv("CZ_CATEGORY_MAPPING_FILE")
+	if cznMappingFile == "" {
+		cznMappingFile = "chestny_znak_off_category_mapping.json"
+	}
 	var fallbackSvc ports.FallbackService
 	if cznKey != "" {
-		fallbackSvc = services.NewFallbackService(productRepo, cznKey, openaiKey)
+		fallbackSvc = services.NewFallbackService(productRepo, cznKey, openaiKey, cznMappingFile)
 		log.Println("Честный Знак fallback enabled")
 	} else {
 		log.Println("CHESTNY_ZNAK_API_KEY not set — fallback disabled")

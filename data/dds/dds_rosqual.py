@@ -45,6 +45,65 @@ def split_barcodes(text: str | None) -> list[str]:
     return [p for p in parts if p]
 
 
+_MACRO_FIELDS = ("calories_kcal", "protein_g", "fat_g", "carbs_g")
+_KUPER_PROP_MAP = {
+    "calories_kcal": "energy_value",
+    "protein_g": "protein",
+    "fat_g": "fat",
+    "carbs_g": "carbohydrate",
+}
+
+
+def fetch_kuper_macros_by_barcodes(cur, barcodes: list[str]) -> dict[str, dict]:
+    """Return {barcode: {calories_kcal, protein_g, fat_g, carbs_g}} for kuper matches."""
+    if not barcodes:
+        return {}
+    cur.execute(
+        """
+        SELECT DISTINCT ON (e.ean)
+            e.ean,
+            regexp_replace(
+                (SELECT pp->>'value'
+                 FROM jsonb_array_elements(ke.data->'data'->'product_properties') pp
+                 WHERE pp->>'name' = 'energy_value' LIMIT 1),
+                '[^0-9.,]', '', 'g') AS calories,
+            regexp_replace(
+                (SELECT pp->>'value'
+                 FROM jsonb_array_elements(ke.data->'data'->'product_properties') pp
+                 WHERE pp->>'name' = 'protein' LIMIT 1),
+                '[^0-9.,]', '', 'g') AS protein,
+            regexp_replace(
+                (SELECT pp->>'value'
+                 FROM jsonb_array_elements(ke.data->'data'->'product_properties') pp
+                 WHERE pp->>'name' = 'fat' LIMIT 1),
+                '[^0-9.,]', '', 'g') AS fat,
+            regexp_replace(
+                (SELECT pp->>'value'
+                 FROM jsonb_array_elements(ke.data->'data'->'product_properties') pp
+                 WHERE pp->>'name' = 'carbohydrate' LIMIT 1),
+                '[^0-9.,]', '', 'g') AS carbs
+        FROM staging.raw_kuper kr
+        JOIN staging.raw_kuper_enriched ke ON ke.id = kr.id,
+             LATERAL jsonb_array_elements_text(kr.data->'eans') AS e(ean)
+        WHERE e.ean = ANY(%s)
+          AND jsonb_typeof(kr.data->'eans') = 'array'
+        ORDER BY e.ean
+        """,
+        (barcodes,),
+    )
+    result = {}
+    for ean, cal, prot, fat, carb in cur.fetchall():
+        macros = {
+            "calories_kcal": parse_number(cal),
+            "protein_g": parse_number(prot),
+            "fat_g": parse_number(fat),
+            "carbs_g": parse_number(carb),
+        }
+        if any(v is not None for v in macros.values()):
+            result[ean] = macros
+    return result
+
+
 def parse_nutrition(text: str) -> dict:
     result = {
         "serving_size_g": 100,
@@ -60,14 +119,16 @@ def parse_nutrition(text: str) -> dict:
     if not text:
         return result
 
+    # Separator: dash/colon OR plain space (both appear in source data)
+    sep = r"(?:\s*[-–—:]\s*|\s+)"
     patterns = {
-        "protein_g": r"бел(?:ки|ок)\s*[-–—:]\s*([\d,\.]+)",
-        "fat_g": r"жир[ы]?\s*[-–—:]\s*([\d,\.]+)",
-        "carbs_g": r"углевод[ы]?\s*[-–—:]\s*([\d,\.]+)",
-        "fiber_g": r"пищевые\s+волокна\s*[-–—:]\s*([\d,\.]+)",
-        "sugar_g": r"сахар[а]?\s*[-–—:]\s*([\d,\.]+)",
-        "salt_g": r"соль\s*[-–—:]\s*([\d,\.]+)",
-        "sodium_mg": r"натрий\s*[-–—:]\s*([\d,\.]+)",
+        "protein_g": rf"бел(?:ки|ок|ков){sep}([\d,\.]+)",
+        "fat_g": rf"жир(?:ы|ов)?{sep}([\d,\.]+)",
+        "carbs_g": rf"углевод(?:ы|ов)?{sep}([\d,\.]+)",
+        "fiber_g": rf"пищевые\s+волокна{sep}([\d,\.]+)",
+        "sugar_g": rf"сахар(?:а|ов)?{sep}([\d,\.]+)",
+        "salt_g": rf"соль{sep}([\d,\.]+)",
+        "sodium_mg": rf"натри(?:й|я){sep}([\d,\.]+)",
     }
 
     for key, pattern in patterns.items():
@@ -75,14 +136,49 @@ def parse_nutrition(text: str) -> dict:
         if m:
             result[key] = parse_number(m.group(1))
 
-    m = re.search(r"([\d,\.]+)\s*ккал", text, re.IGNORECASE)
+    # Calories: look for paired кДж/ккал or ккал/кДж first.
+    # Source data sometimes has them swapped; physically kJ must be ~4.18× kcal.
+    kj_val = kcal_val = None
+    m = re.search(r"([\d,\.]+)\s*к[дД][жЖ]\s*[/\s]\s*([\d,\.]+)\s*к[кК]ал", text, re.IGNORECASE)
     if m:
-        result["calories_kcal"] = parse_number(m.group(1))
-
-    if result["calories_kcal"] is None:
-        m = re.search(r"кДж\s*/\s*ккал\s*\)?\s*:?\s*[\d,\.]+\s*/\s*([\d,\.]+)", text, re.IGNORECASE)
+        kj_val, kcal_val = parse_number(m.group(1)), parse_number(m.group(2))
+    else:
+        m = re.search(r"([\d,\.]+)\s*к[кК]ал\s*[/\s]\s*([\d,\.]+)\s*к[дД][жЖ]", text, re.IGNORECASE)
         if m:
-            result["calories_kcal"] = parse_number(m.group(1))
+            kcal_val, kj_val = parse_number(m.group(1)), parse_number(m.group(2))
+
+    if kj_val and kcal_val:
+        if kj_val >= kcal_val:
+            # Normal ordering: kJ is larger
+            result["calories_kcal"] = kcal_val
+        else:
+            # Impossible physically → labels are swapped; smaller value is true kcal
+            smaller = min(kj_val, kcal_val)
+            result["calories_kcal"] = smaller if smaller <= 900 else round(smaller / 4.184, 1)
+    elif kcal_val is not None:
+        result["calories_kcal"] = kcal_val if kcal_val <= 900 else round(kcal_val / 4.184, 1)
+    else:
+        # No paired expression – try standalone ккал (value after or before unit label)
+        m = re.search(r"([\d,\.]+)\s*к[кК]ал", text, re.IGNORECASE)
+        if not m:
+            m = re.search(r"к[кК]ал\s*[-–—:]\s*([\d,\.]+)", text, re.IGNORECASE)
+        if m:
+            v = parse_number(m.group(1))
+            result["calories_kcal"] = v if (v and v <= 900) else (round(v / 4.184, 1) if v else None)
+
+        # kDzh-only standalone: convert to kcal
+        if result["calories_kcal"] is None:
+            m = re.search(r"к[дД][жЖ]\s*[-–—:]\s*([\d,\.]+)", text, re.IGNORECASE)
+            if m:
+                v = parse_number(m.group(1))
+                if v:
+                    result["calories_kcal"] = round(v / 4.184, 1)
+
+    # Derive kcal from macros when absent (Atwater: protein×4 + fat×9 + carbs×4)
+    if result["calories_kcal"] is None:
+        p, f, c = result["protein_g"], result["fat_g"], result["carbs_g"]
+        if p is not None and f is not None and c is not None:
+            result["calories_kcal"] = round(p * 4 + f * 9 + c * 4, 1)
 
     m = re.search(r"на\s+([\d,\.]+)\s*г", text, re.IGNORECASE)
     if m:
@@ -139,7 +235,75 @@ def load_dds():
                 return name_to_cat_id[off_name]
         return None
 
-    # 3. Build product, document, nutrition, barcode, health_risks rows
+    # 3. Deduplicate by barcode: for each barcode keep the record with the
+    #    highest "Год исследования". Products with no barcodes are always kept.
+    def research_year(data: dict) -> int:
+        yr = get_product_info_value(data, "Год исследования", "Год исследования ")
+        try:
+            return int(yr.strip()) if yr else 0
+        except ValueError:
+            return 0
+
+    # barcode → best (year, staging_id)
+    barcode_best: dict[str, tuple[int, int]] = {}
+    for staging_id, data in rows:
+        yr = research_year(data)
+        bc_raw = get_product_info_value(data, "Штрихкоды", "Штрихкод")
+        for bc in split_barcodes(bc_raw):
+            if bc not in barcode_best or yr > barcode_best[bc][0]:
+                barcode_best[bc] = (yr, staging_id)
+
+    # staging_ids that win at least one barcode
+    winning_ids: set[int] = {sid for _, sid in barcode_best.values()}
+
+    def is_kept(staging_id: int, data: dict) -> bool:
+        bc_raw = get_product_info_value(data, "Штрихкоды", "Штрихкод")
+        barcodes = split_barcodes(bc_raw)
+        if not barcodes:
+            return True  # no barcode — always keep
+        return staging_id in winning_ids
+
+    n_before = len(rows)
+    rows = [(sid, data) for sid, data in rows if is_kept(sid, data)]
+    log.info("Deduplication by barcode: %d → %d records (dropped %d)",
+             n_before, len(rows), n_before - len(rows))
+
+    # 3b. Filter: drop products that have no nutrition in source AND no barcode
+    #     in kuper raw (even unenriched). If kuper has the barcode, keep it —
+    #     enriched data may arrive later.
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT e.ean
+            FROM staging.raw_kuper kr,
+                 LATERAL jsonb_array_elements_text(kr.data->'eans') AS e(ean)
+            WHERE jsonb_typeof(kr.data->'eans') = 'array'
+        """)
+        kuper_eans: set[str] = {row[0] for row in cur.fetchall()}
+    log.info("Kuper EANs loaded: %d", len(kuper_eans))
+
+    def has_source_nutrition(data: dict) -> bool:
+        nutrition_text = get_product_info_value(
+            data, "Дополнительная информация", "Пищевая ценность в 100г",
+        )
+        nf = parse_nutrition(nutrition_text)
+        if any(v is not None for k, v in nf.items() if k != "serving_size_g"):
+            return True
+        kcal_text = get_product_info_value(data, "Энергетическая ценность, ккал")
+        return bool(kcal_text and parse_number(kcal_text.strip()) is not None)
+
+    def has_kuper_barcode(data: dict) -> bool:
+        bc_raw = get_product_info_value(data, "Штрихкоды", "Штрихкод")
+        return any(bc in kuper_eans for bc in split_barcodes(bc_raw))
+
+    n_before = len(rows)
+    rows = [
+        (sid, data) for sid, data in rows
+        if has_source_nutrition(data) or has_kuper_barcode(data)
+    ]
+    log.info("Nutrition filter: %d → %d records (dropped %d with no source nutrition and no kuper barcode)",
+             n_before, len(rows), n_before - len(rows))
+
+    # 3d. Build product, document, nutrition, barcode, health_risks rows
     product_rows = []
     doc_rows_by_source_id = {}
     nutrition_rows_by_source_id = {}
@@ -172,13 +336,60 @@ def load_dds():
         if disadvantages:
             risks_by_source_id[source_id] = disadvantages
 
-        nutrition_text = get_product_info_value(data, "Дополнительная информация")
+        # Try all fields that may contain nutrition text, merge results
+        nutrition_text = get_product_info_value(
+            data,
+            "Дополнительная информация",
+            "Пищевая ценность в 100г",
+        )
         nf = parse_nutrition(nutrition_text)
+
+        # "Энергетическая ценность, ккал" is a standalone calories field
+        # (sources sometimes put kJ value here by mistake)
+        if nf["calories_kcal"] is None:
+            kcal_text = get_product_info_value(data, "Энергетическая ценность, ккал")
+            if kcal_text:
+                v = parse_number(kcal_text.strip())
+                if v:
+                    nf["calories_kcal"] = v if v <= 900 else round(v / 4.184, 1)
+
         if any(v is not None for k, v in nf.items() if k != "serving_size_g"):
             nutrition_rows_by_source_id[source_id] = nf
 
     n_with = sum(1 for row in product_rows if row[2] is not None)
     log.info("Products with category: %d / %d", n_with, len(product_rows))
+
+    # 3b. Enrich macros from kuper raw via barcode match
+    all_barcodes = [bc for bcs in barcode_rows_by_source_id.values() for bc in bcs]
+    with conn.cursor() as cur:
+        kuper_macros = fetch_kuper_macros_by_barcodes(cur, all_barcodes)
+    log.info("Kuper barcode matches with macros: %d", len(kuper_macros))
+
+    kuper_filled = 0
+    for source_id, barcodes in barcode_rows_by_source_id.items():
+        for bc in barcodes:
+            km = kuper_macros.get(bc)
+            if not km:
+                continue
+            nf = nutrition_rows_by_source_id.get(source_id)
+            if nf is None:
+                nf = {
+                    "serving_size_g": 100,
+                    "calories_kcal": None, "protein_g": None,
+                    "fat_g": None, "carbs_g": None,
+                    "fiber_g": None, "sugar_g": None,
+                    "salt_g": None, "sodium_mg": None,
+                }
+                nutrition_rows_by_source_id[source_id] = nf
+            filled = False
+            for field in _MACRO_FIELDS:
+                if nf[field] is None and km.get(field) is not None:
+                    nf[field] = km[field]
+                    filled = True
+            if filled:
+                kuper_filled += 1
+            break  # first barcode match is enough
+    log.info("Products enriched with kuper macros: %d", kuper_filled)
 
     # 4. Delete old rosqual data only
     with conn.cursor() as cur:
@@ -295,8 +506,24 @@ def load_dds():
             log.info("Inserted %d health risks", len(risk_rows))
 
     conn.commit()
+    _enrich_nutrition(conn, "rosqual")
     log.info("DDS rosqual load complete")
     conn.close()
+
+
+def _enrich_nutrition(conn, source: str):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.dirname(script_dir)
+    model_dir = os.environ.get("NUTR_MODEL_DIR", os.path.join(project_dir, "models", "nutr"))
+    if not os.path.exists(model_dir):
+        log.warning("NUTR_MODEL_DIR not found (%s) — skipping ML nutrition enrichment", model_dir)
+        return
+    try:
+        from dds.nutr_model import NutritionModel
+    except ImportError:
+        from nutr_model import NutritionModel
+    model = NutritionModel.load(model_dir)
+    model.enrich_source(conn, source)
 
 
 if __name__ == "__main__":

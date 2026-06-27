@@ -159,14 +159,35 @@ class DQRunner:
         col = _ident(rule["column"])
         short = table.split(".")[-1]
         from_sql, pred, params, cp = self._scope(table, source)
+
+        # exempt_categories: exclude products in these OFF category names from
+        # the denominator (e.g. oils have no carbs, honey has no fat — by design).
+        exempt_params: list = []
+        exempt_pred = ""
+        exempt_cats = rule.get("exempt_categories") or []
+        if exempt_cats and short == "nutrition_facts":
+            if source is None:
+                # _scope returned bare table name without alias; add nf alias
+                from_sql = f"{table} nf"
+                cp = "nf."
+            ph = ", ".join(["%s"] * len(exempt_cats))
+            exempt_pred = (
+                f"nf.product_id NOT IN ("
+                f"SELECT p2.id FROM product_catalog.product p2 "
+                f"JOIN product_catalog.category cat ON cat.id = p2.category_id "
+                f"WHERE cat.name IN ({ph}))"
+            )
+            exempt_params = list(exempt_cats)
+
         c = f"{cp}{col}"
-        where = f"WHERE {pred}" if pred else ""
+        preds = [p for p in [exempt_pred, pred] if p]
+        where = f"WHERE {' AND '.join(preds)}" if preds else ""
         with self.conn.cursor() as cur:
             cur.execute(
                 f"SELECT count(*), "
                 f"count(*) FILTER (WHERE {c} IS NULL OR ({c})::text = '') "
                 f"FROM {from_sql} {where}",
-                params,
+                exempt_params + params,
             )
             total, failed = cur.fetchone()
         self._record(CheckResult(

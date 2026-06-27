@@ -25,7 +25,7 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 		SELECT
 			p.id, p.source_id, p.source, p.total_rating, p.brand, p.image_link, pb.barcode, p.name, p.ingredients,
 			c.id, c.name, NULL::text,
-			n.serving_size_g, n.calories_kcal, n.protein_g, n.fat_g, n.carbs_g, n.fiber_g, n.sugar_g, n.salt_g, n.sodium_mg
+			n.serving_size_g, n.calories_kcal, n.protein_g, n.fat_g, n.carbs_g, n.fiber_g, n.sugar_g, n.salt_g, n.sodium_mg, n.saturated_fat_g
 		FROM product_catalog.product p
 		JOIN product_catalog.product_barcode pb ON p.id = pb.product_id
 		LEFT JOIN product_catalog.category c ON p.category_id = c.id
@@ -42,7 +42,7 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 	err := r.db.QueryRow(ctx, query, barcode).Scan(
 		&p.ID, &p.SourceID, &p.Source, &p.TotalRating, &p.Brand, &p.ImageLink, &p.Barcode, &p.Name, &p.Ingredients,
 		&catID, &catTitle, &catImg,
-		&nf.ServingSizeG, &nf.CaloriesKcal, &nf.ProteinG, &nf.FatG, &nf.CarbsG, &nf.FiberG, &nf.SugarG, &nf.SaltG, &nf.SodiumMg,
+		&nf.ServingSizeG, &nf.CaloriesKcal, &nf.ProteinG, &nf.FatG, &nf.CarbsG, &nf.FiberG, &nf.SugarG, &nf.SaltG, &nf.SodiumMg, &nf.SaturatedFatG,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -99,15 +99,12 @@ func (r *PostgresProductRepository) GetByBarcode(ctx context.Context, barcode st
 	return p, nil
 }
 
-// GetCategoryIDByEmbedding finds the nearest category using pgvector cosine similarity.
-func (r *PostgresProductRepository) GetCategoryIDByEmbedding(ctx context.Context, embedding []float32) (*int64, error) {
+// GetCategoryIDByName looks up a category by its OFF category ID string (e.g. "en:milks").
+func (r *PostgresProductRepository) GetCategoryIDByName(ctx context.Context, offCategoryID string) (*int64, error) {
 	var id int64
 	err := r.db.QueryRow(ctx, `
-		SELECT id FROM product_catalog.category
-		WHERE embedding IS NOT NULL
-		ORDER BY embedding <=> $1::vector
-		LIMIT 1
-	`, float32SliceToLiteral(embedding)).Scan(&id)
+		SELECT id FROM product_catalog.category WHERE name = $1 LIMIT 1
+	`, offCategoryID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -203,10 +200,10 @@ func (r *PostgresProductRepository) SaveFallbackProduct(
 		if nfExists == 0 {
 			if _, err := tx.Exec(ctx, `
 				INSERT INTO product_catalog.nutrition_facts
-					(product_id, serving_size_g, calories_kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, salt_g, sodium_mg)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+					(product_id, serving_size_g, calories_kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, salt_g, sodium_mg, saturated_fat_g)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			`, productID, nf.ServingSizeG, nf.CaloriesKcal, nf.ProteinG, nf.FatG,
-				nf.CarbsG, nf.FiberG, nf.SugarG, nf.SaltG, nf.SodiumMg,
+				nf.CarbsG, nf.FiberG, nf.SugarG, nf.SaltG, nf.SodiumMg, nf.SaturatedFatG,
 			); err != nil {
 				return fmt.Errorf("insert nutrition: %w", err)
 			}

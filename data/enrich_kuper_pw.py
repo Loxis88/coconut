@@ -25,12 +25,33 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 KUPER_BASE = "https://kuper.ru"        # mobile: "https://web.kuper.ru"
 MULTICARDS_URL = f"{KUPER_BASE}/api/v3/multicards"
 
-# One worker thread per CDP endpoint. Both reached over an SSH tunnel on the VPS
-# (e.g. autossh -L 9222 -L 9223). First = direct browser, second = via hysteria.
-CDP_ENDPOINTS = [
-    "http://127.0.0.1:9222",   # direct
-    "http://127.0.0.1:9223",   # via hysteria
+# One worker thread per CDP endpoint. The browsers run at home and are reached over a
+# reverse SSH tunnel on the VPS (e.g. autossh -R 9222 -R 9223 ...). Each home browser is
+# launched against its own proxy: --proxy-server -> a LOCAL http_auth_relay.py front that
+# injects auth for a commercial HTTP proxy (replaces the old ldns-socks -> hysteria SOCKS5).
+# The enricher itself never touches the proxy — it only connects to the CDP endpoints.
+#
+# Endpoints are loaded dynamically so you can tunnel as many browsers as you have proxies,
+# in priority order:
+#   1. cdp_endpoints.txt   — one CDP URL per line (explicit override)
+#   2. CDP_ENDPOINTS env   — comma-separated CDP URLs (explicit override)
+#   3. AUTO from proxies.txt — one browser per proxy at CDP port CDP_PORT_BASE + i.
+#      This matches launch_browsers.ps1 (ChromePortBase) and relay_service.py, so the
+#      single source of truth is proxies.txt — no manual endpoint list to maintain.
+#   4. the DEFAULT_ENDPOINTS list below
+DEFAULT_ENDPOINTS = [
+    "http://127.0.0.1:9222",
+    "http://127.0.0.1:9223",
 ]
+ENDPOINTS_FILE = os.environ.get("ENDPOINTS_FILE", os.path.join(SCRIPT_DIR, "cdp_endpoints.txt"))
+PROXIES_FILE = os.environ.get("PROXIES_FILE", os.path.join(SCRIPT_DIR, "proxies.txt"))
+CDP_PORT_BASE = int(os.environ.get("CDP_PORT_BASE", "9222"))
+
+# Ramp-up: workers DON'T all start at once (that synchronized burst across one /24 is
+# what gets the whole subnet flagged). Worker i waits ~i * RAMP_SECONDS (jittered)
+# before connecting, so the browsers come online gradually. 0 disables. This is a
+# one-time startup stagger — it does NOT touch the per-request pause.
+RAMP_SECONDS = float(os.environ.get("RAMP_SECONDS", "90"))
 
 # JS run inside the page (same origin) to call the multicards API with session cookies.
 FETCH_JS = """
@@ -48,6 +69,47 @@ async (url) => {
     return { status: resp.status, body: resp.status === 200 ? await resp.json() : await resp.text() };
 }
 """
+
+
+def _count_proxies(path):
+    """Number of non-blank, non-comment lines in a proxies file (0 if absent)."""
+    if not os.path.exists(path):
+        return 0
+    n = 0
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                n += 1
+    return n
+
+
+def load_endpoints():
+    """CDP endpoints: cdp_endpoints.txt, else CDP_ENDPOINTS env, else AUTO from
+    proxies.txt (CDP_PORT_BASE + i per proxy), else defaults."""
+    if os.path.exists(ENDPOINTS_FILE):
+        eps = []
+        with open(ENDPOINTS_FILE, "r", encoding="utf-8-sig") as f:
+            for raw in f:
+                line = raw.strip()
+                if line and not line.startswith("#"):
+                    eps.append(line)
+        if eps:
+            log.info("Loaded %d CDP endpoints from %s", len(eps), ENDPOINTS_FILE)
+            return eps
+    env = os.environ.get("CDP_ENDPOINTS", "").strip()
+    if env:
+        eps = [e.strip() for e in env.split(",") if e.strip()]
+        log.info("Loaded %d CDP endpoints from CDP_ENDPOINTS env", len(eps))
+        return eps
+    n = _count_proxies(PROXIES_FILE)
+    if n:
+        eps = [f"http://127.0.0.1:{CDP_PORT_BASE + i}" for i in range(n)]
+        log.info("Auto-derived %d CDP endpoints from %s (CDP port base %d)",
+                 n, PROXIES_FILE, CDP_PORT_BASE)
+        return eps
+    log.info("Using %d default CDP endpoints", len(DEFAULT_ENDPOINTS))
+    return list(DEFAULT_ENDPOINTS)
 
 
 def load_slug_map(conn, store_ids):
@@ -83,19 +145,53 @@ def resolve_missing_slugs(endpoint, missing):
     return out
 
 
+def _warmup_goto(page, url, label):
+    """Best-effort 'warm-up' navigation for anti-bot realism. NOT fatal: product data
+    is fetched via page.evaluate(fetch), not page content, so a navigation timeout must
+    not kill the worker (which would crash the whole process)."""
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        time.sleep(random.uniform(2.0, 4.0))
+    except Exception as e:
+        log.warning("[%s] warm-up goto failed (%s); continuing", label, str(e)[:100])
+
+
 def worker(idx, endpoint, q, slug_map, default_slug, default_store_id):
     """One browser. Pulls products off the shared queue until empty.
-    On captcha (401/403) the thread RAISES and dies — no interactive prompt."""
-    label = chr(65 + idx)  # A, B, ...
+    On captcha (401/403) the worker does NOT die: it re-pings the same request every
+    90s (refreshing the page so a human can solve the captcha) until it recovers."""
+    label = chr(65 + idx) if idx < 26 else f"#{idx}"  # A, B, ... then #26, #27
+
+    # Ramp: stagger this worker's start so the browsers don't appear as a synchronized
+    # swarm from one subnet (one-time delay; not the per-request pause).
+    if idx > 0 and RAMP_SECONDS > 0:
+        delay = idx * RAMP_SECONDS * random.uniform(0.8, 1.2)
+        log.info("[%s] ramp: waiting %.0fs before connecting", label, delay)
+        time.sleep(delay)
+
     conn = psycopg2.connect(**DB_CONFIG)
     conn.autocommit = True
 
     with sync_playwright() as p:
-        browser = p.chromium.connect_over_cdp(endpoint)
+        # A dead/missing endpoint (home Chrome not up, stale -R forward) must NOT crash
+        # the run — just skip this browser; the other workers share the queue.
+        browser = None
+        for attempt in range(3):
+            try:
+                browser = p.chromium.connect_over_cdp(endpoint)
+                break
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(3)
+                else:
+                    log.warning("[%s] cannot connect to %s (%s) — skipping this browser",
+                                label, endpoint, str(e)[:120])
+        if browser is None:
+            conn.close()
+            return
         context = browser.contexts[0]
         page = context.new_page()
-        page.goto(f"{KUPER_BASE}/{default_slug}?referrer=landing_retailer_list",
-                  wait_until="domcontentloaded", timeout=30000)
+        _warmup_goto(page, f"{KUPER_BASE}/{default_slug}?referrer=landing_retailer_list", label)
         log.info("[%s] connected to %s, starting", label, endpoint)
 
         processed = 0
@@ -121,16 +217,14 @@ def worker(idx, endpoint, q, slug_map, default_slug, default_store_id):
                 page.close()
                 time.sleep(60)
                 page = context.new_page()
-                page.goto(cur_catalog_url, wait_until="load", timeout=30000)
-                time.sleep(random.uniform(2.0, 4.0))
+                _warmup_goto(page, cur_catalog_url, label)
                 batch_count = 0
                 batch_size = random.randint(20, 25)
                 next_catalog_visit = processed + random.randint(5, 10)
                 log.info("[%s] new session started", label)
             elif processed == next_catalog_visit:
                 log.info("[%s] visiting catalog page...", label)
-                page.goto(cur_catalog_url, wait_until="load", timeout=30000)
-                time.sleep(random.uniform(2.0, 4.0))
+                _warmup_goto(page, cur_catalog_url, label)
                 next_catalog_visit = processed + random.randint(5, 10)
 
             url = (f"{MULTICARDS_URL}?permalink={permalink}&store_id={sid}"
@@ -150,6 +244,21 @@ def worker(idx, endpoint, q, slug_map, default_slug, default_store_id):
                 continue
 
             status = result["status"]
+
+            # Captcha / anti-bot (401/403): do NOT kill the worker. Re-ping the same
+            # request every 90s (refreshing the page so a human can solve the captcha
+            # in that browser) until the session recovers, then handle the real result.
+            while status in (401, 403):
+                log.warning("[%s] captcha/anti-bot %d on %s — solve it in the browser; retry in 90s",
+                            label, status, permalink)
+                time.sleep(90)
+                _warmup_goto(page, cur_catalog_url, label)  # surface/refresh so it can be solved
+                try:
+                    result = page.evaluate(FETCH_JS, url)
+                    status = result["status"]
+                except Exception as e:
+                    log.warning("[%s] captcha retry fetch error: %s", label, str(e)[:120])
+
             remaining = q.qsize()
 
             if status == 200:
@@ -160,9 +269,6 @@ def worker(idx, endpoint, q, slug_map, default_slug, default_store_id):
                         (row_id, Json(result["body"])),
                     )
                 log.info("[%s] %s -> OK (queue left: %d)", label, permalink, remaining)
-            elif status in (401, 403):
-                # No interactive captcha solving on the VPS: let the thread die loudly.
-                raise RuntimeError(f"[{label}] captcha/anti-bot {status} on {permalink} — thread stopping")
             elif status == 429:
                 log.warning("[%s] rate limited (429), waiting 60s...", label)
                 time.sleep(60)
@@ -190,6 +296,8 @@ def enrich():
     with open(os.path.join(SCRIPT_DIR, "config.json"), "r", encoding="utf-8") as f:
         config = json.load(f)
     default_store_id = config["store_id"]
+
+    endpoints = load_endpoints()
 
     conn = psycopg2.connect(**DB_CONFIG)
     conn.autocommit = True
@@ -233,8 +341,8 @@ def enrich():
 
     slug_map, missing = load_slug_map(conn, store_ids)
     log.info("Slugs from dds.kuper_store: %d; missing: %d", len(slug_map), len(missing))
-    if missing and CDP_ENDPOINTS:
-        slug_map.update(resolve_missing_slugs(CDP_ENDPOINTS[0], missing))
+    if missing and endpoints:
+        slug_map.update(resolve_missing_slugs(endpoints[0], missing))
     default_slug = next(iter(slug_map.values()), "metro")
     conn.close()
 
@@ -254,13 +362,14 @@ def enrich():
         except Exception:
             # Thread "falls" on captcha/other fatal error; record so the process can
             # exit non-zero (systemd Restart=on-failure / alerting).
-            log.exception("[%s] worker crashed", chr(65 + idx))
+            log.exception("[%s] worker crashed", chr(65 + idx) if idx < 26 else f"#{idx}")
             errors.append(idx)
 
+    log.info("Connecting %d browser worker(s) over CDP", len(endpoints))
     threads = []
-    for idx, endpoint in enumerate(CDP_ENDPOINTS):
+    for idx, endpoint in enumerate(endpoints):
         t = threading.Thread(target=run, args=(idx, endpoint),
-                             name=f"browser-{chr(65 + idx)}")
+                             name=f"browser-{idx}")
         t.start()
         threads.append(t)
     for t in threads:

@@ -121,7 +121,7 @@ def load_kuper_dds():
                  LIMIT 1
                 ) AS carbs
             FROM staging.raw_kuper r
-            LEFT JOIN staging.raw_kuper_enriched e ON e.id = r.id
+            JOIN staging.raw_kuper_enriched e ON e.id = r.id
         """)
         cur.execute("CREATE INDEX ON tmp_kuper_products (sku)")
 
@@ -206,8 +206,22 @@ def load_kuper_dds():
         log.info("Inserted %d nutrition facts", nutrition_count)
 
     conn.commit()
+    _enrich_nutrition(conn, "kuper")
     conn.close()
     log.info("Done")
+
+
+def _enrich_nutrition(conn, source: str):
+    model_dir = os.environ.get("NUTR_MODEL_DIR", os.path.join(PROJECT_DIR, "models", "nutr"))
+    if not os.path.exists(model_dir):
+        log.warning("NUTR_MODEL_DIR not found (%s) — skipping ML nutrition enrichment", model_dir)
+        return
+    try:
+        from dds.nutr_model import NutritionModel
+    except ImportError:
+        from nutr_model import NutritionModel
+    model = NutritionModel.load(model_dir)
+    model.enrich_source(conn, source)
 
 
 if __name__ == "__main__":

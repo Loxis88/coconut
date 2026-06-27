@@ -8,6 +8,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/coconut/backend/internal/core/domain"
@@ -23,6 +28,7 @@ type cznCategory struct {
 }
 
 type cznAttr struct {
+	AttrID    int    `json:"attr_id"`
 	AttrName  string `json:"attr_name"`
 	AttrValue string `json:"attr_value"`
 }
@@ -39,16 +45,6 @@ type cznResponse struct {
 	Result []cznProduct `json:"result"`
 }
 
-func (p *cznProduct) shortestCategoryName() string {
-	best := ""
-	for _, c := range p.Categories {
-		if best == "" || len(c.CatName) < len(best) {
-			best = c.CatName
-		}
-	}
-	return best
-}
-
 func (p *cznProduct) composition() string {
 	for _, a := range p.GoodAttrs {
 		if a.AttrName == "Состав" {
@@ -58,22 +54,185 @@ func (p *cznProduct) composition() string {
 	return ""
 }
 
+// nutritionFromAttrs extracts КБЖУ directly from CZ good_attrs by stable attr_id.
+// Returns nil when none of the nutrition attrs are present.
+func (p *cznProduct) nutritionFromAttrs() *domain.NutritionFacts {
+	const (
+		idProtein   = 23862
+		idFat       = 23865
+		idCarbs     = 23868
+		idKcal      = 23874
+		idKj        = 23880
+	)
+	attrMap := make(map[int]string, len(p.GoodAttrs))
+	for _, a := range p.GoodAttrs {
+		attrMap[a.AttrID] = strings.TrimSpace(a.AttrValue)
+	}
+	parseF := func(id int) *float64 {
+		s, ok := attrMap[id]
+		if !ok || s == "" {
+			return nil
+		}
+		s = strings.ReplaceAll(s, ",", ".")
+		v, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return nil
+		}
+		return &v
+	}
+
+	protein := parseF(idProtein)
+	fat := parseF(idFat)
+	carbs := parseF(idCarbs)
+	kcal := parseF(idKcal)
+	kj := parseF(idKj)
+
+	// Derive kcal from kJ when kcal absent
+	if kcal == nil && kj != nil {
+		v := *kj / 4.184
+		kcal = &v
+	}
+	// Sanity: if kJ < kcal it means units are swapped — use the smaller as kcal
+	if kcal != nil && kj != nil && *kj < *kcal {
+		v := *kj
+		kcal = &v
+	}
+
+	if protein == nil && fat == nil && carbs == nil && kcal == nil {
+		return nil
+	}
+	return &domain.NutritionFacts{
+		CaloriesKcal: kcal,
+		ProteinG:     protein,
+		FatG:         fat,
+		CarbsG:       carbs,
+	}
+}
+
 // ── FallbackService ───────────────────────────────────────────────────────────
 
 type FallbackService struct {
-	repo       ports.ProductRepository
-	openai     *openAIClient
-	cznAPIKey  string
-	httpClient *http.Client
+	repo            ports.ProductRepository
+	openai          *openAIClient
+	cznAPIKey       string
+	httpClient      *http.Client
+	categoryMapping map[string]*string // czn cat_name → OFF category ID (nil = no match)
+	nutrScript      string             // path to predict_nutr.py (empty = disabled)
+	pythonBin       string             // python executable
 }
 
-func NewFallbackService(repo ports.ProductRepository, cznAPIKey, openAIKey string) *FallbackService {
-	return &FallbackService{
-		repo:       repo,
-		openai:     newOpenAIClient(openAIKey),
-		cznAPIKey:  cznAPIKey,
-		httpClient: &http.Client{Timeout: 15 * time.Second},
+func NewFallbackService(repo ports.ProductRepository, cznAPIKey, openAIKey, mappingFile string) *FallbackService {
+	pythonBin := os.Getenv("NUTR_PYTHON_BIN")
+	if pythonBin == "" {
+		pythonBin = "python"
 	}
+	svc := &FallbackService{
+		repo:            repo,
+		openai:          newOpenAIClient(openAIKey),
+		cznAPIKey:       cznAPIKey,
+		httpClient:      &http.Client{Timeout: 15 * time.Second},
+		categoryMapping: loadCategoryMapping(mappingFile),
+		nutrScript:      os.Getenv("NUTR_PREDICT_SCRIPT"),
+		pythonBin:       pythonBin,
+	}
+	return svc
+}
+
+func loadCategoryMapping(path string) map[string]*string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("fallback: category mapping not loaded (%s): %v", path, err)
+		return nil
+	}
+	var raw map[string]*string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		log.Printf("fallback: category mapping parse error: %v", err)
+		return nil
+	}
+	log.Printf("fallback: loaded %d CZ category mappings from %s", len(raw), path)
+	return raw
+}
+
+// resolveCategoryID looks up CZ categories in the pre-built mapping (most specific first).
+// Returns (db category ID, OFF category name), or (nil, "") if none matched.
+func (s *FallbackService) resolveCategoryID(ctx context.Context, categories []cznCategory) (*int64, string) {
+	if s.categoryMapping == nil {
+		return nil, ""
+	}
+	// Sort by cat_id descending — higher IDs are deeper/more specific in the CZ tree.
+	sorted := make([]cznCategory, len(categories))
+	copy(sorted, categories)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].CatID > sorted[j].CatID
+	})
+	for _, cat := range sorted {
+		offID, ok := s.categoryMapping[cat.CatName]
+		if !ok || offID == nil {
+			continue
+		}
+		catID, err := s.repo.GetCategoryIDByName(ctx, *offID)
+		if err != nil {
+			log.Printf("fallback: category DB lookup %q: %v", *offID, err)
+			continue
+		}
+		if catID != nil {
+			return catID, *offID
+		}
+	}
+	return nil, ""
+}
+
+// enrichNutrition calls predict_nutr.py subprocess to fill secondary nutrients.
+// Only fills fields that are still nil in nf (never overwrites CZ data).
+func (s *FallbackService) enrichNutrition(nf *domain.NutritionFacts, offCategory, ingredients string) {
+	if s.nutrScript == "" || nf == nil {
+		return
+	}
+	args := []string{s.nutrScript, "--category", offCategory, "--ingredients", ingredients}
+	fmtF := func(v *float64) string {
+		if v == nil {
+			return ""
+		}
+		return strconv.FormatFloat(*v, 'f', 4, 64)
+	}
+	if s := fmtF(nf.CaloriesKcal); s != "" {
+		args = append(args, "--kcal", s)
+	}
+	if s := fmtF(nf.ProteinG); s != "" {
+		args = append(args, "--protein", s)
+	}
+	if s := fmtF(nf.FatG); s != "" {
+		args = append(args, "--fat", s)
+	}
+	if s := fmtF(nf.CarbsG); s != "" {
+		args = append(args, "--carbs", s)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, s.pythonBin, args...).Output()
+	if err != nil {
+		log.Printf("fallback: nutr enrichment subprocess: %v", err)
+		return
+	}
+
+	var result struct {
+		SugarG        *float64 `json:"sugar_g"`
+		SodiumMg      *float64 `json:"sodium_mg"`
+		SaltG         *float64 `json:"salt_g"`
+		FiberG        *float64 `json:"fiber_g"`
+		SaturatedFatG *float64 `json:"saturated_fat_g"`
+	}
+	if err := json.Unmarshal(out, &result); err != nil {
+		log.Printf("fallback: nutr enrichment parse: %v", err)
+		return
+	}
+	if nf.SugarG == nil        { nf.SugarG = result.SugarG }
+	if nf.SodiumMg == nil      { nf.SodiumMg = result.SodiumMg }
+	if nf.SaltG == nil         { nf.SaltG = result.SaltG }
+	if nf.FiberG == nil        { nf.FiberG = result.FiberG }
+	if nf.SaturatedFatG == nil { nf.SaturatedFatG = result.SaturatedFatG }
+	log.Printf("fallback: secondary nutrients enriched via ML model")
 }
 
 func (s *FallbackService) FetchAndSave(ctx context.Context, barcode string) (*domain.Product, error) {
@@ -87,28 +246,21 @@ func (s *FallbackService) FetchAndSave(ctx context.Context, barcode string) (*do
 	}
 
 	ingredientsText := raw.composition()
-	categoryQueryText := raw.shortestCategoryName()
 
-	// 2. Embed category name → nearest DB category
-	var categoryID *int64
-	if categoryQueryText != "" && s.openai.apiKey != "" {
-		emb, embErr := s.openai.Embed(ctx, categoryQueryText)
-		if embErr != nil {
-			log.Printf("fallback: embed category %q: %v", categoryQueryText, embErr)
-		} else {
-			catID, catErr := s.repo.GetCategoryIDByEmbedding(ctx, emb)
-			if catErr != nil {
-				log.Printf("fallback: category lookup: %v", catErr)
-			} else {
-				categoryID = catID
-			}
-		}
+	// 2. Resolve category via pre-built mapping (most specific CZ category first)
+	categoryID, offCatName := s.resolveCategoryID(ctx, raw.Categories)
+	if categoryID != nil {
+		log.Printf("fallback: barcode %s → category %d (%s)", barcode, *categoryID, offCatName)
+	} else {
+		log.Printf("fallback: barcode %s → no category match", barcode)
 	}
 
-	// 3. Category-median nutrition
-	var nf *domain.NutritionFacts
-	if categoryID != nil {
-		nf, _ = s.repo.GetCategoryMedianNutrition(ctx, *categoryID)
+	// 3. Nutrition: use CZ attrs directly; nil when CZ doesn't provide them
+	nf := raw.nutritionFromAttrs()
+	if nf != nil {
+		log.Printf("fallback: barcode %s → nutrition from CZ attrs (kcal=%v prot=%v fat=%v carbs=%v)",
+			barcode, nf.CaloriesKcal, nf.ProteinG, nf.FatG, nf.CarbsG)
+		s.enrichNutrition(nf, offCatName, ingredientsText)
 	}
 
 	// 4. Nutri-Score
